@@ -1,242 +1,342 @@
 # Negroni Bar Lab
 
-Private order-taking system for Negroni Bar Lab (Piraeus): an Android app for
-servers and the barman, a web dashboard for the barman's laptop, and a Firebase
-backend. Not distributed through the Play Store; the debug APK is installed from
-Android Studio.
+Private order-taking system for Negroni Bar Lab (Κολοκοτρώνη 74–76, Piraeus):
 
-> Work in progress. This README is completed in milestone 8 (APK install steps,
-> Firebase setup, operations).
+- an **Android app** for servers and the barman: tables, menu, orders, payments, order board;
+- a **web dashboard** for the barman's laptop: live order board with sound, tables,
+  payments, and all admin work (users, menu, tables, settings);
+- a **Firebase backend**: Auth, Firestore (region `europe-west8`, Milan) with role-based
+  security rules, and a few Cloud Functions.
 
-## Layout
+Not distributed through the Play Store: the debug APK is installed from this laptop.
+The look (colours, fonts, spacing) comes from https://www.barlab.gr/menu.html, see
+[design/tokens.md](design/tokens.md).
 
-| Folder        | What                                                        |
-|---------------|-------------------------------------------------------------|
-| `android/`    | Kotlin + Jetpack Compose app (`gr.barlab.negroni`), minSdk 29 |
-| `web/`        | Dashboard: Vite + TypeScript + Preact, Firebase JS SDK      |
-| `functions/`  | Cloud Functions (TypeScript, Node 22, region `europe-west8`) |
-| `firebase/`   | Firestore security rules, indexes and emulator rules tests  |
-| `tools/seed/` | Menu parser and seed script (milestones 2–3)                 |
-| `design/`     | `tokens.md` (colors, fonts, spacing from barlab.gr) and bundled OFL fonts |
-| `scripts/`    | `env.sh`: puts Node 22 and JDK 21 on the PATH               |
-| `Resources/`  | Source images supplied by the bar (not used yet)            |
+**Contents:** [First-time setup](#first-time-setup) ·
+[Install the app on a phone](#install-the-app-on-a-phone) · [Daily use](#daily-use) ·
+[Admin tasks](#admin-tasks) · [How it works](#how-it-works) ·
+[Development](#development) · [Dependencies](#dependencies) ·
+[Known limits](#known-limits) · [Troubleshooting](#troubleshooting)
 
-## Local setup
+---
 
-Requirements: Android Studio (or the Android SDK), JDK 17+ for Android builds,
-Node 22 and JDK 21 for Firebase tooling. On the dev laptop these live in
-`~/.config/nvm` and `~/.local/jdks`; load them with:
+## First-time setup
+
+### 1. Tools on the laptop
+
+Android Studio (or the Android SDK) with JDK 17+, Node 22 and JDK 21 (for the Firebase
+emulators). On the dev laptop Node lives in `~/.config/nvm` and JDK 21 in `~/.local/jdks`;
+every terminal session first runs:
 
 ```bash
 . scripts/env.sh
+```
+
+```bash
 npm run install:all
 ```
 
-Checks run at the end of every milestone:
+### 2. Firebase project (Firebase console, once)
+
+1. Go to https://console.firebase.google.com, create a project named **Negroni Bar Lab**.
+   Turn Google Analytics and Gemini off. Note the **Project ID** under the name.
+2. Bottom left → **Upgrade** → **Blaze** (Cloud Functions need it) → link or create a
+   billing account.
+3. Budget alert: https://console.cloud.google.com/billing → **Budgets & alerts** →
+   **Create budget**: this project, €5, alerts at 50/90/100 %. (An alert does not stop
+   spending; at this size the expected cost is about €0.)
+4. **Build → Firestore Database → Create database**: Standard edition, ID `(default)`,
+   location **europe-west8 (Milan)**, **production mode**. The location cannot change later.
+5. **Build → Authentication → Get started → Sign-in method → Email/Password**: enable the
+   first switch only (not "Email link"), save.
+6. **Authentication → Settings → User actions**: untick **Enable create (sign-up)** and
+   **Enable deletion**, save. Only our Cloud Functions create accounts.
+7. ⚙ **Project settings → Your apps → Android**: package `gr.barlab.negroni`, no SHA-1 →
+   **Register** → download `google-services.json` into `android/app/`. Skip the remaining
+   SDK steps (already done).
+8. Same page → **Add app → Web (`</>`)**, nickname "Dashboard", Hosting unticked →
+   **Register**. Copy `web/.env.example` to `web/.env.local` and fill in `apiKey`,
+   `authDomain`, `projectId`, `appId`.
+
+Both files are git-ignored and never committed.
+
+### 3. Command-line logins (once per laptop)
+
+Install the gcloud CLI (https://cloud.google.com/sdk/docs/install#linux), then:
 
 ```bash
-(cd android && ./gradlew assembleDebug testDebugUnitTest && ./gradlew --stop)
-npm run test:web && npm run build:web
-npm run build:functions
-npm run test:backend      # functions + rules + seed tests in the Auth/Firestore emulators (demo project, no login)
+gcloud auth application-default login
 ```
 
-## Accounts and login
+```bash
+gcloud auth application-default set-quota-project <projectId>
+```
 
-- Staff log in with a **username**; Firebase Auth sees `<username>@users.negronibarlab.invalid`
-  (reserved `.invalid` domain, so no mail can ever be sent). Passwords live only in Firebase Auth (hashed).
-- Roles: `admin` (the barman/owner: everything), `barman` (order board in the Android app),
-  `server`. The dashboard is admin-only.
-- Role, active state and `mustChangePassword` live in `users/{uid}`. Security rules read that
-  document on every request, so deactivation and role changes apply at once. Only Cloud
-  Functions write it: `createUser`, `updateUser`, `resetPassword`, `changeOwnPassword`.
-  Every change is written to `auditLog`.
-- Anyone with `mustChangePassword` (the seeded admin, and anyone after a reset) can do nothing
-  except change their password.
+```bash
+npx firebase login && npx firebase use --add
+```
 
-## Seeding
+Pick the project and give it the alias `default` (this writes `.firebaserc`, which may be
+committed).
 
-Seed credentials live in `tools/seed/seed-credentials.json`, which is git-ignored. Create it
-with the initial accounts (admin + user1..user5, password = username twice):
+### 4. Deploy and seed
+
+```bash
+npm run deploy:backend
+```
+
+Deploys the security rules, indexes and Cloud Functions. The first deploy enables a few
+Google Cloud APIs and may ask how long to keep build images: accept the default.
 
 ```bash
 npm --prefix tools/seed run init-credentials
-```
-
-Seed the emulators, or the real project once `gcloud auth application-default login` is done:
-
-```bash
-npm --prefix tools/seed run seed:emulator
 ```
 
 ```bash
 npm --prefix tools/seed run seed -- --project <projectId>
 ```
 
-The seed is idempotent: existing accounts keep their passwords and flags. It also adds the
-menu and tables "1".."20"; documents that already exist are never overwritten, so the
-admin's edits survive a re-run.
+Creates `admin` and `user1`..`user5` (display names "Admin", "Server 1".."Server 5"; initial
+password = username twice, e.g. `user1user1`), the menu imported from barlab.gr, tables
+"1".."20" and the summary header. The seed never overwrites anything that already exists.
+The credentials file is git-ignored; keep it off shared drives.
 
-## Menu import
+```bash
+npm run deploy:hosting
+```
 
-`tools/seed/menu/source-menu.html` is a saved copy of https://www.barlab.gr/menu.html.
-`npm --prefix tools/seed run menu:import` turns it into `menu/menu.json` (seeded) and
-`menu/menu-report.md`, which lists what needs a human look: price ranges (the lower price is
-stored, the range text stays in the description), brand lists sold at one price, a different
-price inside a description, duplicate names, and text clean-ups. Add `-- --fetch` to download
-a fresh copy of the page first.
+Builds the dashboard with `web/.env.local` and publishes it at `https://<projectId>.web.app`.
 
-Money is always integer cents. Menu items, categories and sections are never hard-deleted:
-"Delete" in the dashboard sets `archived`, which hides them everywhere but keeps them for
-reports. "Hide" makes an entry unorderable but keeps it visible to the admin.
+### 5. First sign-in
 
-Removing a table goes through the `removeTable` function, which refuses while the table's
-current session has any round or payment.
+1. Open the dashboard, sign in as `admin` / `adminadmin`, choose a new password (required).
+2. **Users**: the seeded servers can sign in with their initial passwords, which are easy to
+   guess. Use **Reset password** for each to give them a temporary one; they choose their own
+   at first sign-in.
+3. Check the menu against [tools/seed/menu/menu-report.md](tools/seed/menu/menu-report.md)
+   (price ranges stored at the lower price, brand lists, duplicate "Gin" names).
 
-## Orders (rounds)
+---
 
-- A server picks a table, adds menu items with quantity and an optional note per item plus an
-  order note, and sends it: that is one **round** (`rounds/{id}`), status Preparing → Served
-  (or Cancelled). A table can have many rounds. Names and prices are copied into the round, so
-  later menu edits never change past orders.
-- Each table has a `currentSessionId`; its rounds belong to that session until the table is
-  closed (milestone 6). Table status (Free, Preparing, Served, Partially paid, Paid) is never
-  stored: it is derived from the current session's rounds and payments.
-- While Preparing, anyone can change quantities and notes, cancel single items, or cancel the
-  round; anyone can mark it served. Every change is written in one batch with an event in
-  `rounds/{id}/events`. The rules refuse a change without its event, and refuse any change once
-  the round is Served or Cancelled. Edits and cancellations set `editSeen: false` so the
-  barman's board can highlight them.
-- **Offline:** round and event ids are generated on the phone and writes never wait for the
-  server. Firestore queues them locally and sends them on reconnect; a retry hits the same
-  document, so no duplicates. A round not yet confirmed shows "Waiting to sync". If the server
-  refuses a queued change (for example an edit to a round that was served meanwhile), the app
-  shows a message.
+## Install the app on a phone
 
-## Order board and dashboard
+Tested target: Xiaomi Mi 10T Pro (MIUI / HyperOS). Other Android 10+ phones work the same way.
 
-- **Order board** (dashboard home, and the first tab in the Android app for barman/admin):
-  every Preparing round plus unacknowledged cancellations, oldest first, with waiting time.
-  A round nobody has opened is highlighted gold ("New"); an edited or cancelled one red
-  ("Edited"/"Cancelled"), with the exact change read from its event log. "Got it" clears the
-  highlight (only barman/admin may), "Served" moves it off the board.
-- **Sound:** browsers block audio until the page gets a click, so the board shows
-  "Enable sound" once per page load. New orders play two rising notes; edits and
-  cancellations three falling notes.
-- **Tables:** live grid with the derived status colours and the amount due; click a table for
-  its rounds and totals. "Manage tables" leads to add/rename/reorder/remove.
-- Try it without phones: `npm run emulators`, then `npm --prefix tools/seed run seed:emulator`
-  and `npm --prefix tools/seed run demo:rounds` (emulator only; refuses a real project).
+**On the phone (once):**
 
-## Offline sync and its verification
+1. Settings → About phone → tap **MIUI version** (HyperOS: **OS version**) 7 times until
+   "You are now a developer".
+2. Settings → Additional settings → **Developer options**: turn on **USB debugging** and
+   **Install via USB** (MIUI asks you to be signed in to a Mi account for the second one).
+3. Connect the phone by USB, choose "File transfer" if asked, and accept the "Allow USB
+   debugging?" prompt (tick "Always allow from this computer").
 
-How it works: Firestore keeps an on-disk cache on the phones (and in the dashboard's browser).
-Orders and payments get their ids on the device and are written without waiting for the
-server, so they work offline, survive the app being killed, and are sent on reconnect. A
-retried write targets the same document, so it can never create a copy.
+**On the laptop:**
 
-What you see:
-- **Android:** a strip under the status bar: rust "Offline · N changes waiting to sync",
-  slate "Syncing N changes…", hidden when everything is confirmed. Each unconfirmed order or
-  payment also shows "Waiting to sync". If the server refuses a queued change after reconnect
-  (for example an edit to an order that was served meanwhile), a message explains it.
-- **Dashboard:** the same banner under the navigation; buttons do not stay busy while offline.
+4. `google-services.json` must be in `android/app/` (step 2.7 above).
+5. Android Studio → **Open** the `android/` folder, wait for Gradle sync, pick the phone in
+   the device list, press **Run ▶**. Or from a terminal:
 
-How it is verified:
-1. `npm run test:rules` runs `firebase/test/offline.sync.test.ts` against the Firestore
-   emulator with the real rules. It checks that offline rounds and payments are visible
-   locally at once and reach the server exactly once, that a double-sent round or retried
-   payment is stored once, that an offline edit to a round served meanwhile is refused, that a
-   late round keeps its old session, that two phones closing the same table offline cannot both
-   win, and that a user deactivated meanwhile cannot sync.
-2. **On the phone** (real app code, including an app kill while offline):
-   `android/app/src/androidTest/.../OfflineSyncTest.kt`. Connect the Mi 10T Pro by USB with
-   USB debugging on, then run:
+   ```bash
+   (cd android && ./gradlew installDebug && ./gradlew --stop)
+   ```
+
+6. MIUI shows an "Install via USB" confirmation on the phone: tap **Install** (it times out
+   after a few seconds).
+
+**On the phone again (important for offline orders):**
+
+7. Settings → Apps → Manage apps → **Negroni Bar Lab** → **Battery saver → No restrictions**,
+   and turn **Autostart** on. MIUI otherwise stops the app in the background, and orders taken
+   offline are only sent while the app runs.
+
+**Updates:** run step 5 again; data and sign-in are kept. Install every phone from **this
+laptop**: debug builds are signed with `~/.android/debug.keystore`, and a build from another
+computer cannot update the app without uninstalling it, which deletes orders still waiting to
+sync. Back up that keystore file. Before ever uninstalling, check the app shows no
+"Offline"/"Syncing" banner.
+
+An APK file can also be copied to a phone instead (allow "Install unknown apps" for the file
+manager): `android/app/build/outputs/apk/debug/app-debug.apk`, built by
+`./gradlew assembleDebug`.
+
+---
+
+## Daily use
+
+**Servers (Android):** sign in → **Tables** → tap a table → **New order** → tap items (set
+quantity and an optional note) → **Review** (order note) → **Send to bar**. While a round is
+Preparing it can be edited, items cancelled, or marked served. **Record payment** (cash or
+card, several per table), **Summary** shows the "Not a fiscal receipt" bill, and **Close
+table** appears once everything is served and paid.
+
+**Barman:** the dashboard opens on the **Order board**: oldest first, waiting time, gold =
+new, red = edited/cancelled with the exact change. Click **Enable sound** once per page load.
+**Got it** clears a highlight, **Served** removes the round. The Android app shows the same
+board as its first tab for barman and admin accounts.
+
+**Offline:** the app keeps working without Wi-Fi. A rust banner says "Offline · N changes
+waiting to sync"; each unsynced order/payment says "Waiting to sync". Everything is sent
+when the connection returns.
+
+## Admin tasks
+
+All in the dashboard (admin account only):
+
+- **Users**: create (username, display name, role, temporary password), rename, change role,
+  deactivate/activate, reset password. Roles: `admin` (everything, the barman/owner),
+  `barman` (order board in the Android app, no admin work), `server`.
+- **Menu**: sections (tabs) → categories → items. Add, edit, hide (not orderable), reorder,
+  delete (archived: gone everywhere, kept for reports), change prices ("8,50" or "8.50").
+  Changes appear live on every phone.
+- **Tables → Manage tables**: add, rename, reorder, remove (refused while the table has an
+  open order).
+- **Payments**: today's payments with cash and card totals.
+- **Settings**: dashboard language, and the header of the non-fiscal summary (bar name,
+  address, phone, footer).
+
+**Language:** English is the default. Android: Settings → Language (English / Ελληνικά), kept
+across restarts (on Android 13+ also under the system's app language setting). Dashboard:
+Settings → Language, stored in that browser. The Greek translation is scaffolded but not
+written: `android/app/src/main/res/values-el/strings.xml` and `web/src/i18n/el.json` are
+empty, so everything falls back to English until they are filled in.
+
+---
+
+## How it works
+
+### Accounts
+
+- Staff log in with a **username**; Firebase Auth sees `<username>@users.negronibarlab.invalid`
+  (reserved `.invalid` domain, so no mail can ever be sent). Passwords live only in Firebase
+  Auth (hashed); the seed reads initial ones from the git-ignored credentials file.
+- Role, active state and `mustChangePassword` live in `users/{uid}`. Security rules read that
+  document on every request, so deactivation and role changes apply at once. Only Cloud
+  Functions write it: `createUser`, `updateUser`, `resetPassword`, `changeOwnPassword`. Every
+  change goes to `auditLog`.
+- Anyone with `mustChangePassword` (the seeded admin, anyone after a reset) can do nothing
+  but change their password, and not back to the initial username-twice password.
+
+### Menu and tables
+
+- `tools/seed/menu/source-menu.html` is a saved copy of the barlab.gr menu page.
+  `npm --prefix tools/seed run menu:import` turns it into `menu.json` (seeded) and
+  `menu-report.md` (what needs a human look). Add `-- --fetch` to refresh the copy first.
+- Money is always integer cents. "8 – 12€" ranges store the lower price and keep the text in
+  the description.
+- Removing a table goes through the `removeTable` function, which refuses while the table's
+  current session has any round or payment.
+
+### Orders (rounds)
+
+- Each submission is a **round** (`rounds/{id}`): Preparing → Served (or Cancelled). Names and
+  prices are copied in, so menu edits never change past orders.
+- Each table has a `currentSessionId`; its rounds and payments belong to that session until the
+  table is closed. Table status (Free, Preparing, Served, Partially paid, Paid) is never stored;
+  it is derived from the current session (Preparing wins while anything is still being made).
+- Every change is one batch: the round plus an event in `rounds/{id}/events`. The rules refuse a
+  change without its event and any change once Served or Cancelled. Edits and cancellations set
+  `editSeen: false`, which the board highlights until the barman clicks **Got it**.
+
+### Payments and closing
+
+- Payments are create-only. A mistake is corrected by one full **reversal** with a reason
+  (id `reversal-<original>`, so a payment can be reversed once). The apps refuse paying more
+  than is due (no tips).
+- **Close table** (anyone, only when Paid) writes `sessions/{sessionId}` with the totals and
+  gives the table a new session id in the same batch; the rules check both halves.
+- **Late orders:** a round sent offline that arrives after its table was closed is accepted
+  and flagged "Late: table already closed" on the board; it is not added to the closed bill.
+
+### Offline sync
+
+Firestore keeps an on-disk cache on the phones and in the dashboard's browser. Order and
+payment ids are generated on the device and writes never wait for the server, so they work
+offline, survive the app being killed and are sent on reconnect; a retry targets the same
+document, so it cannot create a copy. If the server refuses a queued change (for example an
+edit to a round served meanwhile), the app says so.
+
+Verified by:
+1. `firebase/test/offline.sync.test.ts` (part of `npm run test:rules`), against the emulator
+   with the real rules: offline writes arrive exactly once; a double-sent round and a retried
+   payment are stored once; an offline edit to a served round is refused; a late round keeps
+   its session; two offline closes cannot both win; a user deactivated meanwhile cannot sync.
+2. On the phone, with the real app code, including killing Firestore while writes are queued:
+   connect the phone by USB, then run the command below. It uses the emulators on this
+   laptop via `adb reverse` over the cable (nothing is opened on the Wi-Fi).
 
    ```bash
    scripts/verify-offline-on-phone.sh
    ```
 
-   It starts the emulators on this laptop (localhost only), forwards the phone's ports over USB
-   with `adb reverse` (nothing is opened on the Wi-Fi), seeds, installs the debug app plus its
-   test APK, and runs the test: 3 orders and 2 payments taken offline, Firestore killed with
-   them queued, restarted, and every write found on the server exactly once.
+### POS (design only)
 
-Known limits: queued writes are sent only while the app runs (Android may stop a backgrounded
-app; MIUI's battery saver does this aggressively, see "Install on the phone" in milestone 8).
-A user deactivated while their phone is offline loses their queued writes; that is the rules
-working as intended.
+`PosGateway` (`sendOrder`, `sendReceipt`) exists in the Android app (`pos/PosGateway.kt`) and
+the dashboard (`domain/pos.ts`) with a no-op implementation; `JsonExportPosGateway` (Android)
+writes one JSON file per order/receipt (integer cents, ISO times, `"fiscal": false`). No POS
+or fiscal device is connected. Every action carries a timestamp and user id and payments are
+immutable, so reports can be built later from Firestore.
 
-## Payments and closing a table
+### Hosting and a custom subdomain
 
-- Anyone signed in records payments (amount + cash/card) against a table's current session,
-  as many as needed. The apps refuse more than what is still due (no overpayment, no tips);
-  two offline phones could still overpay together, which is shown as "Overpaid" so the extra
-  payment can be reversed.
-- Payments are immutable (`payments/{id}`, create-only). A mistake is corrected by a full
-  **reversal** with a reason; its id is `reversal-<original id>`, so each payment can be
-  reversed once.
-- Table status: Free → Preparing → Served → Partially paid → Paid, derived from rounds and
-  payments (Preparing wins while anything is still being made).
-- **Close table** (anyone, only when Paid) records `sessions/{sessionId}` with totals and gives
-  the table a fresh session id in one batch; the table is Free again. Closed sessions never change.
-- **Summary**: a clearly labelled "Not a fiscal receipt" view (printable from the dashboard)
-  with the header from Settings (bar name, address, phone, footer).
-- **Late orders**: a round sent offline that reaches the server after its table was closed is
-  accepted and flagged on the board ("Late: table already closed"); it is not added to the
-  closed bill, so settle it separately or cancel it.
-- **Dashboard → Payments** lists today's payments with cash and card totals.
+The dashboard is a static SPA on Firebase Hosting with hash routes (`#/board`, `#/tables`, …),
+so it works on any domain. To attach e.g. `bar.example.gr` later: Firebase console → Hosting →
+Add custom domain → create the DNS records it shows → add the domain under Authentication →
+Settings → Authorized domains.
 
-## POS (design only)
+### Launcher icon
 
-`PosGateway` (`sendOrder`, `sendReceipt`) exists in the Android app (`pos/PosGateway.kt`) and the
-dashboard (`domain/pos.ts`). Both use a no-op implementation today; `JsonExportPosGateway`
-(Android) writes one JSON file per order/receipt with integer cents, ISO times and
-`"fiscal": false`. No real POS or fiscal device is connected. Every action carries a timestamp
-and user id, and payments are immutable, so reports can be built later from Firestore.
+Adaptive icon: "Negroni" in Playfair Display Bold (gold `#c9a84c`) over "BAR LAB" in Lato Bold
+(cream `#e8dfc8`) on `#111008`, drawn from the font outlines so it stays sharp, kept inside the
+circular safe zone, with a monochrome layer for Android 13 themed icons. The dashboard favicon
+is the same design. Regenerate with `npm --prefix tools/icon run generate`. A second icon from
+the bar's Instagram picture (`Resources/`) is planned and not included.
 
-## Hosting
+---
 
-The dashboard is a static SPA on Firebase Hosting (`web/dist`, built by the predeploy step).
-It uses hash routes (`#/board`, `#/tables`, …), so it works on any domain without server
-rewrites. The Firebase web config is baked in at build time from `web/.env.local`.
+## Development
+
+| Folder        | What |
+|---------------|------|
+| `android/`    | Kotlin + Jetpack Compose app (`gr.barlab.negroni`), minSdk 29, targetSdk 36 |
+| `web/`        | Dashboard: Vite + TypeScript + Preact, Firebase JS SDK |
+| `functions/`  | Cloud Functions (TypeScript, Node 22, `europe-west8`) |
+| `firebase/`   | Firestore rules, indexes, rules and offline tests |
+| `tools/seed/` | Menu import, seed script, emulator-only demo orders |
+| `tools/icon/` | Launcher icon / favicon generator |
+| `design/`     | `tokens.md`, bundled OFL fonts, icon SVG |
+| `scripts/`    | `env.sh` (Node 22 + JDK 21), `verify-offline-on-phone.sh` |
+| `Resources/`  | Images supplied by the bar (not used yet) |
+
+Checks run at the end of every milestone:
 
 ```bash
-npm run deploy:backend    # Firestore rules + indexes, Cloud Functions
+(cd android && ./gradlew assembleDebug testDebugUnitTest lintDebug && ./gradlew --stop)
 ```
 
 ```bash
-npm run deploy:hosting    # builds web/ and publishes it
+npm run test:web && npm run build:web && npm run build:functions
 ```
-
-To attach a custom subdomain later (e.g. `bar.example.gr`): Firebase console → Hosting →
-Add custom domain, create the DNS records it shows, then add the domain under
-Authentication → Settings → Authorized domains.
-
-## Firebase configuration files (never committed)
-
-- `android/app/google-services.json`: from the Firebase console (Android app `gr.barlab.negroni`).
-  Without it the app builds but shows "Firebase is not configured".
-- `web/.env.local`: copy `web/.env.example` and fill in the web app's config.
-
-## Local development with the emulators
 
 ```bash
-npm run emulators         # Auth, Firestore, Functions, UI on http://localhost:4000
+npm run test:backend
 ```
 
-Then run the dashboard against them with `VITE_USE_EMULATORS=true npm --prefix web run dev`.
-Debug Android builds use the emulators when `firebase.emulatorHost=<laptop LAN IP>` is set in
-`android/local.properties`; the emulators must then listen on the LAN (decided per session,
-not enabled by default).
+`test:backend` runs the functions, rules, offline and seed tests in the Auth/Firestore
+emulators under the `demo-negroni` project (no login, nothing touches the real project).
 
-The Gradle settings keep memory low (1.5 GB heap, 2 workers). The Android
-emulator is not used for development on this laptop; on-device checks run on
-the Xiaomi Mi 10T Pro.
+**Emulators:** `npm run emulators` (UI on http://localhost:4000), then
+`npm --prefix tools/seed run seed:emulator`, `npm --prefix tools/seed run demo:rounds`
+(emulator only) and `VITE_USE_EMULATORS=true npm --prefix web run dev`. Debug Android builds
+use the emulators when `firebase.emulatorHost=<host>` is set in `android/local.properties`
+(with the phone on USB: `adb reverse tcp:9099 tcp:9099` etc. and host `127.0.0.1`).
+
+The Gradle settings keep memory low (1.5 GB heap, 2 workers). The Android emulator is not used
+on this laptop; on-device checks run on the phone.
 
 ## Dependencies
 
-Kept deliberately few. Every addition gets a line here.
+Kept deliberately few; every addition gets a line here.
 
 **Android**
 
@@ -244,34 +344,56 @@ Kept deliberately few. Every addition gets a line here.
 |------------|-----|
 | AndroidX Core KTX | Kotlin extensions used by every modern Android app |
 | Activity Compose | Hosts Compose in the single activity, edge-to-edge |
-| Lifecycle Runtime Compose | Lifecycle-aware collection of data streams in the UI |
-| Compose BOM, UI, Material 3 | The required UI toolkit; the BOM pins compatible versions |
-| Compose UI Tooling (debug only) | Previews and layout inspection in Android Studio; debug builds only |
-| Lifecycle ViewModel Compose | Screen state that survives rotation; `viewModel {}` factories without a DI library |
-| Firebase BoM: Auth, Firestore, Functions | Login, data with offline cache, and the user-management callables |
+| AppCompat | Per-app language below Android 13 (`AppCompatDelegate.setApplicationLocales`) |
+| Lifecycle Runtime / ViewModel Compose | Lifecycle-aware state; `viewModel {}` factories without a DI library |
+| Compose BOM, UI, Material 3 | The UI toolkit; the BOM pins compatible versions |
+| Compose UI Tooling (debug only) | Previews and layout inspection in Android Studio |
+| Firebase BoM: Auth, Firestore, Functions | Login, data with offline cache, user-management callables |
 | kotlinx-coroutines-play-services | `await()` on Firebase tasks instead of callbacks |
 | Google Services Gradle plugin | Reads `google-services.json`; applied only when that file exists |
 | JUnit 4 (tests only) | Unit tests |
 | AndroidX Test runner + ext-junit (instrumented tests only) | Runs `OfflineSyncTest` on the phone |
 
-Navigation uses a small back stack held as Compose state (`ui/nav/Navigator.kt`) instead of
+Navigation is a small back stack held as Compose state (`ui/nav/Navigator.kt`) instead of
 Navigation Compose: a handful of screens and no deep links did not justify the dependency.
+JSON for the POS export is written by hand (two small documents) instead of adding a library.
 
-Planned: AppCompat (per-app language setting below Android 13, milestone 8).
+**Web**: `preact` (≈4 kB UI layer, saves hand-written DOM code for the admin forms),
+`firebase` (official SDK). Dev only: `vite`, `typescript`, `@preact/preset-vite`, `vitest`.
 
-**Web** — `preact` (≈4 kB UI layer, saves hand-written DOM code for admin
-forms), `firebase` (official SDK). Dev only: `vite` (bundler/dev server),
-`typescript`, `@preact/preset-vite`, `vitest`.
+**Functions**: `firebase-functions`, `firebase-admin` (the only way to manage Auth users and
+claims). Dev only: `typescript`, `vitest`.
 
-**Functions** — `firebase-functions`, `firebase-admin` (the only way to manage
-Auth users and custom claims). Dev only: `typescript`, `vitest`.
+**Rules tests**: `@firebase/rules-unit-testing`, `firebase`, `vitest`.
+**Seed**: `firebase-admin`; dev only `vitest`. Runs with Node 22's built-in TypeScript support.
+**Icon**: `opentype.js` (dev only, reads the font outlines).
+**Root**: `firebase-tools` (CLI, emulators, deploy), pinned per project.
 
-**Rules tests** — `@firebase/rules-unit-testing`, `firebase`, `vitest`.
-**Seed** — `firebase-admin` (creates Auth users and profile docs); dev only `vitest`.
-Runs with Node 22's built-in TypeScript support, so no build step.
-**Root** — `firebase-tools` (CLI, emulators, deploy), pinned per project.
+**Fonts**: Lato, Playfair Display and Dancing Script, SIL Open Font License 1.1, bundled
+unmodified (licences in `design/fonts/`). They have no Greek glyphs; Greek text falls back to
+the system font.
 
-## Fonts
+## Known limits
 
-Lato, Playfair Display and Dancing Script, all SIL Open Font License 1.1,
-bundled unmodified. Licences: `design/fonts/OFL-*.txt`.
+- Greek is listed but not translated (falls back to English).
+- No reports yet, no real POS or fiscal integration (design seam only).
+- Late offline orders for a closed table are flagged, not merged into a bill.
+- Two phones paying the same table while both offline can overpay; it is shown as "Overpaid"
+  and corrected with a reversal.
+- A user deactivated while their phone is offline loses that phone's queued writes (by design).
+- Firebase App Check is not set up; worth adding before the dashboard URL is shared widely.
+- `npm audit` reports advisories in `@grpc/grpc-js` pulled in by the Firebase Node SDKs
+  (server/tooling side, not in the dashboard bundle).
+
+## Troubleshooting
+
+- **"Firebase is not configured"** on the phone: `android/app/google-services.json` is missing;
+  add it and reinstall. On the dashboard: `web/.env.local` is missing; add it and redeploy.
+- **"Wrong username or password"** right after setup: the seed has not run against this project.
+- **"Account not set up"**: the Auth user exists but has no `users/{uid}` profile; create users
+  from the dashboard, not the Firebase console.
+- **Orders stuck on "Waiting to sync"**: the phone is offline, or MIUI stopped the app; open it
+  with a connection (and see step 7 of the install).
+- **Install fails with "signatures do not match"**: the installed app was built on another
+  computer. Sync everything first, then uninstall and install from this laptop.
+- **No sound on the dashboard**: click **Enable sound** after each page load.

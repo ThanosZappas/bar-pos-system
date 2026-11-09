@@ -12,7 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gr.barlab.negroni.R
@@ -31,6 +31,7 @@ import gr.barlab.negroni.ui.home.HomeScreen
 import gr.barlab.negroni.ui.nav.Navigator
 import gr.barlab.negroni.ui.nav.Screen
 import gr.barlab.negroni.ui.order.NewOrderScreen
+import gr.barlab.negroni.ui.settings.SettingsScreen
 import gr.barlab.negroni.ui.table.TableScreen
 
 /** Everything after sign-in: one live subscription each for tables, menu and table states. */
@@ -38,7 +39,7 @@ import gr.barlab.negroni.ui.table.TableScreen
 fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepository, sync: SyncMonitor?, onSignOut: () -> Unit) {
     val nav = remember { Navigator() }
     val snackbar = remember { SnackbarHostState() }
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val tables by catalog.tables.collectAsStateWithLifecycle(initialValue = emptyList())
     val menu by catalog.menu.collectAsStateWithLifecycle(initialValue = Menu(emptyList()))
     val syncStatus by (sync?.status ?: flowOf(SyncStatus.Synced)).collectAsStateWithLifecycle(initialValue = SyncStatus.Synced)
@@ -58,7 +59,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
                 Action.Reverse -> R.string.failure_reverse
                 Action.Close -> R.string.failure_close
             }
-            snackbar.showSnackbar(context.getString(res, f.tableName))
+            snackbar.showSnackbar(resources.getString(res, f.tableName))
         }
     }
     BackHandler(enabled = nav.canGoBack) { nav.back() }
@@ -66,7 +67,8 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }, topBar = { SyncBanner(syncStatus) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSignOut = onSignOut)
+                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) })
+                Screen.Settings -> SettingsScreen(user, onBack = nav::back, onSignOut = onSignOut)
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)

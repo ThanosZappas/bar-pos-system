@@ -2,7 +2,7 @@ import { render } from 'preact';
 import './styles/tokens.css';
 import './styles/base.css';
 import { firebase } from './firebase';
-import { t } from './i18n';
+import { getLang, t } from './i18n';
 import { useSession } from './session';
 import { ChangePassword } from './ui/ChangePassword';
 import { Login } from './ui/Login';
@@ -29,4 +29,5 @@ function App() {
   }
 }
 
+document.documentElement.lang = getLang();
 render(<App />, document.getElementById('app')!);

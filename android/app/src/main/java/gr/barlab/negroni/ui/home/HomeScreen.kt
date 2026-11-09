@@ -41,7 +41,7 @@ fun HomeScreen(
     menu: Menu,
     orders: OrdersRepository,
     onTableClick: (DiningTable) -> Unit,
-    onSignOut: () -> Unit,
+    onSettings: () -> Unit,
 ) {
     val tabs = if (user.role.seesOrderBoard) HomeTab.entries else listOf(HomeTab.Tables, HomeTab.Menu)
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -56,7 +56,7 @@ fun HomeScreen(
                 modifier = Modifier.weight(1f).padding(start = Spacing.m),
                 maxLines = 1,
             )
-            TextButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out)) }
+            TextButton(onClick = onSettings) { Text(stringResource(R.string.settings)) }
         }
         PrimaryTabRow(selectedTabIndex = tab.coerceIn(tabs.indices)) {
             tabs.forEachIndexed { i, t ->

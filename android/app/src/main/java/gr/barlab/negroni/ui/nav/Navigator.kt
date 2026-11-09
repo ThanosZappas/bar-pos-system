@@ -7,6 +7,7 @@ sealed interface Screen {
     data object Home : Screen
     data class Table(val tableId: String) : Screen
     data class NewOrder(val tableId: String) : Screen
+    data object Settings : Screen
 }
 
 /**

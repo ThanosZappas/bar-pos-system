@@ -3,7 +3,7 @@
   "private": true,
   "description": "Root helper scripts. Each part (web, functions, firebase, tools/seed) has its own package.json.",
   "scripts": {
-    "install:all": "npm install && npm --prefix web install && npm --prefix functions install && npm --prefix firebase install && npm --prefix tools/seed install",
+    "install:all": "npm install && npm --prefix web install && npm --prefix functions install && npm --prefix firebase install && npm --prefix tools/seed install && npm --prefix tools/icon install",
     "test:web": "npm --prefix web test",
     "test:functions": "firebase emulators:exec --only auth,firestore --project demo-negroni \"npm --prefix functions test\"",
     "test:rules": "firebase emulators:exec --only firestore --project demo-negroni \"npm --prefix firebase test\"",

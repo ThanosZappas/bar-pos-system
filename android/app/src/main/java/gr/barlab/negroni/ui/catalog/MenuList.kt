@@ -22,6 +22,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +53,10 @@ fun MenuList(menu: Menu, modifier: Modifier = Modifier, onItemClick: ((Menu.Item
     // Index of each section's first row in the flat list, for the tabs.
     val rows = remember(shown) { flatten(shown) }
     val sectionStarts = remember(rows) { rows.withIndex().filter { it.value is Row.SectionHeader }.map { it.index } }
-    val currentSection = sectionStarts.indexOfLast { it <= listState.firstVisibleItemIndex }.coerceAtLeast(0)
+    // derivedStateOf: recompose only when the visible section changes, not on every scroll frame.
+    val currentSection by remember(sectionStarts) {
+        derivedStateOf { sectionStarts.indexOfLast { it <= listState.firstVisibleItemIndex }.coerceAtLeast(0) }
+    }
 
     Column(modifier.fillMaxSize()) {
         OutlinedTextField(

@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -68,7 +69,7 @@ fun NewOrderScreen(table: DiningTable, menu: Menu, onSubmit: (OrderDraft) -> Uni
             Text(stringResource(R.string.order_empty), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(Spacing.l))
         } else {
             Button(onClick = { reviewing = true }, modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
-                Text(stringResource(R.string.order_review, draft.itemCount, Money.format(draft.totalCents)).uppercase(), style = MaterialTheme.typography.labelLarge)
+                Text(pluralStringResource(R.plurals.order_review, draft.itemCount, draft.itemCount, Money.format(draft.totalCents)).uppercase(), style = MaterialTheme.typography.labelLarge)
             }
         }
     }

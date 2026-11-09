@@ -1,6 +1,7 @@
 package gr.barlab.negroni.ui.auth
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.AuthFailure
@@ -13,7 +14,7 @@ fun authFailureMessage(failure: AuthFailure): String = when (failure.reason) {
     Reason.Deactivated -> stringResource(R.string.error_deactivated)
     Reason.Network -> stringResource(R.string.error_network)
     Reason.TooManyAttempts -> stringResource(R.string.error_too_many_attempts)
-    Reason.PasswordTooShort -> stringResource(R.string.error_password_too_short, PasswordRules.MIN_LENGTH)
+    Reason.PasswordTooShort -> pluralStringResource(R.plurals.error_password_too_short, PasswordRules.MIN_LENGTH, PasswordRules.MIN_LENGTH)
     Reason.PasswordMismatch -> stringResource(R.string.error_password_mismatch)
     Reason.PasswordSameAsCurrent -> stringResource(R.string.error_password_same_as_current)
     Reason.PasswordSameAsInitial -> stringResource(R.string.error_password_same_as_initial)

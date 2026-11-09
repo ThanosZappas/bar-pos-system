@@ -23,6 +23,13 @@ export function getLang(): Lang {
   return current;
 }
 
+/** Locale for dates and times: day/month order and 24-hour clock in both languages. */
+export function dateLocale(lang: Lang = current): string {
+  return lang === 'el' ? 'el-GR' : 'en-GB';
+}
+
+export const LANGS: Lang[] = ['en', 'el'];
+
 export function setLang(lang: Lang): void {
   current = lang;
   try {

@@ -176,5 +176,7 @@
   "sync.offline": "Offline · changes are saved in this browser and sent when the connection returns",
   "sync.offlinePending": "Offline · {count} change(s) waiting to sync",
   "sync.syncing": "Syncing {count} change(s)…",
-  "sync.refused": "The server refused a change: {error}"
+  "sync.refused": "The server refused a change: {error}",
+  "settings.language": "Language",
+  "settings.languageNote": "The Greek translation is in progress: untranslated text stays in English. The page reloads to apply."
 }

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Window theme shown before Compose draws; matches the site's background. -->
-    <style name="Theme.NegroniBarLab" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.NegroniBarLab" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@color/bg</item>
+        <item name="colorPrimary">@color/gold</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
