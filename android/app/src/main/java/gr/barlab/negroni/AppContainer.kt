@@ -2,6 +2,7 @@ package gr.barlab.negroni
 
 import android.content.Context
 import gr.barlab.negroni.auth.SessionRepository
+import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.data.FirebaseSetup
 
 /** Manual dependency injection: one instance per process, created by [NegroniApp]. */
@@ -12,4 +13,6 @@ class AppContainer(context: Context) {
     val isConfigured: Boolean = firebase != null
 
     val sessions: SessionRepository? = firebase?.let { SessionRepository(it.auth, it.firestore, it.functions) }
+
+    val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore) }
 }

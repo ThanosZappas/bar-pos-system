@@ -13,4 +13,5 @@ object Spacing {
     val xxxl = 32.dp
     val hero = 60.dp
     val hairline = 0.5.dp
+    val listRow = 11.dp // .item padding on the site
 }

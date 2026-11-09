@@ -25,6 +25,30 @@ service cloud.firestore {
       return hasRole(['admin']);
     }
 
+    // Every client write carries who and when (reportable later); the server clock is enforced.
+    function stampedUpdate() {
+      let d = request.resource.data;
+      return d.updatedBy == request.auth.uid && d.updatedAt == request.time
+        && d.createdAt == resource.data.createdAt && d.createdBy == resource.data.createdBy;
+    }
+    function stampedCreate() {
+      let d = request.resource.data;
+      return d.createdBy == request.auth.uid && d.createdAt == request.time
+        && d.updatedBy == request.auth.uid && d.updatedAt == request.time;
+    }
+    function changesOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function text(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+    function listed(d) {
+      return d.order is number && d.hidden is bool && d.archived is bool;
+    }
+    function stampKeys() {
+      return ['createdAt', 'createdBy', 'updatedAt', 'updatedBy'];
+    }
+
     match /users/{uid} {
       // Everyone may read their own profile (needed for the forced password change screen).
       allow get: if signedIn() && request.auth.uid == uid;
@@ -35,6 +59,55 @@ service cloud.firestore {
     match /auditLog/{id} {
       allow read: if isAdmin();
       allow write: if false;
+    }
+
+    // ── Menu: staff read, admin edits. Deleting = archived:true (keeps history reportable). ──
+    function validSection(d) {
+      return d.keys().hasOnly(['name', 'note', 'order', 'hidden', 'archived'].concat(stampKeys()))
+        && text(d.name, 1, 60) && text(d.note, 0, 200) && listed(d);
+    }
+    function validCategory(d) {
+      return d.keys().hasOnly(['sectionId', 'name', 'order', 'hidden', 'archived'].concat(stampKeys()))
+        && text(d.sectionId, 1, 100) && text(d.name, 1, 60) && listed(d);
+    }
+    function validItem(d) {
+      return d.keys().hasOnly(['categoryId', 'name', 'description', 'priceCents', 'tags', 'order', 'hidden', 'archived'].concat(stampKeys()))
+        && text(d.categoryId, 1, 100) && text(d.name, 1, 80) && text(d.description, 0, 500)
+        && d.priceCents is int && d.priceCents >= 0 && d.priceCents <= 1000000
+        && d.tags is list && d.tags.size() <= 5 && listed(d);
+    }
+    match /menuSections/{id} {
+      allow read: if isStaff();
+      allow create: if isAdmin() && stampedCreate() && validSection(request.resource.data);
+      allow update: if isAdmin() && stampedUpdate() && validSection(request.resource.data);
+      allow delete: if false;
+    }
+    match /menuCategories/{id} {
+      allow read: if isStaff();
+      allow create: if isAdmin() && stampedCreate() && validCategory(request.resource.data);
+      allow update: if isAdmin() && stampedUpdate() && validCategory(request.resource.data);
+      allow delete: if false;
+    }
+    match /menuItems/{id} {
+      allow read: if isStaff();
+      allow create: if isAdmin() && stampedCreate() && validItem(request.resource.data);
+      allow update: if isAdmin() && stampedUpdate() && validItem(request.resource.data);
+      allow delete: if false;
+    }
+
+    // ── Tables: staff read, admin adds/renames/reorders. Removal only via the removeTable
+    // function, which first checks that the table has no open order. ──
+    function validTable(d) {
+      return d.keys().hasOnly(['name', 'order', 'archived', 'currentSessionId'].concat(stampKeys()))
+        && text(d.name, 1, 20) && d.order is number && d.archived is bool && text(d.currentSessionId, 10, 64);
+    }
+    match /tables/{id} {
+      allow read: if isStaff();
+      allow create: if isAdmin() && stampedCreate() && validTable(request.resource.data)
+        && request.resource.data.archived == false;
+      allow update: if isAdmin() && stampedUpdate() && validTable(request.resource.data)
+        && changesOnly(['name', 'order', 'updatedAt', 'updatedBy']);
+      allow delete: if false;
     }
 
     // Everything else stays closed until its milestone adds rules and tests.

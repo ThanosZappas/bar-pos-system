@@ -3,6 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall } from 'firebase-functions/v2/https';
+import * as tables from './tables.js';
 import * as users from './users.js';
 
 // Same region as Firestore (europe-west8, Milan). Few instances: one small bar.
@@ -16,3 +17,4 @@ export const createUser = onCall((req) => users.createUser(deps, req.auth?.uid, 
 export const updateUser = onCall((req) => users.updateUser(deps, req.auth?.uid, req.data));
 export const resetPassword = onCall((req) => users.resetPassword(deps, req.auth?.uid, req.data));
 export const changeOwnPassword = onCall((req) => users.changeOwnPassword(deps, req.auth?.uid, req.data));
+export const removeTable = onCall((req) => tables.removeTable(deps, req.auth?.uid, req.data));

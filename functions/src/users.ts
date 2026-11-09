@@ -72,7 +72,7 @@ async function loadUser(deps: Deps, uid: string): Promise<UserDoc | undefined> {
   return (await deps.db.doc(`users/${uid}`).get()).data() as UserDoc | undefined;
 }
 
-async function requireAdmin(deps: Deps, callerUid: string | undefined): Promise<string> {
+export async function requireAdmin(deps: Deps, callerUid: string | undefined): Promise<string> {
   if (!callerUid) throw new HttpsError('unauthenticated', 'Sign in first.');
   const caller = await loadUser(deps, callerUid);
   if (!caller || !caller.active || caller.role !== 'admin') throw new HttpsError('permission-denied', 'Admin only.');

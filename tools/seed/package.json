@@ -9,6 +9,7 @@
     "init-credentials": "node init-credentials.ts",
     "seed:emulator": "node seed.ts --emulator",
     "seed": "node seed.ts",
+    "menu:import": "node menu/import-menu.ts",
     "test": "vitest run"
   },
   "dependencies": {

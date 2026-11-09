@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu — Negroni Bar Lab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111008;
+      color: #e8dfc8;
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* ── NAV (αντιγράφει το στυλ της ιστοσελίδας σου) ── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 40px;
+      background: rgba(0,0,0,0.7);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 0.5px solid #2a2416;
+    }
+    .nav-logo {
+      font-family: 'Dancing Script', cursive;
+      font-size: 28px;
+      color: #e8dfc8;
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a {
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: #e8dfc8;
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: #c9a84c; }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 60px 20px 40px;
+      border-bottom: 0.5px solid #2a2416;
+    }
+    .hero-logo {
+      font-family: 'Dancing Script', cursive;
+      font-size: 52px;
+      color: #c9a84c;
+      line-height: 1;
+    }
+    .hero-sub {
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: #8a7a5a;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 280px;
+      margin: 18px auto;
+    }
+    .divider span { flex: 1; height: 0.5px; background: linear-gradient(to right, transparent, #c9a84c, transparent); }
+    .divider i { color: #c9a84c; font-size: 14px; }
+
+    /* ── TABS ── */
+    .tabs-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 30px 20px 0;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .tab-btn {
+      padding: 8px 22px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 0.5px solid #4a3f25;
+      background: transparent;
+      color: #8a7a5a;
+      cursor: pointer;
+      font-family: 'Lato', sans-serif;
+      font-weight: 400;
+      transition: all .2s;
+    }
+    .tab-btn:hover { border-color: #c9a84c; color: #c9a84c; }
+    .tab-btn.active {
+      border-color: #c9a84c;
+      color: #c9a84c;
+      background: rgba(201,168,76,0.08);
+    }
+
+    /* ── CONTENT ── */
+    .menu-content {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 30px 24px 60px;
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .cat-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 2rem 0 1rem;
+    }
+    .cat-line span { flex: 1; height: 0.5px; background: #2a2416; }
+    .cat-line p {
+      font-family: 'Playfair Display', serif;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #c9a84c;
+      white-space: nowrap;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 11px 0;
+      border-bottom: 0.5px solid #1e1a0f;
+    }
+    .item:last-child { border: none; }
+    .item-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      color: #e8dfc8;
+    }
+    .item-desc {
+      font-size: 13.5px;
+      color: #b8954a;
+      margin-top: 4px;
+      line-height: 1.6;
+      letter-spacing: .3px;
+    }
+    .item-price {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      color: #c9a84c;
+      white-space: nowrap;
+      margin-left: 20px;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border: 0.5px solid currentColor;
+      margin-left: 8px;
+      vertical-align: middle;
+      font-family: 'Lato', sans-serif;
+    }
+    .badge-na  { color: #6a9a6a; }
+    .badge-str { color: #9a5a3a; }
+    .badge-sig { color: #6a7a9a; }
+
+    .note {
+      font-size: 11px;
+      color: #5a4f35;
+      text-align: center;
+      letter-spacing: .5px;
+      margin-bottom: 1rem;
+      font-style: italic;
+    }
+
+    /* spirits grid */
+    .spirits-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+    .spirit-card {
+      border: 0.5px solid #2a2416;
+      padding: 12px 14px;
+    }
+    .spirit-cat {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6a5f45;
+      margin-bottom: 6px;
+    }
+    .spirit-name { font-size: 12px; color: #c8bea8; line-height: 1.5; }
+    .spirit-price {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      color: #c9a84c;
+      margin-top: 8px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      border-top: 0.5px solid #2a2416;
+      font-size: 12px;
+      color: #5a4f35;
+      letter-spacing: 1px;
+    }
+    footer a { color: #8a7a5a; text-decoration: none; }
+
+    @media (max-width: 520px) {
+      nav { padding: 14px 20px; }
+      .nav-links { gap: 16px; }
+      .hero-logo { font-size: 38px; }
+      .spirits-grid { grid-template-columns: 1fr; }
+      .tab-btn { padding: 7px 14px; font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-logo" href="index.html">Negroni Bar Lab</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="menu.html" class="active">Menu</a></li>
+      <li><a href="index.html#gallery">Gallery</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-logo">Negroni Bar Lab</div>
+    <div class="hero-sub">Κολοκοτρώνη 74–76 &nbsp;·&nbsp; Πειραιάς</div>
+    <div class="divider"><span></span>✦<span></span></div>
+  </div>
+
+  <div class="tabs-wrap">
+    <button class="tab-btn active" onclick="show('negroni', this)">Negroni</button>
+    <button class="tab-btn" onclick="show('cocktails', this)">Cocktails</button>
+    <button class="tab-btn" onclick="show('tropical', this)">Tropical</button>
+    <button class="tab-btn" onclick="show('spirits', this)">Spirits</button>
+    <button class="tab-btn" onclick="show('wine', this)">Wine & Beers</button>
+    <button class="tab-btn" onclick="show('pizza', this)">pizza</button>
+  </div>
+
+  <div class="menu-content">
+
+    <!-- NEGRONI -->
+    <div id="negroni" class="section active">
+      <p class="note">Η τέχνη του Negroni σε 9 εκδοχές</p>
+
+      <div class="cat-line"><span></span><p>Classic</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Classic Negroni</div><div class="item-desc">Gin · Campari · Sweet Vermouth</div></div>
+        <div class="item-price">10€</div>
+      </div>
+
+      <div class="cat-line"><span></span><p>Variations</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Red Nose Negroni</div><div class="item-desc">Gin · Bitter · Fortified red wine · Orange bitters</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Kentucky Negroni</div><div class="item-desc">Bourbon · Aperol · Vermouth · Old fashioned bitters</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Te Groni</div><div class="item-desc">Tequila · Bitter · Vermouth rosso · Aromatic bitter</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Varadero Negroni</div><div class="item-desc">Rum · Veroni rosso · Bitter · Aztec chocolate bitter</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">White Negroni</div><div class="item-desc">Vodka · Italicus Bergamot · Dry Vermouth · Suze · Peach bitter</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Emilia-Romagna Negroni</div><div class="item-desc">Gin · Cynar Aperitivo · Casoni Vermouth · Balsamic bitter</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Holy Groni</div><div class="item-desc">Τσίπουρο Αγιονερίου · Pamplemousse Vermouth · Bergamot bitter</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Coffe Groni</div><div class="item-desc">Gin · Vermouth Amaro bitter · Espresso Tincture</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div>
+          <div class="item-name">No-Groni <span class="badge badge-na">Non Alcoholic</span></div>
+          <div class="item-desc">Gin O% · Non Alc Bitter · Non Alc Vermouth</div>
+        </div>
+        <div class="item-price">10€</div>
+      </div>
+    </div>
+
+    <!-- COCKTAILS -->
+    <div id="cocktails" class="section">
+      <div class="cat-line"><span></span><p>Signature Cocktails</p><span></span></div>
+      <div class="item">
+        <div>
+          <div class="item-name">Apple Velvet <span class="badge badge-sig">Frozen</span></div>
+          <div class="item-desc">Gin · Mastic · Lime · Green Apple</div>
+        </div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Blueberry Bramble</div><div class="item-desc">Gin · Blueberry · Lemon · Balsamic crème</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Maracuya Caipiroska</div><div class="item-desc">Vodka · Passion fruit · Ginger · Lime</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Vortex</div><div class="item-desc">Gin · Mastic · Cucumber · Red peppercorn · Aquafaba</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Absenta Daiquiri</div><div class="item-desc">Rum · Xenta Absenta · Lime · Gum syrup</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Hugo Sprizzz</div><div class="item-desc">St Germain elderflower · Prosecco · Soda · Mint</div></div>
+        <div class="item-price">10€</div>
+      </div>
+
+      <div class="cat-line"><span></span><p>Classic Cocktails</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Ask any Classic</div><div class="item-desc">Ask the bartender</div></div>
+        <div class="item-price">10€</div>
+      </div>
+    </div>
+
+    <!-- TROPICAL -->
+    <div id="tropical" class="section">
+      <div class="cat-line"><span></span><p>Tropical Cocktails</p><span></span></div>
+      <div class="item">
+        <div>
+          <div class="item-name">Zombie <span class="badge badge-str">Strong</span></div>
+          <div class="item-desc">Mix of rums · Falernum · Passion fruit · Spicy mix · Bitters</div>
+        </div>
+        <div class="item-price">12€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Mai Tai</div><div class="item-desc">Rum · Triple sec · Orgeat · Lime · Bitters</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Dark and Stormy</div><div class="item-desc">Rum · Ginger beer · Lime juice</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Peach Breeze</div><div class="item-desc">Vodka · Peach juice · Cranberry · Lime</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div>
+          <div class="item-name">Frozen · Daiquiri or Margarita</div>
+          <div class="item-desc">Rum ή Tequila · Lime · Επιλογή: Strawberry · Mango · Passion fruit </div>
+        </div>
+        <div class="item-price">10€</div>
+      </div>
+
+      <div class="cat-line"><span></span><p>Mojitos</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Classic Mojito</div><div class="item-desc">Rum · Lime · Sugar syrup · Soda · Mint</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Creole Mojito</div><div class="item-desc">The original Mojito</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Mastic Mojito</div><div class="item-desc">Mastic liqueur · Lime · Sugar · Soda · Orange bitter</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Raspberry ή Strawberry Mojito</div><div class="item-desc">Classic Mojito με raspberry ή strawberry</div></div>
+        <div class="item-price">10€</div>
+      </div>
+    </div>
+
+    <!-- SPIRITS -->
+    <div id="spirits" class="section">
+      <p class="note">Pour 60ml</p>
+
+      <div class="cat-line"><span></span><p>Whisky</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Blended Scotch</div><div class="item-desc">Johnnie Walker · Dewars · Famous Grouse · Haig</div></div>
+        <div class="item-price">8€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Blended Irish</div><div class="item-desc">Jameson · Bushmills · Paddy(9€)</div></div>
+        <div class="item-price">8€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">American</div><div class="item-desc">Jack Daniels · 4 Roses · Bulleit · Wild Turkey</div></div>
+        <div class="item-price">9€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Premium (50ml)</div><div class="item-desc">Johnnie Black · Chivas · Dimple</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Single Malt (40ml)</div><div class="item-desc">Lagavulin · Talisker · Glenlivet · Glenfiddich · Tyrconnell · Bowmore · Laphroaig - Glenfargas - Finlaggan</div></div>
+        <div class="item-price">12€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Japanese (40ml)</div><div class="item-desc">Nikka Coffey Malt · The Chita Single Grain</div></div>
+        <div class="item-price">12€</div>
+      </div>
+
+      <div class="cat-line"><span></span><p>Gin</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Gin</div><div class="item-desc">Gordons · Tanqueray 0%</div></div>
+        <div class="item-price">8€</div>
+		</div>
+	   <div class="item">
+		<div><div class="item-name">Gin</div><div class="item-desc">Bombay · Tanqueray</div></div>
+        <div class="item-price">8,5 € </div>
+      </div>
+	  <div class="item">
+	  <div><div class="item-name">Premium Gin</div><div class="item-desc">Sipsmith · The Botanist · Opihr · Tanqueray10 · Hendricks · Monkey          47</div></div>
+        <div class="item-price">12€</div>
+      </div>
+      <div class="cat-line"><span></span><p>Rum</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Rum</div><div class="item-desc">Havana 3y · Bacardi · Captain Morgan · Sailor Jerry </div></div>
+        <div class="item-price">8€</div>
+      </div>
+	   <div class="item">
+        <div><div class="item-name">Rum Premium (50ml)</div><div class="item-desc">Diplomatico · Flor De Cana 12y</div></div>
+        <div class="item-price">10€</div>
+      </div>
+	     <div class="item">
+        <div><div class="item-name">Rum Extra Premium (50ml)</div><div class="item-desc">Ron Zacapa 23</div></div>
+        <div class="item-price">12€</div>
+      </div>
+      <div class="cat-line"><span></span><p>Tequila & Mezcal</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Tequila</div><div class="item-desc">Sierra · Olmega · 100% Agave Reposado/Blanco · 100% Agave Anejo</div></div>
+        <div class="item-price">8 – 12€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Mezcal (40ml)</div><div class="item-desc">Montelobos · San Cosme</div></div>
+        <div class="item-price">12€</div>
+      </div>
+
+      <div class="cat-line"><span></span><p>Vodka</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Vodka</div><div class="item-desc">Smirnoff · Absolut · Wyborowa </div></div>
+        <div class="item-price">8€</div>
+      </div>
+	  <div class="item">
+        <div><div class="item-name">Premium Vodka (50ml)</div><div class="item-desc">Belvedere · Grey Goose · Absolut Elyx</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="cat-line"><span></span><p>Liqueurs & Aperitifs</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Liqueurs & Aperitifs</div><div class="item-desc">Ask the bartender</div></div>
+        <div class="item-price">8€</div>
+      </div>
+
+      <div class="cat-line"><span></span><p>Φιάλες 700ml</p><span></span></div>
+      <div class="item"><div><div class="item-name">Regular</div></div><div class="item-price">80€</div></div>
+      <div class="item"><div><div class="item-name">Premium</div></div><div class="item-price">90 – 100€</div></div>
+      <div class="item"><div><div class="item-name">Super Premium</div></div><div class="item-price">120€</div></div>
+
+      <div class="cat-line"><span></span><p>Shot</p><span></span></div>
+      <div class="item"><div><div class="item-name">Regular</div></div><div class="item-price">3€</div></div>
+      <div class="item"><div><div class="item-name">Premium</div></div><div class="item-price">4€</div></div>
+	</div>
+
+    <!-- WINE & BEER -->
+    <div id="wine" class="section">
+      <div class="cat-line"><span></span><p>Μπύρα - Draught Beer</p><span></span></div>
+      <div class="item"><div><div class="item-name">Βαρελίσια - Draught, Carlsberg (500ml)</div></div><div class="item-price">5€</div></div>
+      <div class="cat-line"><span></span><p>Μπύρα Μπουκάλι - Beer bottle </p><span></span></div>
+	  <div class="item"><div><div class="item-name">Mythos Lager (330ml)</div></div><div class="item-price">5€</div></div>
+      <div class="item"><div><div class="item-name">Mythos ICE (330ml)</div></div><div class="item-price">5€</div></div>
+      <div class="item"><div><div class="item-name">Stella Artois Non Alcohol (330ml)</div><div class="item-desc">Χωρίς αλκοόλ</div></div><div class="item-price">5€</div></div>
+
+      <div class="cat-line"><span></span><p>Κρασί Ποτήρι - Wine by glass (187ml)</p><span></span></div>
+      <div class="item"><div><div class="item-name">Λευκό Chardonnay Ζαχαριάς</div></div><div class="item-price">5€</div></div>
+      <div class="item"><div><div class="item-name">Κόκκινο Merlot Ζαχαριάς</div></div><div class="item-price">5€</div></div>
+      <div class="item"><div><div class="item-name">Moscato D'Asti Villagio </div></div><div class="item-price">5€</div></div>
+      <div class="item"><div><div class="item-name">Prosecco Heart Wines </div></div><div class="item-price">5€</div></div>
+      <div class="item"><div><div class="item-name">Sangria (200ml)</div></div><div class="item-price">5€</div></div>
+
+      <div class="cat-line"><span></span><p>Κρασί Μπουκάλι - Wine by bottle 750ml</p><span></span></div>
+      <div class="item"><div><div class="item-name">Λευκό - White, Chardonnay Ζαχαριάς</div></div><div class="item-price">22€</div></div>
+      <div class="item"><div><div class="item-name">Κόκκινο - Red, Merlot Ζαχαριάς</div></div><div class="item-price">22€</div></div>
+
+      <div class="cat-line"><span></span><p>Αναψυκτικά & Χυμοί</p><span></span></div>
+      <div class="item"><div><div class="item-name">Coca Cola (330ml)</div></div><div class="item-price">3,50€</div></div>
+      <div class="item"><div><div class="item-name">KORPI Sparkling Water (330ml)</div></div><div class="item-price">3,50€</div></div>
+      <div class="item"><div><div class="item-name">Tuborg (330ml)</div><div class="item-desc">Ρώτα για τις διαθέσιμες γεύσεις- ask for flavors</div></div><div class="item-price">3,50€</div></div>
+    </div>
+
+    <!-- pizza -->
+    <div id="pizza" class="section">
+      <div class="cat-line"><span></span><p>Pizza</p><span></span></div>
+      <div class="item">
+        <div><div class="item-name">Special</div><div class="item-desc">Ham · Mushrooms · Peppers · Cheese · White sauce</div></div>
+        <div class="item-price">10€</div>
+      </div>
+      <div class="item">
+        <div><div class="item-name">Margarita</div><div class="item-desc">Cherry tomatoes · Mozzarella · Basil · Oregano · Sea salt</div></div>
+        <div class="item-price">8€</div>
+      </div>
+      <div class="divider" style="margin-top:2.5rem"><span></span>✦<span></span></div>
+    </div>
+
+  </div><!-- /menu-content -->
+
+  <footer>
+    <p>Κολοκοτρώνη 74–76, Πειραιάς 18535 &nbsp;·&nbsp; <a href="tel:+302112158270">+30 211 215 8270</a></p>
+    <p style="margin-top:8px">Monday – Saturday: Night</p>
+  </footer>
+
+  <script>
+    function show(id, btn) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      btn.classList.add('active');
+      window.scrollTo({ top: document.querySelector('.tabs-wrap').offsetTop - 20, behavior: 'smooth' });
+    }
+  </script>
+
+</body>
+</html>

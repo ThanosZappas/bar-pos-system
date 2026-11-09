@@ -73,7 +73,25 @@ npm --prefix tools/seed run seed:emulator
 npm --prefix tools/seed run seed -- --project <projectId>
 ```
 
-The seed is idempotent: existing accounts keep their passwords and flags.
+The seed is idempotent: existing accounts keep their passwords and flags. It also adds the
+menu and tables "1".."20"; documents that already exist are never overwritten, so the
+admin's edits survive a re-run.
+
+## Menu import
+
+`tools/seed/menu/source-menu.html` is a saved copy of https://www.barlab.gr/menu.html.
+`npm --prefix tools/seed run menu:import` turns it into `menu/menu.json` (seeded) and
+`menu/menu-report.md`, which lists what needs a human look: price ranges (the lower price is
+stored, the range text stays in the description), brand lists sold at one price, a different
+price inside a description, duplicate names, and text clean-ups. Add `-- --fetch` to download
+a fresh copy of the page first.
+
+Money is always integer cents. Menu items, categories and sections are never hard-deleted:
+"Delete" in the dashboard sets `archived`, which hides them everywhere but keeps them for
+reports. "Hide" makes an entry unorderable but keeps it visible to the admin.
+
+Removing a table goes through the `removeTable` function, which refuses while the table's
+current session has any round or payment.
 
 ## Firebase configuration files (never committed)
 

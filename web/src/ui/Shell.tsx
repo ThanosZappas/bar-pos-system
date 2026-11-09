@@ -3,11 +3,15 @@ import { signOut } from 'firebase/auth';
 import { firebase } from '../firebase';
 import { t, type Key } from '../i18n';
 import type { StaffUser } from '../session';
+import { Menu } from './Menu';
+import { Tables } from './Tables';
 import { Users } from './Users';
 
-type Route = 'board' | 'users';
+type Route = 'board' | 'tables' | 'menu' | 'users';
 const ROUTES: { route: Route; label: Key }[] = [
   { route: 'board', label: 'nav.board' },
+  { route: 'tables', label: 'nav.tables' },
+  { route: 'menu', label: 'nav.menu' },
   { route: 'users', label: 'nav.users' },
 ];
 
@@ -37,7 +41,10 @@ export function Shell({ user }: { user: StaffUser }) {
           <li><button class="link" onClick={() => signOut(firebase!.auth)}>{t('auth.signOut')}</button></li>
         </ul>
       </nav>
-      {route === 'users' ? <Users me={user} /> : <section class="page"><p class="desc">{t('board.placeholder')}</p></section>}
+      {route === 'users' && <Users me={user} />}
+      {route === 'menu' && <Menu />}
+      {route === 'tables' && <Tables />}
+      {route === 'board' && <section class="page"><p class="desc">{t('board.placeholder')}</p></section>}
     </>
   );
 }

@@ -6,6 +6,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { CREDENTIALS_FILE, seedUsers, validateSeedUsers } from './users.ts';
+import { seedMenu, seedTables } from './catalog.ts';
 
 const args = process.argv.slice(2);
 const emulator = args.includes('--emulator');
@@ -38,3 +39,8 @@ const app = initializeApp({ projectId });
 const result = await seedUsers(getAuth(app), getFirestore(app), users as Parameters<typeof seedUsers>[2]);
 console.log(`Users created: ${result.created.join(', ') || 'none'}`);
 console.log(`Users already present (left unchanged): ${result.existing.join(', ') || 'none'}`);
+
+const menu = JSON.parse(readFileSync(new URL('menu/menu.json', import.meta.url), 'utf8'));
+const added = await seedMenu(getFirestore(app), menu.sections);
+console.log(`Menu added: ${added.sections} sections, ${added.categories} categories, ${added.items} items (existing ones left unchanged)`);
+console.log(`Tables added: ${await seedTables(getFirestore(app))}`);

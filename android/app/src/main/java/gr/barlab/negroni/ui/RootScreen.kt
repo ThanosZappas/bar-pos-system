@@ -16,7 +16,8 @@ import gr.barlab.negroni.ui.home.HomeScreen
 @Composable
 fun RootScreen(container: AppContainer) {
     val sessions = container.sessions
-    if (sessions == null) {
+    val catalog = container.catalog
+    if (sessions == null || catalog == null) {
         MessageScreen(stringResource(R.string.not_configured_title), stringResource(R.string.not_configured_body))
         return
     }
@@ -28,6 +29,6 @@ fun RootScreen(container: AppContainer) {
         Session.NoProfile -> MessageScreen(stringResource(R.string.no_profile_title), stringResource(R.string.no_profile_body), sessions::signOut)
         is Session.Active ->
             if (s.user.mustChangePassword) ChangePasswordScreen(sessions, s.user)
-            else HomeScreen(s.user, sessions::signOut)
+            else HomeScreen(s.user, catalog, sessions::signOut)
     }
 }

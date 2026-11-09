@@ -1,0 +1,622 @@
+{
+  "source": "https://www.barlab.gr/menu.html",
+  "snapshot": "2026-11-09",
+  "sections": [
+    {
+      "id": "negroni",
+      "name": "Negroni",
+      "note": "Η τέχνη του Negroni σε 9 εκδοχές",
+      "categories": [
+        {
+          "id": "negroni-c01",
+          "name": "Classic",
+          "items": [
+            {
+              "id": "negroni-c01-i01",
+              "name": "Classic Negroni",
+              "description": "Gin · Campari · Sweet Vermouth",
+              "priceCents": 1000,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "negroni-c02",
+          "name": "Variations",
+          "items": [
+            {
+              "id": "negroni-c02-i01",
+              "name": "Red Nose Negroni",
+              "description": "Gin · Bitter · Fortified red wine · Orange bitters",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i02",
+              "name": "Kentucky Negroni",
+              "description": "Bourbon · Aperol · Vermouth · Old fashioned bitters",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i03",
+              "name": "Te Groni",
+              "description": "Tequila · Bitter · Vermouth rosso · Aromatic bitter",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i04",
+              "name": "Varadero Negroni",
+              "description": "Rum · Veroni rosso · Bitter · Aztec chocolate bitter",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i05",
+              "name": "White Negroni",
+              "description": "Vodka · Italicus Bergamot · Dry Vermouth · Suze · Peach bitter",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i06",
+              "name": "Emilia-Romagna Negroni",
+              "description": "Gin · Cynar Aperitivo · Casoni Vermouth · Balsamic bitter",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i07",
+              "name": "Holy Groni",
+              "description": "Τσίπουρο Αγιονερίου · Pamplemousse Vermouth · Bergamot bitter",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i08",
+              "name": "Coffe Groni",
+              "description": "Gin · Vermouth Amaro bitter · Espresso Tincture",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "negroni-c02-i09",
+              "name": "No-Groni",
+              "description": "Gin O% · Non Alc Bitter · Non Alc Vermouth",
+              "priceCents": 1000,
+              "tags": [
+                "Non Alcoholic"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cocktails",
+      "name": "Cocktails",
+      "note": "",
+      "categories": [
+        {
+          "id": "cocktails-c01",
+          "name": "Signature Cocktails",
+          "items": [
+            {
+              "id": "cocktails-c01-i01",
+              "name": "Apple Velvet",
+              "description": "Gin · Mastic · Lime · Green Apple",
+              "priceCents": 1000,
+              "tags": [
+                "Frozen"
+              ]
+            },
+            {
+              "id": "cocktails-c01-i02",
+              "name": "Blueberry Bramble",
+              "description": "Gin · Blueberry · Lemon · Balsamic crème",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "cocktails-c01-i03",
+              "name": "Maracuya Caipiroska",
+              "description": "Vodka · Passion fruit · Ginger · Lime",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "cocktails-c01-i04",
+              "name": "Vortex",
+              "description": "Gin · Mastic · Cucumber · Red peppercorn · Aquafaba",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "cocktails-c01-i05",
+              "name": "Absenta Daiquiri",
+              "description": "Rum · Xenta Absenta · Lime · Gum syrup",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "cocktails-c01-i06",
+              "name": "Hugo Sprizzz",
+              "description": "St Germain elderflower · Prosecco · Soda · Mint",
+              "priceCents": 1000,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "cocktails-c02",
+          "name": "Classic Cocktails",
+          "items": [
+            {
+              "id": "cocktails-c02-i01",
+              "name": "Ask any Classic",
+              "description": "Ask the bartender",
+              "priceCents": 1000,
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tropical",
+      "name": "Tropical",
+      "note": "",
+      "categories": [
+        {
+          "id": "tropical-c01",
+          "name": "Tropical Cocktails",
+          "items": [
+            {
+              "id": "tropical-c01-i01",
+              "name": "Zombie",
+              "description": "Mix of rums · Falernum · Passion fruit · Spicy mix · Bitters",
+              "priceCents": 1200,
+              "tags": [
+                "Strong"
+              ]
+            },
+            {
+              "id": "tropical-c01-i02",
+              "name": "Mai Tai",
+              "description": "Rum · Triple sec · Orgeat · Lime · Bitters",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "tropical-c01-i03",
+              "name": "Dark and Stormy",
+              "description": "Rum · Ginger beer · Lime juice",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "tropical-c01-i04",
+              "name": "Peach Breeze",
+              "description": "Vodka · Peach juice · Cranberry · Lime",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "tropical-c01-i05",
+              "name": "Frozen · Daiquiri or Margarita",
+              "description": "Rum ή Tequila · Lime · Επιλογή: Strawberry · Mango · Passion fruit",
+              "priceCents": 1000,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "tropical-c02",
+          "name": "Mojitos",
+          "items": [
+            {
+              "id": "tropical-c02-i01",
+              "name": "Classic Mojito",
+              "description": "Rum · Lime · Sugar syrup · Soda · Mint",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "tropical-c02-i02",
+              "name": "Creole Mojito",
+              "description": "The original Mojito",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "tropical-c02-i03",
+              "name": "Mastic Mojito",
+              "description": "Mastic liqueur · Lime · Sugar · Soda · Orange bitter",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "tropical-c02-i04",
+              "name": "Raspberry ή Strawberry Mojito",
+              "description": "Classic Mojito με raspberry ή strawberry",
+              "priceCents": 1000,
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spirits",
+      "name": "Spirits",
+      "note": "Pour 60ml",
+      "categories": [
+        {
+          "id": "spirits-c01",
+          "name": "Whisky",
+          "items": [
+            {
+              "id": "spirits-c01-i01",
+              "name": "Blended Scotch",
+              "description": "Johnnie Walker · Dewars · Famous Grouse · Haig",
+              "priceCents": 800,
+              "tags": []
+            },
+            {
+              "id": "spirits-c01-i02",
+              "name": "Blended Irish",
+              "description": "Jameson · Bushmills · Paddy(9€)",
+              "priceCents": 800,
+              "tags": []
+            },
+            {
+              "id": "spirits-c01-i03",
+              "name": "American",
+              "description": "Jack Daniels · 4 Roses · Bulleit · Wild Turkey",
+              "priceCents": 900,
+              "tags": []
+            },
+            {
+              "id": "spirits-c01-i04",
+              "name": "Premium (50ml)",
+              "description": "Johnnie Black · Chivas · Dimple",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "spirits-c01-i05",
+              "name": "Single Malt (40ml)",
+              "description": "Lagavulin · Talisker · Glenlivet · Glenfiddich · Tyrconnell · Bowmore · Laphroaig - Glenfargas - Finlaggan",
+              "priceCents": 1200,
+              "tags": []
+            },
+            {
+              "id": "spirits-c01-i06",
+              "name": "Japanese (40ml)",
+              "description": "Nikka Coffey Malt · The Chita Single Grain",
+              "priceCents": 1200,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "spirits-c02",
+          "name": "Gin",
+          "items": [
+            {
+              "id": "spirits-c02-i01",
+              "name": "Gin",
+              "description": "Gordons · Tanqueray 0%",
+              "priceCents": 800,
+              "tags": []
+            },
+            {
+              "id": "spirits-c02-i02",
+              "name": "Gin",
+              "description": "Bombay · Tanqueray",
+              "priceCents": 850,
+              "tags": []
+            },
+            {
+              "id": "spirits-c02-i03",
+              "name": "Premium Gin",
+              "description": "Sipsmith · The Botanist · Opihr · Tanqueray10 · Hendricks · Monkey 47",
+              "priceCents": 1200,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "spirits-c03",
+          "name": "Rum",
+          "items": [
+            {
+              "id": "spirits-c03-i01",
+              "name": "Rum",
+              "description": "Havana 3y · Bacardi · Captain Morgan · Sailor Jerry",
+              "priceCents": 800,
+              "tags": []
+            },
+            {
+              "id": "spirits-c03-i02",
+              "name": "Rum Premium (50ml)",
+              "description": "Diplomatico · Flor De Cana 12y",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "spirits-c03-i03",
+              "name": "Rum Extra Premium (50ml)",
+              "description": "Ron Zacapa 23",
+              "priceCents": 1200,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "spirits-c04",
+          "name": "Tequila & Mezcal",
+          "items": [
+            {
+              "id": "spirits-c04-i01",
+              "name": "Tequila",
+              "description": "Sierra · Olmega · 100% Agave Reposado/Blanco · 100% Agave Anejo · Price 8 – 12€",
+              "priceCents": 800,
+              "tags": []
+            },
+            {
+              "id": "spirits-c04-i02",
+              "name": "Mezcal (40ml)",
+              "description": "Montelobos · San Cosme",
+              "priceCents": 1200,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "spirits-c05",
+          "name": "Vodka",
+          "items": [
+            {
+              "id": "spirits-c05-i01",
+              "name": "Vodka",
+              "description": "Smirnoff · Absolut · Wyborowa",
+              "priceCents": 800,
+              "tags": []
+            },
+            {
+              "id": "spirits-c05-i02",
+              "name": "Premium Vodka (50ml)",
+              "description": "Belvedere · Grey Goose · Absolut Elyx",
+              "priceCents": 1000,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "spirits-c06",
+          "name": "Liqueurs & Aperitifs",
+          "items": [
+            {
+              "id": "spirits-c06-i01",
+              "name": "Liqueurs & Aperitifs",
+              "description": "Ask the bartender",
+              "priceCents": 800,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "spirits-c07",
+          "name": "Φιάλες 700ml",
+          "items": [
+            {
+              "id": "spirits-c07-i01",
+              "name": "Regular",
+              "description": "",
+              "priceCents": 8000,
+              "tags": []
+            },
+            {
+              "id": "spirits-c07-i02",
+              "name": "Premium",
+              "description": "Price 90 – 100€",
+              "priceCents": 9000,
+              "tags": []
+            },
+            {
+              "id": "spirits-c07-i03",
+              "name": "Super Premium",
+              "description": "",
+              "priceCents": 12000,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "spirits-c08",
+          "name": "Shot",
+          "items": [
+            {
+              "id": "spirits-c08-i01",
+              "name": "Regular",
+              "description": "",
+              "priceCents": 300,
+              "tags": []
+            },
+            {
+              "id": "spirits-c08-i02",
+              "name": "Premium",
+              "description": "",
+              "priceCents": 400,
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wine",
+      "name": "Wine & Beers",
+      "note": "",
+      "categories": [
+        {
+          "id": "wine-c01",
+          "name": "Μπύρα - Draught Beer",
+          "items": [
+            {
+              "id": "wine-c01-i01",
+              "name": "Βαρελίσια - Draught, Carlsberg (500ml)",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "wine-c02",
+          "name": "Μπύρα Μπουκάλι - Beer bottle",
+          "items": [
+            {
+              "id": "wine-c02-i01",
+              "name": "Mythos Lager (330ml)",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            },
+            {
+              "id": "wine-c02-i02",
+              "name": "Mythos ICE (330ml)",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            },
+            {
+              "id": "wine-c02-i03",
+              "name": "Stella Artois Non Alcohol (330ml)",
+              "description": "Χωρίς αλκοόλ",
+              "priceCents": 500,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "wine-c03",
+          "name": "Κρασί Ποτήρι - Wine by glass (187ml)",
+          "items": [
+            {
+              "id": "wine-c03-i01",
+              "name": "Λευκό Chardonnay Ζαχαριάς",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            },
+            {
+              "id": "wine-c03-i02",
+              "name": "Κόκκινο Merlot Ζαχαριάς",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            },
+            {
+              "id": "wine-c03-i03",
+              "name": "Moscato D'Asti Villagio",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            },
+            {
+              "id": "wine-c03-i04",
+              "name": "Prosecco Heart Wines",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            },
+            {
+              "id": "wine-c03-i05",
+              "name": "Sangria (200ml)",
+              "description": "",
+              "priceCents": 500,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "wine-c04",
+          "name": "Κρασί Μπουκάλι - Wine by bottle 750ml",
+          "items": [
+            {
+              "id": "wine-c04-i01",
+              "name": "Λευκό - White, Chardonnay Ζαχαριάς",
+              "description": "",
+              "priceCents": 2200,
+              "tags": []
+            },
+            {
+              "id": "wine-c04-i02",
+              "name": "Κόκκινο - Red, Merlot Ζαχαριάς",
+              "description": "",
+              "priceCents": 2200,
+              "tags": []
+            }
+          ]
+        },
+        {
+          "id": "wine-c05",
+          "name": "Αναψυκτικά & Χυμοί",
+          "items": [
+            {
+              "id": "wine-c05-i01",
+              "name": "Coca Cola (330ml)",
+              "description": "",
+              "priceCents": 350,
+              "tags": []
+            },
+            {
+              "id": "wine-c05-i02",
+              "name": "KORPI Sparkling Water (330ml)",
+              "description": "",
+              "priceCents": 350,
+              "tags": []
+            },
+            {
+              "id": "wine-c05-i03",
+              "name": "Tuborg (330ml)",
+              "description": "Ρώτα για τις διαθέσιμες γεύσεις- ask for flavors",
+              "priceCents": 350,
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pizza",
+      "name": "Pizza",
+      "note": "",
+      "categories": [
+        {
+          "id": "pizza-c01",
+          "name": "Pizza",
+          "items": [
+            {
+              "id": "pizza-c01-i01",
+              "name": "Special",
+              "description": "Ham · Mushrooms · Peppers · Cheese · White sauce",
+              "priceCents": 1000,
+              "tags": []
+            },
+            {
+              "id": "pizza-c01-i02",
+              "name": "Margarita",
+              "description": "Cherry tomatoes · Mozzarella · Basil · Oregano · Sea salt",
+              "priceCents": 800,
+              "tags": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
