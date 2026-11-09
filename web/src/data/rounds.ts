@@ -129,6 +129,19 @@ export async function cancelRound(r: Round, byName: string): Promise<void> {
   await send(writeBatch(db()).update(doc(db(), 'rounds', r.id), { openedAt: serverTimestamp(), openedBy: uid, editSeen: true, updatedAt: serverTimestamp(), updatedBy: uid }).commit());
 }
 
+/** Adds a late round (its bill was closed) to a table's current bill, logged as "moved". */
+export async function rebillRound(r: Round, table: { id: string; name: string; currentSessionId: string }, byName: string): Promise<void> {
+  const uid = me();
+  const eventId = crypto.randomUUID();
+  const b = writeBatch(db());
+  b.update(doc(db(), 'rounds', r.id), {
+    tableId: table.id, tableName: table.name, sessionId: table.currentSessionId,
+    updatedAt: serverTimestamp(), updatedBy: uid, lastEventId: eventId,
+  });
+  b.set(doc(db(), 'rounds', r.id, 'events', eventId), { type: 'moved', at: serverTimestamp(), by: uid, byName });
+  await send(b.commit());
+}
+
 export interface LineChange {
   lineId: string;
   name: string;
@@ -139,7 +152,7 @@ export interface LineChange {
   cancelled: boolean;
 }
 export interface RoundEvent {
-  type: 'created' | 'edited' | 'served' | 'cancelled' | 'unserved';
+  type: 'created' | 'edited' | 'served' | 'cancelled' | 'unserved' | 'moved';
   byName: string;
   changes?: LineChange[];
   note?: string;

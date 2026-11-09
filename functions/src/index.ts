@@ -18,3 +18,4 @@ export const updateUser = onCall((req) => users.updateUser(deps, req.auth?.uid, 
 export const resetPassword = onCall((req) => users.resetPassword(deps, req.auth?.uid, req.data));
 export const changeOwnPassword = onCall((req) => users.changeOwnPassword(deps, req.auth?.uid, req.data));
 export const removeTable = onCall((req) => tables.removeTable(deps, req.auth?.uid, req.data));
+export const moveTable = onCall((req) => tables.moveTable(deps, req.auth?.uid, req.data));

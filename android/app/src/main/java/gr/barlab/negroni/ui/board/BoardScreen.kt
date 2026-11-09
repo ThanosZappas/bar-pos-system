@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.StaffUser
+import gr.barlab.negroni.catalog.DiningTable
 import gr.barlab.negroni.domain.BoardAlerts
 import gr.barlab.negroni.domain.Round
 import gr.barlab.negroni.domain.RoundStatus
@@ -53,7 +54,10 @@ import kotlinx.coroutines.delay
  * and vibration when one arrives, and the screen kept on while the board is open.
  */
 @Composable
-fun BoardScreen(user: StaffUser, orders: OrdersRepository, currentSessionByTable: Map<String, String>, onServe: (Round) -> Unit) {
+fun BoardScreen(user: StaffUser, orders: OrdersRepository, tables: List<DiningTable>, onServe: (Round) -> Unit) {
+    val currentSessions = remember(tables) { tables.map { it.currentSessionId }.toSet() }
+    val tableNameBySession = remember(tables) { tables.associate { it.currentSessionId to it.name } }
+    val tableById = remember(tables) { tables.associateBy { it.id } }
     // null until Firestore answers, so "no data yet" is never mistaken for "no orders".
     val loaded by remember { orders.boardRounds() }.collectAsStateWithLifecycle(initialValue = null)
     val rounds = loaded.orEmpty()
@@ -95,8 +99,13 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository, currentSessionByTable
         } else {
             LazyColumn(contentPadding = PaddingValues(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m), modifier = Modifier.fillMaxSize()) {
                 items(rounds, key = { it.id }) { round ->
+                    val late = round.isLate(currentSessions)
+                    val rebillTo = if (late) tableById[round.tableId] else null
                     BoardCard(
-                        round, now, late = round.isLate(currentSessionByTable),
+                        round, now, late = late,
+                        tableName = round.tableNameNow(tableNameBySession),
+                        rebillTo = rebillTo?.name,
+                        onRebill = { rebillTo?.let { orders.rebill(round, it, user) } },
                         onOpen = { orders.open(round, user) },
                         onServe = { onServe(round) },
                         onCancel = { confirmCancel = round },
@@ -122,7 +131,17 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository, currentSessionByTable
 }
 
 @Composable
-private fun BoardCard(round: Round, now: Long, late: Boolean, onOpen: () -> Unit, onServe: () -> Unit, onCancel: () -> Unit) {
+private fun BoardCard(
+    round: Round,
+    now: Long,
+    late: Boolean,
+    tableName: String,
+    rebillTo: String?,
+    onRebill: () -> Unit,
+    onOpen: () -> Unit,
+    onServe: () -> Unit,
+    onCancel: () -> Unit,
+) {
     val cancelled = round.status == RoundStatus.Cancelled
     val accent = when {
         round.isChanged -> BarLabColors.Error
@@ -136,7 +155,7 @@ private fun BoardCard(round: Round, now: Long, late: Boolean, onOpen: () -> Unit
     ) {
         Column(Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                Text(round.tableName, style = MaterialTheme.typography.displayMedium.copy(fontFamily = MaterialTheme.typography.titleLarge.fontFamily), color = MaterialTheme.colorScheme.onSurface)
+                Text(tableName, style = MaterialTheme.typography.displayMedium.copy(fontFamily = MaterialTheme.typography.titleLarge.fontFamily), color = MaterialTheme.colorScheme.onSurface)
                 if (round.isNew) Badge(stringResource(R.string.board_new), BarLabColors.Gold)
                 if (round.isChanged && !cancelled) Badge(stringResource(R.string.board_edited), BarLabColors.Error)
                 if (cancelled) Badge(stringResource(R.string.round_status_cancelled), BarLabColors.Error)
@@ -151,6 +170,7 @@ private fun BoardCard(round: Round, now: Long, late: Boolean, onOpen: () -> Unit
             }
             Text(stringResource(R.string.board_by, round.createdByName), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (late) Text(stringResource(R.string.late_explainer, round.tableName), style = MaterialTheme.typography.bodyMedium, color = BarLabColors.Rust)
+            if (rebillTo != null) TextButton(onClick = onRebill) { Text(stringResource(R.string.late_rebill, rebillTo), color = BarLabColors.Rust) }
             round.lines.forEach { line ->
                 val struck = line.cancelled || cancelled
                 Column {

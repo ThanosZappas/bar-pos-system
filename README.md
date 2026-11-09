@@ -201,14 +201,19 @@ manager): `android/app/build/outputs/apk/debug/app-debug.apk`, built by
 
 **Servers (Android):** sign in → **Tables** → tap a table → **New order** → tap items (set
 quantity and an optional note) → **Review** (order note) → **Send to bar**. While a round is
-Preparing it can be edited, items cancelled, or marked served. **Record payment** (cash or
-card, several per table), **Summary** shows the "Not a fiscal receipt" bill, and **Close
-table** appears once everything is served and paid.
+Preparing it can be edited, items cancelled, or marked served (tapped "Served" by mistake?
+**Undo** appears for 30 seconds). **Record payment** (cash or card, several per table),
+**Summary** shows the "Not a fiscal receipt" bill, **Move to another table** takes the open bill
+to a free table when guests move, and **Close table** appears once everything is served and paid.
 
 **Barman:** the dashboard opens on the **Order board**: oldest first, waiting time, gold =
 new, red = edited/cancelled with the exact change. Click **Enable sound** once per page load.
-**Got it** clears a highlight, **Served** removes the round. The Android app shows the same
-board as its first tab for barman and admin accounts.
+**Got it** clears a highlight, **Served** removes the round (with **Undo** for a minute),
+**Cancel** is for a drink that cannot be made. The screen stays on while the board is open. An
+order sent offline that arrives after its table's bill was closed is marked "Late" with a button
+to add it to that table's current bill. The Android app shows the same board as its first tab
+for barman and admin accounts, with a beep and vibration for new or changed orders (switch on
+the board).
 
 **Offline:** the app keeps working without Wi-Fi. A rust banner says "Offline · N changes
 waiting to sync"; each unsynced order/payment says "Waiting to sync". Everything is sent
@@ -226,7 +231,8 @@ All in the dashboard (admin account only):
   Changes appear live on every phone.
 - **Tables → Manage tables**: add, rename, reorder, remove (refused while the table has an
   open order).
-- **Payments**: today's payments with cash and card totals.
+- **Payments**: today's payments with cash and card totals, and today's closed bills (open one
+  to see its lines and payments).
 - **Settings**: dashboard language, and the header of the non-fiscal summary (bar name,
   address, phone, footer).
 
@@ -260,7 +266,7 @@ empty, so everything falls back to English until they are filled in.
 - Money is always integer cents. "8 – 12€" ranges store the lower price and keep the text in
   the description.
 - Removing a table goes through the `removeTable` function, which refuses while the table's
-  current session has any round or payment.
+  current session (its open bill) has any round or payment.
 
 ### Orders (rounds)
 
@@ -280,8 +286,15 @@ empty, so everything falls back to English until they are filled in.
   than is due (no tips).
 - **Close table** (anyone, only when Paid) writes `sessions/{sessionId}` with the totals and
   gives the table a new session id in the same batch; the rules check both halves.
-- **Late orders:** a round sent offline that arrives after its table was closed is accepted
-  and flagged "Late: table already closed" on the board; it is not added to the closed bill.
+- **Moving guests:** the `moveTable` function gives the target table the source's session id
+  (and the source a fresh one), so the open bill moves without touching its rounds or payments.
+  It refuses unless the target is free. The board shows a round at the table that holds its
+  session now.
+- **Late orders:** a round whose session no table holds any more (its bill was closed, or its
+  table removed) is accepted and flagged "Late" on the board. One tap adds it to its table's
+  current bill (logged as a `moved` event; the rules check that its old bill is really closed).
+- **Undo "Served":** allowed for 2 minutes after serving (server clock), logged as `unserved`.
+  The apps offer it for 30 s (phone) and 60 s (dashboard).
 
 ### Offline sync
 
@@ -412,7 +425,6 @@ the system font.
 
 - Greek is listed but not translated (falls back to English).
 - No reports yet, no real POS or fiscal integration (design seam only).
-- Late offline orders for a closed table are flagged, not merged into a bill.
 - Two phones paying the same table while both offline can overpay; it is shown as "Overpaid"
   and corrected with a reversal.
 - A user deactivated while their phone is offline loses that phone's queued writes (by design).

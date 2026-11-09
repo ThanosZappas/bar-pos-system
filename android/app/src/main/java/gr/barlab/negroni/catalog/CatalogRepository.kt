@@ -3,6 +3,8 @@ package gr.barlab.negroni.catalog
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
+import com.google.firebase.functions.FirebaseFunctions
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -12,7 +14,7 @@ import kotlinx.coroutines.flow.map
  * Live menu and tables. Firestore listeners push every admin change to all phones, and the
  * local cache keeps both available offline. Collections are small, so archived rows are filtered here.
  */
-class CatalogRepository(private val db: FirebaseFirestore) {
+class CatalogRepository(private val db: FirebaseFirestore, private val functions: FirebaseFunctions) {
 
     val menu: Flow<Menu> = combine(
         docs("menuSections") { it.toSection() },
@@ -33,6 +35,15 @@ class CatalogRepository(private val db: FirebaseFirestore) {
             footer = d.getString("receiptFooter").orEmpty(),
         )
     }.catch { emit(ReceiptHeader.DEFAULT) }
+
+    /**
+     * Guests change table: the open bill moves to a free table. The server checks the target is
+     * free and moves it atomically, so this needs a connection.
+     */
+    suspend fun moveTable(from: DiningTable, to: DiningTable): Result<Unit> = runCatching {
+        functions.getHttpsCallable("moveTable").call(mapOf("fromTableId" to from.id, "toTableId" to to.id)).await()
+        Unit
+    }
 
     private fun <T> docs(collection: String, map: (DocumentSnapshot) -> T): Flow<List<T>> =
         db.collection(collection).snapshots().map { snap -> snap.documents.map(map) }

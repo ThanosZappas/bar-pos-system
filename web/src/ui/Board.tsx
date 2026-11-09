@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { fill } from '../i18n/format';
 import { chimeFor, fingerprint } from '../domain/attention';
-import { elapsed, isChanged, isLate, isNew, type Round } from '../domain/rounds';
+import { elapsed, isChanged, isLate, isNew, tableNameNow, type Round } from '../domain/rounds';
 import { useCatalog, type Table } from '../data/catalog';
-import { cancelRound, fetchEvent, openRound, serveRound, unserveRound, useBoardRounds, UNDO_SERVED_SECONDS, type RoundEvent } from '../data/rounds';
+import { cancelRound, fetchEvent, openRound, rebillRound, serveRound, unserveRound, useBoardRounds, UNDO_SERVED_SECONDS, type RoundEvent } from '../data/rounds';
 import { useWakeLock } from '../lib/wakeLock';
 import { chime } from '../lib/sound';
 import { useNow } from '../lib/useNow';
@@ -15,7 +15,9 @@ import { RoundLines } from './RoundLines';
 export function Board({ user }: { user: StaffUser }) {
   const rounds = useBoardRounds();
   const tables = useCatalog<Table>('tables');
-  const currentSession = new Map((tables ?? []).map((x) => [x.id, x.currentSessionId]));
+  const currentSessions = new Set((tables ?? []).map((x) => x.currentSessionId));
+  const tableNameBySession = new Map((tables ?? []).map((x) => [x.currentSessionId, x.name]));
+  const tableById = new Map((tables ?? []).map((x) => [x.id, x]));
   const [soundOn, setSoundOn] = useState(chime.enabled);
   const seen = useRef<Map<string, string> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +81,13 @@ export function Board({ user }: { user: StaffUser }) {
             key={r.id}
             round={r}
             now={now}
-            late={tables !== null && isLate(r, currentSession)}
+            late={tables !== null && isLate(r, currentSessions)}
+            tableName={tableNameNow(r, tableNameBySession)}
+            rebillTo={tableById.get(r.tableId)?.name ?? null}
+            onRebill={() => {
+              const target = tableById.get(r.tableId);
+              if (target) act(() => rebillRound(r, target, user.displayName));
+            }}
             onOpen={() => act(() => openRound(r))}
             onServe={() => {
               setRecentlyServed((list) => [...list, { round: r, at: Date.now() }]);
@@ -93,8 +101,11 @@ export function Board({ user }: { user: StaffUser }) {
   );
 }
 
-function BoardCard(props: { round: Round; now: number; late: boolean; onOpen: () => void; onServe: () => void; onCancel: () => void }) {
-  const { round, now, late, onOpen, onServe, onCancel } = props;
+function BoardCard(props: {
+  round: Round; now: number; late: boolean; tableName: string; rebillTo: string | null;
+  onOpen: () => void; onServe: () => void; onCancel: () => void; onRebill: () => void;
+}) {
+  const { round, now, late, tableName, rebillTo, onOpen, onServe, onCancel, onRebill } = props;
   const fresh = isNew(round);
   const changed = isChanged(round);
   const cancelled = round.status === 'cancelled';
@@ -102,7 +113,7 @@ function BoardCard(props: { round: Round; now: number; late: boolean; onOpen: ()
   return (
     <article class={cls}>
       <header class="board-card-head">
-        <span class="board-table">{round.tableName}</span>
+        <span class="board-table">{tableName}</span>
         <span class="board-flags">
           {fresh && <span class="flag flag-new">{t('board.new')}</span>}
           {changed && !cancelled && <span class="flag flag-changed">{t('board.edited')}</span>}
@@ -113,6 +124,9 @@ function BoardCard(props: { round: Round; now: number; late: boolean; onOpen: ()
       </header>
       <p class="board-by">{fill(t('board.by'), { name: round.createdByName })}</p>
       {late && <p class="late-note">{fill(t('late.explainer'), { name: round.tableName })}</p>}
+      {late && rebillTo && (
+        <button class="link late-action" onClick={onRebill}>{fill(t('late.rebill'), { name: rebillTo })}</button>
+      )}
       <RoundLines round={round} />
       {changed && <ChangeSummary round={round} />}
       <footer class="board-actions">

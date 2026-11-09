@@ -39,11 +39,18 @@ describe('elapsed', () => {
   ])('%i ms → %s', (diff, text) => expect(elapsed(0, diff)).toBe(text));
 });
 
-import { isLate } from './rounds';
+import { isLate, tableNameNow } from './rounds';
 
+// Same cases as android LateRoundTest.
 describe('isLate', () => {
-  const r = { tableId: 't1', sessionId: 's1' } as Round;
-  it('is false for the current session', () => expect(isLate(r, new Map([['t1', 's1']]))).toBe(false));
-  it('is true after the table was closed', () => expect(isLate(r, new Map([['t1', 's2']]))).toBe(true));
-  it('is true when the table was removed', () => expect(isLate(r, new Map())).toBe(true));
+  const r = { tableId: 't1', tableName: '1', sessionId: 's1' } as Round;
+  it('is false for the current session', () => expect(isLate(r, new Set(['s1']))).toBe(false));
+  it('is false after its bill moved to another table', () => expect(isLate(r, new Set(['s9', 's1']))).toBe(false));
+  it('is true after the bill was closed or the table removed', () => expect(isLate(r, new Set(['s2']))).toBe(true));
+});
+
+describe('tableNameNow', () => {
+  const r = { tableId: 't1', tableName: '1', sessionId: 's1' } as Round;
+  it('follows a moved bill', () => expect(tableNameNow(r, new Map([['s1', '5']]))).toBe('5'));
+  it('falls back to the name it was ordered at', () => expect(tableNameNow(r, new Map())).toBe('1'));
 });

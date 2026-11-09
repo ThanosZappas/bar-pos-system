@@ -24,6 +24,7 @@ import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.catalog.Menu
 import gr.barlab.negroni.catalog.ReceiptHeader
 import gr.barlab.negroni.domain.Round
+import gr.barlab.negroni.domain.TableStatus
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.orders.OrdersRepository.Action
 import gr.barlab.negroni.sync.SyncMonitor
@@ -61,6 +62,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
                 Action.Edit -> R.string.failure_edit
                 Action.Serve -> R.string.failure_serve
                 Action.Unserve -> R.string.failure_unserve
+                Action.Rebill -> R.string.failure_rebill
                 Action.Cancel -> R.string.failure_cancel
                 Action.Pay -> R.string.failure_pay
                 Action.Reverse -> R.string.failure_reverse
@@ -97,7 +99,24 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)
-                    else TableScreen(table, user, orders, header, onBack = nav::back, onNewOrder = { nav.go(Screen.NewOrder(table.id)) }, onServe = serveWithUndo)
+                    else TableScreen(
+                        table, user, orders, header,
+                        onBack = nav::back,
+                        onNewOrder = { nav.go(Screen.NewOrder(table.id)) },
+                        onServe = serveWithUndo,
+                        freeTables = tables.filter { it.id != table.id && (states[it.id]?.status ?: TableStatus.Free) == TableStatus.Free },
+                        onMove = { to ->
+                            scope.launch {
+                                catalog.moveTable(table, to)
+                                    .onSuccess {
+                                        nav.back()
+                                        nav.go(Screen.Table(to.id))
+                                        snackbar.showSnackbar(resources.getString(R.string.move_done, to.name))
+                                    }
+                                    .onFailure { snackbar.showSnackbar(resources.getString(R.string.move_failed, it.message.orEmpty())) }
+                            }
+                        },
+                    )
                 }
                 is Screen.NewOrder -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }

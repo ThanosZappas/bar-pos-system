@@ -141,6 +141,26 @@ describe('undoing an accidental "Served"', () => {
   });
 });
 
+describe('adding a late round to the current bill', () => {
+  const tableAt = (session: string, extra = {}) => ({ name: '1', order: 0, archived: false, currentSessionId: session, createdAt: Timestamp.fromMillis(0), createdBy: 'seed', updatedAt: Timestamp.fromMillis(0), updatedBy: 'seed', ...extra });
+  const rebill = (uid: string, eventId: string, sessionId: string, extra = {}) => ({ tableId: 'table-01', tableName: '1', sessionId, ...touched(uid, eventId), ...extra });
+
+  it('works once the round\'s bill is closed, into the table\'s current session, logged', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'tables/table-01'), tableAt('session-0000002'));
+      await setDoc(doc(ctx.firestore(), 'sessions/session-0000001'), { tableId: 'table-01' });
+    });
+    await assertFails(write(db('barman'), 'r1', 'e2', rebill('barman', 'e2', 'session-9999999'), 'moved', false)); // not the current one
+    await assertFails(updateDoc(doc(db('barman'), 'rounds/r1'), rebill('barman', 'e2', 'session-0000002'))); // no event
+    await assertSucceeds(write(db('barman'), 'r1', 'e2', rebill('barman', 'e2', 'session-0000002'), 'moved', false));
+  });
+
+  it('is refused while the round\'s bill is still open', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'tables/table-01'), tableAt('session-0000001')));
+    await assertFails(write(db('barman'), 'r1', 'e2', rebill('barman', 'e2', 'session-0000001'), 'moved', false));
+  });
+});
+
 describe('opening on the board', () => {
   const open = (uid: string) => ({ openedAt: serverTimestamp(), openedBy: uid, editSeen: true, updatedAt: serverTimestamp(), updatedBy: uid });
   it('barman and admin may, servers may not', async () => {

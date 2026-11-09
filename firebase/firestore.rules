@@ -217,6 +217,18 @@ service cloud.firestore {
         && !('servedAt' in d) && !('servedBy' in d) && !('servedByName' in d)
         && loggedAs(roundId, 'unserved');
     }
+    // A late round (its bill was closed, or its table removed) is added to a table's current bill.
+    function isRebill(roundId) {
+      let d = request.resource.data;
+      let target = get(/databases/$(database)/documents/tables/$(d.tableId)).data;
+      let oldTable = get(/databases/$(database)/documents/tables/$(resource.data.tableId)).data;
+      return resource.data.status in ['preparing', 'served']
+        && changesOnly(['tableId', 'tableName', 'sessionId', 'updatedAt', 'updatedBy', 'lastEventId'])
+        && (exists(/databases/$(database)/documents/sessions/$(resource.data.sessionId)) || oldTable.archived == true)
+        && target.archived == false
+        && d.sessionId == target.currentSessionId && d.tableName == target.name
+        && loggedAs(roundId, 'moved');
+    }
     // The barman (or admin) opening a round on the board: clears the "new"/"edited" highlight.
     function isOpen() {
       let d = request.resource.data;
@@ -228,14 +240,14 @@ service cloud.firestore {
       allow read: if isStaff();
       allow create: if isStaff() && validNewRound() && loggedAs(roundId, 'created');
       allow update: if isStaff() && roundTouched()
-        && (isEdit(roundId) || isServe(roundId) || isCancel(roundId) || isUnserve(roundId) || isOpen());
+        && (isEdit(roundId) || isServe(roundId) || isCancel(roundId) || isUnserve(roundId) || isRebill(roundId) || isOpen());
       allow delete: if false;
 
       match /events/{eventId} {
         allow read: if isStaff();
         allow create: if isStaff()
           && request.resource.data.keys().hasOnly(['type', 'at', 'by', 'byName', 'changes', 'note'])
-          && request.resource.data.type in ['created', 'edited', 'served', 'cancelled', 'unserved']
+          && request.resource.data.type in ['created', 'edited', 'served', 'cancelled', 'unserved', 'moved']
           && request.resource.data.at == request.time
           && request.resource.data.by == request.auth.uid
           && text(request.resource.data.byName, 0, 60)

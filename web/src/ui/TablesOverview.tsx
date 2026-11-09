@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { t, type Key } from '../i18n';
-import { useCatalog, type Table } from '../data/catalog';
+import { moveTable, useCatalog, type Table } from '../data/catalog';
+import { errorKey } from './errors';
 import { serveRound, useSessionRounds } from '../data/rounds';
 import { useSessionPayments } from '../data/payments';
 import { paidCents, type Payment } from '../domain/payments';
@@ -54,7 +55,9 @@ export function TablesOverview({ user }: { user: StaffUser }) {
             state={stateOf(open)}
             rounds={bySession.get(open.currentSessionId) ?? []}
             payments={paysBySession.get(open.currentSessionId) ?? []}
+            freeTables={tables.filter((x) => x.id !== open.id && stateOf(x).status === 'free')}
             user={user}
+            onMoved={(to) => setSelected(to)}
             onClose={() => setSelected(null)}
           />
         )}
@@ -63,7 +66,10 @@ export function TablesOverview({ user }: { user: StaffUser }) {
   );
 }
 
-function TableDetail(props: { table: Table & { id: string }; state: TableState; rounds: Round[]; payments: Payment[]; user: StaffUser; onClose: () => void }) {
+function TableDetail(props: {
+  table: Table & { id: string }; state: TableState; rounds: Round[]; payments: Payment[];
+  freeTables: (Table & { id: string })[]; user: StaffUser; onMoved: (tableId: string) => void; onClose: () => void;
+}) {
   const { table, state, rounds, payments, user, onClose } = props;
   return (
     <aside class="table-detail">
@@ -75,6 +81,7 @@ function TableDetail(props: { table: Table & { id: string }; state: TableState; 
         {t('tables.total')} <strong>{formatCents(state.totalCents)}</strong> · {t('pay.paid')} <strong>{formatCents(state.paidCents)}</strong> ·{' '}
         {t('tables.due')} <strong>{formatCents(state.dueCents)}</strong>
       </p>
+      {state.status !== 'free' && <MoveTable from={table} freeTables={props.freeTables} onMoved={props.onMoved} />}
       {(state.totalCents > 0 || payments.length > 0) && <PaymentsPanel table={table} state={state} rounds={rounds} payments={payments} user={user} />}
       {rounds.length === 0 && <p class="desc">{t('tables.noRounds')}</p>}
       {rounds.map((r) => (
@@ -90,5 +97,43 @@ function TableDetail(props: { table: Table & { id: string }; state: TableState; 
         </div>
       ))}
     </aside>
+  );
+}
+
+/** Guests change table: their open bill moves to a free table (server-checked, online only). */
+function MoveTable({ from, freeTables, onMoved }: { from: Table & { id: string }; freeTables: (Table & { id: string })[]; onMoved: (id: string) => void }) {
+  const [to, setTo] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (freeTables.length === 0) return <p class="field-hint">{t('move.none')}</p>;
+  const target = freeTables.find((x) => x.id === to) ?? freeTables[0];
+  return (
+    <div class="move-table">
+      <label class="field">
+        <span class="field-label">{t('move.label')}</span>
+        <select value={target.id} onChange={(e) => setTo((e.target as HTMLSelectElement).value)}>
+          {freeTables.map((x) => <option value={x.id}>{x.name}</option>)}
+        </select>
+      </label>
+      <button
+        class="primary"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            await moveTable(from.id, target.id);
+            onMoved(target.id);
+          } catch (err) {
+            setError(errorKey(err) ? t(errorKey(err)!) : (err as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {t('move.button')}
+      </button>
+      {error && <p class="error">{error}</p>}
+    </div>
   );
 }

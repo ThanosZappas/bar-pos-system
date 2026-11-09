@@ -80,3 +80,8 @@ export async function addTable(name: string, order: number): Promise<void> {
 export async function removeTable(tableId: string): Promise<void> {
   await httpsCallable(firebase!.functions, 'removeTable')({ tableId });
 }
+
+/** Guests change table: the open bill moves to a free table (checked on the server). Online only. */
+export async function moveTable(fromTableId: string, toTableId: string): Promise<void> {
+  await httpsCallable(firebase!.functions, 'moveTable')({ fromTableId, toTableId });
+}

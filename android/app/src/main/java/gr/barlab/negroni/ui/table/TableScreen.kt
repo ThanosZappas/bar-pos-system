@@ -2,6 +2,7 @@ package gr.barlab.negroni.ui.table
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,6 +49,8 @@ fun TableScreen(
     onBack: () -> Unit,
     onNewOrder: () -> Unit,
     onServe: (Round) -> Unit,
+    freeTables: List<DiningTable>,
+    onMove: (DiningTable) -> Unit,
 ) {
     val rounds by remember(table.currentSessionId) { orders.roundsForSessions(listOf(table.currentSessionId)) }
         .collectAsStateWithLifecycle(initialValue = emptyList())
@@ -58,6 +61,7 @@ fun TableScreen(
     var paying by remember { mutableStateOf(false) }
     var showSummary by remember { mutableStateOf(false) }
     var confirmClose by remember { mutableStateOf(false) }
+    var moving by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(end = Spacing.l), verticalAlignment = Alignment.CenterVertically) {
@@ -93,6 +97,7 @@ fun TableScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
                             if (state.dueCents > 0) OutlinedButton(onClick = { paying = true }) { Text(stringResource(R.string.pay_record).uppercase(), style = MaterialTheme.typography.labelLarge) }
                             TextButton(onClick = { showSummary = true }) { Text(stringResource(R.string.summary_button)) }
+                            TextButton(onClick = { moving = true }) { Text(stringResource(R.string.move_table)) }
                         }
                         if (state.status == TableStatus.Paid) {
                             Button(onClick = { confirmClose = true }, modifier = Modifier.fillMaxWidth()) {
@@ -112,6 +117,19 @@ fun TableScreen(
 
     if (paying) {
         RecordPaymentSheet(state.dueCents, onRecord = { cents, method -> orders.addPayment(table, cents, method, user); paying = false }, onDismiss = { paying = false })
+    }
+    if (moving) {
+        AlertDialog(
+            onDismissRequest = { moving = false },
+            title = { Text(stringResource(R.string.move_title, table.name)) },
+            text = {
+                if (freeTables.isEmpty()) Text(stringResource(R.string.move_none))
+                else FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    freeTables.forEach { t -> OutlinedButton(onClick = { moving = false; onMove(t) }) { Text(t.name) } }
+                }
+            },
+            confirmButton = { TextButton(onClick = { moving = false }) { Text(stringResource(R.string.close)) } },
+        )
     }
     if (showSummary) SummaryDialog(header, table.name, rounds, payments, onDismiss = { showSummary = false })
     if (confirmClose) {

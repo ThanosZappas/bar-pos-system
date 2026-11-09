@@ -158,7 +158,7 @@
   "close.confirm": "Close table {name}? It returns to Free.",
   "close.onlyPaid": "A table can be closed once everything is served and paid.",
   "late.flag": "Late: table already closed",
-  "late.explainer": "This order reached the server after table {name} was closed. Serve and settle it separately, or cancel it.",
+  "late.explainer": "This order reached the server after table {name}'s bill was closed. Add it to the table's current bill, serve and settle it separately, or cancel it.",
   "summary.button": "Summary",
   "summary.notFiscal": "Not a fiscal receipt",
   "summary.table": "Table {name}",
@@ -183,5 +183,14 @@
   "board.confirmCancel": "Cancel this round for table {name}? The server sees it as cancelled.",
   "board.servedUndo": "Served table {name}",
   "board.undo": "Undo ({seconds} s)",
-  "board.awake": "Screen stays on"
+  "board.awake": "Screen stays on",
+  "late.rebill": "Add to table {name}'s current bill",
+  "move.label": "Move guests to",
+  "move.button": "Move",
+  "move.none": "No free table to move to.",
+  "closed.title": "Closed tables today",
+  "closed.none": "No table closed yet today.",
+  "closed.row": "{time} · table {name} · {rounds} rounds · by {by}",
+  "closed.show": "Show",
+  "closed.hide": "Hide"
 }

@@ -248,3 +248,10 @@ button.primary.serve { align-self: flex-end; border-color: var(--slate); color: 
 .undo-bar { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-3); padding: var(--s-3) var(--s-4); border: 1px solid var(--slate); color: var(--soft-text); font-size: 16px; }
 .undo-bar .primary { margin-left: auto; }
 .board-actions .link.danger { margin-right: auto; }
+
+/* ── Move table, late rebill, closed bills ── */
+.move-table { display: flex; gap: var(--s-3); align-items: flex-end; flex-wrap: wrap; }
+.move-table .field { width: 160px; }
+.late-action { color: var(--rust); font-size: 15px; text-align: left; }
+.closed-bill { border-bottom: var(--hairline) solid var(--line-faint); padding: var(--s-2) 0; max-width: 720px; }
+.closed-detail { padding: var(--s-2) 0 var(--s-2) var(--s-6); display: flex; flex-direction: column; gap: 2px; }

@@ -62,10 +62,14 @@ data class Round(
     val isChanged: Boolean get() = !editSeen
 
     /**
-     * Sent offline and synced after its table was closed (or the table was removed): the round
-     * belongs to a session that is no longer the table's current one. Accepted and flagged.
+     * Late when no table currently holds its session: the bill was closed (sent offline, synced
+     * afterwards) or its table was removed. Accepted and flagged. A bill that moved to another
+     * table is not late: the new table holds the same session.
      */
-    fun isLate(currentSessionByTable: Map<String, String>): Boolean = currentSessionByTable[tableId] != sessionId
+    fun isLate(currentSessions: Set<String>): Boolean = sessionId !in currentSessions
+
+    /** The table the round is at now: after a move, its session belongs to another table. */
+    fun tableNameNow(tableNameBySession: Map<String, String>): String = tableNameBySession[sessionId] ?: tableName
 
     /** On the bar's to-do list: still Preparing, or cancelled and not yet acknowledged. */
     val isOnBoard: Boolean get() = status == RoundStatus.Preparing || (status == RoundStatus.Cancelled && !editSeen)

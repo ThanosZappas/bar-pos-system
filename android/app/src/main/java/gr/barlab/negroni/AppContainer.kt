@@ -18,7 +18,7 @@ class AppContainer(context: Context) {
 
     val sessions: SessionRepository? = firebase?.let { SessionRepository(it.auth, it.firestore, it.functions) }
 
-    val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore) }
+    val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore, it.functions) }
 
     /** No real POS yet (design only). Swap in JsonExportPosGateway(File(context.filesDir, "pos")) to export JSON. */
     private val pos: PosGateway = NoOpPosGateway

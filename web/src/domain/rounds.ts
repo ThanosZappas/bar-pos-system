@@ -116,9 +116,15 @@ export function elapsed(fromMs: number, nowMs: number): string {
 }
 
 /**
- * A round is late when it belongs to a session its table has already closed (it was sent
- * offline and synced after the close), or to a table that no longer exists. Accepted and flagged.
+ * A round is late when no table currently holds its session: the bill was closed (the round was
+ * sent offline and synced afterwards) or its table was removed. Accepted and flagged. A bill that
+ * moved to another table is not late: the new table holds the same session.
  */
-export function isLate(r: Round, currentSessionByTable: Map<string, string>): boolean {
-  return currentSessionByTable.get(r.tableId) !== r.sessionId;
+export function isLate(r: Round, currentSessions: Set<string>): boolean {
+  return !currentSessions.has(r.sessionId);
+}
+
+/** The table a round is at now: after a move, its session belongs to another table. */
+export function tableNameNow(r: Round, tableNameBySession: Map<string, string>): string {
+  return tableNameBySession.get(r.sessionId) ?? r.tableName;
 }

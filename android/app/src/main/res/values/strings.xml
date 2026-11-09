@@ -175,7 +175,15 @@
 
     <!-- Late orders -->
     <string name="late_flag">Late: table already closed</string>
-    <string name="late_explainer">This order reached the server after table %1$s was closed. Serve and settle it separately, or cancel it.</string>
+    <string name="late_explainer">This order reached the server after table %1$s\'s bill was closed. Add it to the table\'s current bill, serve and settle it separately, or cancel it.</string>
+    <string name="late_rebill">Add to table %1$s\'s current bill</string>
+
+    <!-- Move table -->
+    <string name="move_table">Move to another table</string>
+    <string name="move_title">Move guests from table %1$s to</string>
+    <string name="move_none">No free table to move to.</string>
+    <string name="move_done">Moved to table %1$s.</string>
+    <string name="move_failed">Could not move: %1$s</string>
 
     <!-- Refused writes after sync -->
     <string name="failure_submit">The server refused an order for table %1$s.</string>
@@ -183,6 +191,7 @@
     <string name="failure_serve">Marking a round served at table %1$s was refused: it changed in the meantime.</string>
     <string name="failure_cancel">Cancelling a round at table %1$s was refused: it was already served.</string>
     <string name="failure_unserve">Undo at table %1$s was refused: more than two minutes had passed.</string>
+    <string name="failure_rebill">Adding the late order to table %1$s\'s bill was refused.</string>
     <string name="failure_pay">A payment for table %1$s was refused by the server.</string>
     <string name="failure_reverse">A reversal at table %1$s was refused: that payment was already reversed.</string>
     <string name="failure_close">Closing table %1$s was refused: someone else closed it first, or it was not fully paid.</string>

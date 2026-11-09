@@ -102,3 +102,40 @@ export function useSettings(): Settings {
 export async function saveSettings(s: Settings): Promise<void> {
   await send(setDoc(doc(db(), 'settings', 'app'), { ...s, updatedAt: serverTimestamp(), updatedBy: uid() }));
 }
+
+export interface ClosedSession {
+  id: string;
+  tableName: string;
+  closedAtMs: number;
+  closedByName: string;
+  totalCents: number;
+  paidCents: number;
+  roundCount: number;
+}
+
+/** Bills closed since local midnight, newest first. */
+export function useTodaySessions(): ClosedSession[] | null {
+  const [rows, setRows] = useState<ClosedSession[] | null>(null);
+  useEffect(() => {
+    const midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    const q = query(collection(db(), 'sessions'), where('closedAt', '>=', Timestamp.fromDate(midnight)), orderBy('closedAt', 'desc'));
+    return onSnapshot(q, (snap) =>
+      setRows(
+        snap.docs.map((d) => {
+          const x = d.data({ serverTimestamps: 'estimate' });
+          return {
+            id: d.id,
+            tableName: x.tableName ?? '',
+            closedAtMs: x.closedAt?.toMillis?.() ?? 0,
+            closedByName: x.closedByName ?? '',
+            totalCents: Number(x.totalCents ?? 0),
+            paidCents: Number(x.paidCents ?? 0),
+            roundCount: Number(x.roundCount ?? 0),
+          };
+        }),
+      ),
+    );
+  }, []);
+  return rows;
+}

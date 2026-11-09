@@ -112,12 +112,14 @@ class BoardTest {
     }
 }
 
-// Same cases as web isLate tests.
+// Same cases as web isLate / tableNameNow tests.
 class LateRoundTest {
     private val r = Round("r", "t1", "1", "s1", RoundStatus.Preparing, emptyList(), "", 0, "S")
-    @Test fun currentSessionIsNotLate() = assertEquals(false, r.isLate(mapOf("t1" to "s1")))
-    @Test fun closedSessionIsLate() = assertTrue(r.isLate(mapOf("t1" to "s2")))
-    @Test fun removedTableIsLate() = assertTrue(r.isLate(emptyMap()))
+    @Test fun currentSessionIsNotLate() = assertEquals(false, r.isLate(setOf("s1")))
+    @Test fun movedBillIsNotLate() = assertEquals(false, r.isLate(setOf("s9", "s1")))
+    @Test fun closedOrRemovedIsLate() = assertTrue(r.isLate(setOf("s2")))
+    @Test fun nameFollowsAMovedBill() = assertEquals("5", r.tableNameNow(mapOf("s1" to "5")))
+    @Test fun nameFallsBackToWhereItWasOrdered() = assertEquals("1", r.tableNameNow(emptyMap()))
 }
 
 // Same cases as web/src/domain/attention.test.ts.
