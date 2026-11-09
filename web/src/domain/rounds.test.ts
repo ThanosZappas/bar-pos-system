@@ -38,3 +38,12 @@ describe('elapsed', () => {
     [-5_000, '0 s'],
   ])('%i ms → %s', (diff, text) => expect(elapsed(0, diff)).toBe(text));
 });
+
+import { isLate } from './rounds';
+
+describe('isLate', () => {
+  const r = { tableId: 't1', sessionId: 's1' } as Round;
+  it('is false for the current session', () => expect(isLate(r, new Map([['t1', 's1']]))).toBe(false));
+  it('is true after the table was closed', () => expect(isLate(r, new Map([['t1', 's2']]))).toBe(true));
+  it('is true when the table was removed', () => expect(isLate(r, new Map())).toBe(true));
+});

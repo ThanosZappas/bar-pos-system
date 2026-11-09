@@ -12,10 +12,17 @@ import gr.barlab.negroni.catalog.DiningTable
 import gr.barlab.negroni.domain.LineChange
 import gr.barlab.negroni.domain.OrderDraft
 import gr.barlab.negroni.domain.OrderLine
+import gr.barlab.negroni.domain.Payment
+import gr.barlab.negroni.domain.PaymentMethod
+import gr.barlab.negroni.domain.Payments
 import gr.barlab.negroni.domain.Round
 import gr.barlab.negroni.domain.RoundEdits
 import gr.barlab.negroni.domain.RoundStatus
 import gr.barlab.negroni.domain.TableState
+import gr.barlab.negroni.domain.TableStatus
+import gr.barlab.negroni.domain.summaryLines
+import gr.barlab.negroni.pos.PosGateway
+import gr.barlab.negroni.pos.Receipt
 import java.util.UUID
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -35,10 +42,10 @@ import kotlinx.coroutines.flow.map
  * If the server refuses a queued write after reconnecting (e.g. the round was already served),
  * it is reported on [writeFailures].
  */
-class OrdersRepository(private val db: FirebaseFirestore) {
+class OrdersRepository(private val db: FirebaseFirestore, private val pos: PosGateway) {
 
     data class WriteFailure(val action: Action, val tableName: String)
-    enum class Action { Submit, Edit, Serve, Cancel }
+    enum class Action { Submit, Edit, Serve, Cancel, Pay, Reverse, Close }
 
     private val _writeFailures = MutableSharedFlow<WriteFailure>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val writeFailures: SharedFlow<WriteFailure> = _writeFailures
@@ -81,11 +88,77 @@ class OrdersRepository(private val db: FirebaseFirestore) {
         )
     }
 
-    fun tableStates(tables: List<DiningTable>): Flow<Map<String, TableState>> =
-        roundsForSessions(tables.map { it.currentSessionId }).map { rounds ->
-            val bySession = rounds.groupBy { it.sessionId }
-            tables.associate { it.id to TableState.derive(bySession[it.currentSessionId].orEmpty()) }
+    /** Live payments of the given sessions, oldest first. */
+    fun paymentsForSessions(sessionIds: Collection<String>): Flow<List<Payment>> {
+        val ids = sessionIds.filter { it.isNotEmpty() }.distinct()
+        if (ids.isEmpty()) return flowOf(emptyList())
+        val flows = ids.chunked(30).map { chunk ->
+            db.collection(PAYMENTS).whereIn("sessionId", chunk)
+                .snapshots(MetadataChanges.INCLUDE)
+                .map { snap -> snap.documents.map { it.toPayment() } }
+                .catch { emit(emptyList()) }
         }
+        return combine(flows) { parts -> parts.flatMap { it }.sortedBy { it.createdAtMs } }
+    }
+
+    fun tableStates(tables: List<DiningTable>): Flow<Map<String, TableState>> {
+        val sessions = tables.map { it.currentSessionId }
+        return combine(roundsForSessions(sessions), paymentsForSessions(sessions)) { rounds, payments ->
+            val roundsBySession = rounds.groupBy { it.sessionId }
+            val paidBySession = payments.groupBy { it.sessionId }.mapValues { Payments.paidCents(it.value) }
+            tables.associate { it.id to TableState.derive(roundsBySession[it.currentSessionId].orEmpty(), paidBySession[it.currentSessionId] ?: 0) }
+        }
+    }
+
+    /** Records a payment for the table's current session. Queued offline like every other write. */
+    fun addPayment(table: DiningTable, amountCents: Long, method: PaymentMethod, user: StaffUser) {
+        require(amountCents > 0)
+        write(Action.Pay, table.name) {
+            set(db.collection(PAYMENTS).document(newId()), paymentData(table.id, table.name, table.currentSessionId, amountCents, method, user))
+        }
+    }
+
+    /** Full reversal of a mistaken payment. Its id derives from the original, so it can happen only once. */
+    fun reverse(payment: Payment, reason: String, user: StaffUser) {
+        val data = paymentData(payment.tableId, payment.tableName, payment.sessionId, -payment.amountCents, payment.method, user).toMutableMap()
+        data["reversalOf"] = payment.id
+        data["reason"] = reason.trim().take(200)
+        write(Action.Reverse, payment.tableName) { set(db.collection(PAYMENTS).document(Payments.reversalId(payment.id)), data) }
+    }
+
+    /**
+     * Closes a fully paid table: records the session and gives the table a fresh session id in one
+     * batch (the rules check both halves), so the table returns to Free.
+     */
+    fun close(table: DiningTable, rounds: List<Round>, payments: List<Payment>, user: StaffUser) {
+        val paid = Payments.paidCents(payments)
+        val state = TableState.derive(rounds, paid)
+        check(state.status == TableStatus.Paid)
+        write(Action.Close, table.name) {
+            set(
+                db.collection("sessions").document(table.currentSessionId),
+                mapOf(
+                    "tableId" to table.id, "tableName" to table.name,
+                    "closedAt" to FieldValue.serverTimestamp(), "closedBy" to user.uid, "closedByName" to user.displayName,
+                    "totalCents" to state.totalCents, "paidCents" to paid, "roundCount" to state.roundCount,
+                ),
+            )
+            update(
+                db.collection("tables").document(table.id),
+                mapOf("currentSessionId" to newId(), "updatedAt" to FieldValue.serverTimestamp(), "updatedBy" to user.uid),
+            )
+        }
+        pos.sendReceipt(
+            Receipt(table.id, table.name, table.currentSessionId, summaryLines(rounds), state.totalCents, payments, System.currentTimeMillis(), user.displayName),
+        )
+    }
+
+    private fun paymentData(tableId: String, tableName: String, sessionId: String, amountCents: Long, method: PaymentMethod, user: StaffUser) = mapOf(
+        "tableId" to tableId, "tableName" to tableName, "sessionId" to sessionId,
+        "amountCents" to amountCents, "method" to method.wire,
+        "createdAt" to FieldValue.serverTimestamp(), "createdBy" to user.uid, "createdByName" to user.displayName,
+        "clientCreatedAt" to Timestamp.now(),
+    )
 
     /** Creates a round in the table's current session. Returns its id at once, also offline. */
     fun submit(table: DiningTable, user: StaffUser, draft: OrderDraft): String {
@@ -113,6 +186,9 @@ class OrdersRepository(private val db: FirebaseFirestore) {
             set(db.collection(ROUNDS).document(roundId), round)
             set(event(roundId, eventId), eventData("created", user))
         }
+        pos.sendOrder(
+            Round(roundId, table.id, table.name, table.currentSessionId, RoundStatus.Preparing, draft.lines, draft.note.trim(), System.currentTimeMillis(), user.displayName),
+        )
         return roundId
     }
 
@@ -200,6 +276,21 @@ class OrdersRepository(private val db: FirebaseFirestore) {
 
     companion object {
         const val ROUNDS = "rounds"
+        const val PAYMENTS = "payments"
+
+        internal fun DocumentSnapshot.toPayment(): Payment = Payment(
+            id = id,
+            tableId = getString("tableId").orEmpty(),
+            tableName = getString("tableName").orEmpty(),
+            sessionId = getString("sessionId").orEmpty(),
+            amountCents = getLong("amountCents") ?: 0L,
+            method = PaymentMethod.fromWire(getString("method")),
+            reversalOf = getString("reversalOf"),
+            reason = getString("reason"),
+            createdAtMs = millis("clientCreatedAt") ?: millis("createdAt") ?: 0L,
+            createdByName = getString("createdByName").orEmpty(),
+            pendingSync = metadata.hasPendingWrites(),
+        )
 
         private fun OrderLine.toMap() = mapOf(
             "lineId" to lineId, "itemId" to itemId, "name" to name, "priceCents" to priceCents,

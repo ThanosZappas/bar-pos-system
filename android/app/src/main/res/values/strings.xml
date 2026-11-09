@@ -51,7 +51,6 @@
     <string name="table_status_partially_paid">Partially paid</string>
     <string name="table_status_paid">Paid</string>
     <string name="table_title">Table %1$s</string>
-    <string name="table_total">Total %1$s</string>
     <string name="table_no_rounds">No orders yet.</string>
     <string name="table_not_found">This table no longer exists.</string>
 
@@ -108,11 +107,49 @@
     <string name="edit_save">Save changes</string>
     <string name="edit_all_cancelled">All items are cancelled: this cancels the whole round.</string>
 
+    <!-- Payments -->
+    <string name="pay_title">Payments</string>
+    <string name="pay_totals">Total %1$s · Paid %2$s · Due %3$s</string>
+    <string name="pay_none">No payments yet.</string>
+    <string name="pay_record">Record payment</string>
+    <string name="pay_amount">Amount (€)</string>
+    <string name="pay_cash">Cash</string>
+    <string name="pay_card">Card</string>
+    <string name="pay_record_amount">Record %1$s</string>
+    <string name="pay_invalid">Enter an amount like 10 or 8,50.</string>
+    <string name="pay_not_positive">Enter an amount above zero.</string>
+    <string name="pay_more_than_due">That is more than the %1$s still due.</string>
+    <string name="pay_reverse">Reverse</string>
+    <string name="pay_reversed">Reversed</string>
+    <string name="pay_reversal">Reversal: %1$s</string>
+    <string name="pay_reverse_title">Reverse this payment?</string>
+    <string name="pay_reverse_reason">Reason (required)</string>
+    <string name="pay_overpaid">Overpaid by %1$s: reverse the extra payment.</string>
+    <string name="pay_line">%1$s · %2$s · %3$s</string>
+
+    <!-- Close and summary -->
+    <string name="close_table">Close table</string>
+    <string name="close_confirm_title">Close table %1$s?</string>
+    <string name="close_confirm_body">Everything is paid. The table returns to Free.</string>
+    <string name="close_only_paid">A table can be closed once everything is served and paid.</string>
+    <string name="summary_button">Summary</string>
+    <string name="summary_not_fiscal">Not a fiscal receipt</string>
+    <string name="summary_table">Table %1$s · %2$s</string>
+    <string name="summary_total">Total</string>
+    <string name="summary_due">Due</string>
+
+    <!-- Late orders -->
+    <string name="late_flag">Late: table already closed</string>
+    <string name="late_explainer">This order reached the server after table %1$s was closed. Serve and settle it separately, or cancel it.</string>
+
     <!-- Refused writes after sync -->
     <string name="failure_submit">The server refused an order for table %1$s.</string>
     <string name="failure_edit">Your change to table %1$s was refused: the round was already served or cancelled.</string>
     <string name="failure_serve">Marking a round served at table %1$s was refused: it changed in the meantime.</string>
     <string name="failure_cancel">Cancelling a round at table %1$s was refused: it was already served.</string>
+    <string name="failure_pay">A payment for table %1$s was refused by the server.</string>
+    <string name="failure_reverse">A reversal at table %1$s was refused: that payment was already reversed.</string>
+    <string name="failure_close">Closing table %1$s was refused: someone else closed it first, or it was not fully paid.</string>
     <string name="tables_empty">No tables yet. The admin adds them in the dashboard.</string>
 
     <!-- Menu -->

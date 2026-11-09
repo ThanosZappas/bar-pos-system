@@ -19,6 +19,7 @@ import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.StaffUser
 import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.catalog.Menu
+import gr.barlab.negroni.catalog.ReceiptHeader
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.orders.OrdersRepository.Action
 import gr.barlab.negroni.ui.components.MessageScreen
@@ -36,6 +37,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
     val context = LocalContext.current
     val tables by catalog.tables.collectAsStateWithLifecycle(initialValue = emptyList())
     val menu by catalog.menu.collectAsStateWithLifecycle(initialValue = Menu(emptyList()))
+    val header by catalog.receiptHeader.collectAsStateWithLifecycle(initialValue = ReceiptHeader.DEFAULT)
     val sessionKey = tables.joinToString { it.currentSessionId }
     val states by remember(sessionKey) { orders.tableStates(tables) }.collectAsStateWithLifecycle(initialValue = emptyMap())
 
@@ -47,6 +49,9 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
                 Action.Edit -> R.string.failure_edit
                 Action.Serve -> R.string.failure_serve
                 Action.Cancel -> R.string.failure_cancel
+                Action.Pay -> R.string.failure_pay
+                Action.Reverse -> R.string.failure_reverse
+                Action.Close -> R.string.failure_close
             }
             snackbar.showSnackbar(context.getString(res, f.tableName))
         }
@@ -60,7 +65,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)
-                    else TableScreen(table, user, orders, onBack = nav::back, onNewOrder = { nav.go(Screen.NewOrder(table.id)) })
+                    else TableScreen(table, user, orders, header, onBack = nav::back, onNewOrder = { nav.go(Screen.NewOrder(table.id)) })
                 }
                 is Screen.NewOrder -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }

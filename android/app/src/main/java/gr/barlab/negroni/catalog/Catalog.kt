@@ -16,6 +16,12 @@ data class ItemDoc(
     val hidden: Boolean,
     val archived: Boolean,
 )
+data class ReceiptHeader(val barName: String, val address: String, val phone: String, val footer: String) {
+    companion object {
+        val DEFAULT = ReceiptHeader("Negroni Bar Lab", "", "", "")
+    }
+}
+
 data class DiningTable(val id: String, val name: String, val order: Long, val currentSessionId: String)
 
 /** The orderable menu: only visible entries, sorted the way the admin arranged them. */

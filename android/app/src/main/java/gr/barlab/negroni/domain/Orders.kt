@@ -61,6 +61,12 @@ data class Round(
     /** Edited or cancelled since the barman last looked. */
     val isChanged: Boolean get() = !editSeen
 
+    /**
+     * Sent offline and synced after its table was closed (or the table was removed): the round
+     * belongs to a session that is no longer the table's current one. Accepted and flagged.
+     */
+    fun isLate(currentSessionByTable: Map<String, String>): Boolean = currentSessionByTable[tableId] != sessionId
+
     /** On the bar's to-do list: still Preparing, or cancelled and not yet acknowledged. */
     val isOnBoard: Boolean get() = status == RoundStatus.Preparing || (status == RoundStatus.Cancelled && !editSeen)
 }

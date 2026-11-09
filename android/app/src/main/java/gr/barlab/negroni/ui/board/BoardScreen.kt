@@ -42,7 +42,7 @@ import kotlinx.coroutines.delay
 
 /** Live order board for barman and admin: oldest first, new and changed rounds highlighted. */
 @Composable
-fun BoardScreen(user: StaffUser, orders: OrdersRepository) {
+fun BoardScreen(user: StaffUser, orders: OrdersRepository, currentSessionByTable: Map<String, String>) {
     val rounds by remember { orders.boardRounds() }.collectAsStateWithLifecycle(initialValue = emptyList())
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -58,13 +58,13 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository) {
     }
     LazyColumn(contentPadding = PaddingValues(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m), modifier = Modifier.fillMaxSize()) {
         items(rounds, key = { it.id }) { round ->
-            BoardCard(round, now, onOpen = { orders.open(round, user) }, onServe = { orders.serve(round, user) })
+            BoardCard(round, now, late = round.isLate(currentSessionByTable), onOpen = { orders.open(round, user) }, onServe = { orders.serve(round, user) })
         }
     }
 }
 
 @Composable
-private fun BoardCard(round: Round, now: Long, onOpen: () -> Unit, onServe: () -> Unit) {
+private fun BoardCard(round: Round, now: Long, late: Boolean, onOpen: () -> Unit, onServe: () -> Unit) {
     val cancelled = round.status == RoundStatus.Cancelled
     val accent = when {
         round.isChanged -> BarLabColors.Error
@@ -82,6 +82,7 @@ private fun BoardCard(round: Round, now: Long, onOpen: () -> Unit, onServe: () -
                 if (round.isNew) Badge(stringResource(R.string.board_new), BarLabColors.Gold)
                 if (round.isChanged && !cancelled) Badge(stringResource(R.string.board_edited), BarLabColors.Error)
                 if (cancelled) Badge(stringResource(R.string.round_status_cancelled), BarLabColors.Error)
+                if (late) Badge(stringResource(R.string.late_flag), BarLabColors.Rust)
                 Text(
                     stringResource(R.string.board_waiting, elapsed(round.createdAtMs, now)),
                     style = MaterialTheme.typography.bodyLarge,
@@ -91,6 +92,7 @@ private fun BoardCard(round: Round, now: Long, onOpen: () -> Unit, onServe: () -
                 )
             }
             Text(stringResource(R.string.board_by, round.createdByName), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (late) Text(stringResource(R.string.late_explainer, round.tableName), style = MaterialTheme.typography.bodyMedium, color = BarLabColors.Rust)
             round.lines.forEach { line ->
                 val struck = line.cancelled || cancelled
                 Column {

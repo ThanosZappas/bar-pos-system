@@ -64,7 +64,7 @@ fun HomeScreen(
             }
         }
         when (tabs[tab.coerceIn(tabs.indices)]) {
-            HomeTab.Board -> BoardScreen(user, orders)
+            HomeTab.Board -> BoardScreen(user, orders, tables.associate { it.id to it.currentSessionId })
             HomeTab.Tables -> TablesGrid(tables, states, onTableClick)
             HomeTab.Menu -> MenuList(menu)
         }

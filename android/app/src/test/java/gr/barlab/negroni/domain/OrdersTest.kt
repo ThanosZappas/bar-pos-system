@@ -111,3 +111,11 @@ class BoardTest {
         assertEquals("0 s", elapsed(0, -5_000))
     }
 }
+
+// Same cases as web isLate tests.
+class LateRoundTest {
+    private val r = Round("r", "t1", "1", "s1", RoundStatus.Preparing, emptyList(), "", 0, "S")
+    @Test fun currentSessionIsNotLate() = assertEquals(false, r.isLate(mapOf("t1" to "s1")))
+    @Test fun closedSessionIsLate() = assertTrue(r.isLate(mapOf("t1" to "s2")))
+    @Test fun removedTableIsLate() = assertTrue(r.isLate(emptyMap()))
+}

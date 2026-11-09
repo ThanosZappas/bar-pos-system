@@ -65,3 +65,18 @@ export async function seedTables(db: Firestore, count = DEFAULT_TABLE_COUNT): Pr
   }));
   return createMissing(db, 'tables', tables);
 }
+
+/** Header of the non-fiscal summary, from the barlab.gr footer. Created once; the admin edits it in the dashboard. */
+export async function seedSettings(db: Firestore): Promise<boolean> {
+  const ref = db.doc('settings/app');
+  if ((await ref.get()).exists) return false;
+  await ref.set({
+    barName: 'Negroni Bar Lab',
+    address: 'Κολοκοτρώνη 74–76, Πειραιάς 18535',
+    phone: '+30 211 215 8270',
+    receiptFooter: '',
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: 'seed',
+  });
+  return true;
+}

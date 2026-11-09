@@ -24,38 +24,43 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.StaffUser
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
 import gr.barlab.negroni.catalog.DiningTable
+import gr.barlab.negroni.catalog.ReceiptHeader
 import gr.barlab.negroni.domain.Money
+import gr.barlab.negroni.domain.Payments
 import gr.barlab.negroni.domain.Round
 import gr.barlab.negroni.domain.TableState
+import gr.barlab.negroni.domain.TableStatus
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.ui.components.TableStatusBadge
 import gr.barlab.negroni.ui.theme.Spacing
 
-/** A table's current session: its rounds, total, and the button for a new order. */
+/** A table's current session: rounds, payments, summary, closing, and the button for a new order. */
 @Composable
-fun TableScreen(table: DiningTable, user: StaffUser, orders: OrdersRepository, onBack: () -> Unit, onNewOrder: () -> Unit) {
+fun TableScreen(table: DiningTable, user: StaffUser, orders: OrdersRepository, header: ReceiptHeader, onBack: () -> Unit, onNewOrder: () -> Unit) {
     val rounds by remember(table.currentSessionId) { orders.roundsForSessions(listOf(table.currentSessionId)) }
         .collectAsStateWithLifecycle(initialValue = emptyList())
-    val state = TableState.derive(rounds)
+    val payments by remember(table.currentSessionId) { orders.paymentsForSessions(listOf(table.currentSessionId)) }
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val state = TableState.derive(rounds, Payments.paidCents(payments))
     var editing by remember { mutableStateOf<Round?>(null) }
+    var paying by remember { mutableStateOf(false) }
+    var showSummary by remember { mutableStateOf(false) }
+    var confirmClose by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(end = Spacing.l), verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = onBack) { Text("‹ " + stringResource(R.string.back)) }
             Text(
-                stringResource(R.string.table_title, table.name),
+                stringResource(R.string.table_title, table.name) + " · " + Money.format(state.totalCents),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
             TableStatusBadge(state.status)
         }
-        Text(
-            stringResource(R.string.table_total, Money.format(state.totalCents)),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.xs),
-        )
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(Spacing.l),
@@ -72,10 +77,44 @@ fun TableScreen(table: DiningTable, user: StaffUser, orders: OrdersRepository, o
                     onCancel = { orders.cancel(round, user) },
                 )
             }
+            if (state.totalCents > 0 || payments.isNotEmpty()) {
+                item(key = "payments") {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                        PaymentsSection(state, payments, onReverse = { p, reason -> orders.reverse(p, reason, user) })
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                            if (state.dueCents > 0) OutlinedButton(onClick = { paying = true }) { Text(stringResource(R.string.pay_record).uppercase(), style = MaterialTheme.typography.labelLarge) }
+                            TextButton(onClick = { showSummary = true }) { Text(stringResource(R.string.summary_button)) }
+                        }
+                        if (state.status == TableStatus.Paid) {
+                            Button(onClick = { confirmClose = true }, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.close_table).uppercase(), style = MaterialTheme.typography.labelLarge)
+                            }
+                        } else if (state.totalCents > 0) {
+                            Text(stringResource(R.string.close_only_paid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
         }
         Button(onClick = onNewOrder, modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
             Text(stringResource(R.string.order_new).uppercase(), style = MaterialTheme.typography.labelLarge)
         }
+    }
+
+    if (paying) {
+        RecordPaymentSheet(state.dueCents, onRecord = { cents, method -> orders.addPayment(table, cents, method, user); paying = false }, onDismiss = { paying = false })
+    }
+    if (showSummary) SummaryDialog(header, table.name, rounds, payments, onDismiss = { showSummary = false })
+    if (confirmClose) {
+        AlertDialog(
+            onDismissRequest = { confirmClose = false },
+            title = { Text(stringResource(R.string.close_confirm_title, table.name)) },
+            text = { Text(stringResource(R.string.close_confirm_body)) },
+            confirmButton = {
+                TextButton(onClick = { confirmClose = false; orders.close(table, rounds, payments, user); onBack() }) { Text(stringResource(R.string.close_table)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClose = false }) { Text(stringResource(R.string.round_keep)) } },
+        )
     }
 
     // Edit the live version: if the round changed meanwhile, the sheet shows the current data.

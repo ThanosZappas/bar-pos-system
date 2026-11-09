@@ -4,6 +4,8 @@ import android.content.Context
 import gr.barlab.negroni.auth.SessionRepository
 import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.orders.OrdersRepository
+import gr.barlab.negroni.pos.NoOpPosGateway
+import gr.barlab.negroni.pos.PosGateway
 import gr.barlab.negroni.data.FirebaseSetup
 
 /** Manual dependency injection: one instance per process, created by [NegroniApp]. */
@@ -17,5 +19,8 @@ class AppContainer(context: Context) {
 
     val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore) }
 
-    val orders: OrdersRepository? = firebase?.let { OrdersRepository(it.firestore) }
+    /** No real POS yet (design only). Swap in JsonExportPosGateway(File(context.filesDir, "pos")) to export JSON. */
+    private val pos: PosGateway = NoOpPosGateway
+
+    val orders: OrdersRepository? = firebase?.let { OrdersRepository(it.firestore, pos) }
 }

@@ -101,13 +101,41 @@ service cloud.firestore {
       return d.keys().hasOnly(['name', 'order', 'archived', 'currentSessionId'].concat(stampKeys()))
         && text(d.name, 1, 20) && d.order is number && d.archived is bool && text(d.currentSessionId, 10, 64);
     }
-    match /tables/{id} {
+    match /tables/{tableId} {
       allow read: if isStaff();
       allow create: if isAdmin() && stampedCreate() && validTable(request.resource.data)
         && request.resource.data.archived == false;
-      allow update: if isAdmin() && stampedUpdate() && validTable(request.resource.data)
-        && changesOnly(['name', 'order', 'updatedAt', 'updatedBy']);
+      allow update: if (isAdmin() && stampedUpdate() && validTable(request.resource.data)
+          && changesOnly(['name', 'order', 'updatedAt', 'updatedBy']))
+        || isClosing(tableId);
       allow delete: if false;
+    }
+
+    // Closing a paid table (any staff): the table gets a fresh session id and, in the same batch,
+    // the old session is recorded in sessions/{oldSessionId}. Closed sessions never change.
+    function isClosing(tableId) {
+      let old = resource.data.currentSessionId;
+      let next = request.resource.data.currentSessionId;
+      return isStaff() && stampedUpdate()
+        && changesOnly(['currentSessionId', 'updatedAt', 'updatedBy'])
+        && text(next, 10, 64) && next != old
+        && existsAfter(/databases/$(database)/documents/sessions/$(old))
+        && getAfter(/databases/$(database)/documents/sessions/$(old)).data.tableId == tableId;
+    }
+    match /sessions/{sessionId} {
+      allow read: if isStaff();
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly(['tableId', 'tableName', 'closedAt', 'closedBy', 'closedByName',
+          'totalCents', 'paidCents', 'roundCount'])
+        && request.resource.data.closedBy == request.auth.uid
+        && request.resource.data.closedAt == request.time
+        && text(request.resource.data.closedByName, 0, 60)
+        && request.resource.data.totalCents is int && request.resource.data.paidCents is int
+        && request.resource.data.roundCount is int
+        && request.resource.data.paidCents >= request.resource.data.totalCents
+        && get(/databases/$(database)/documents/tables/$(request.resource.data.tableId)).data.currentSessionId == sessionId
+        && getAfter(/databases/$(database)/documents/tables/$(request.resource.data.tableId)).data.currentSessionId != sessionId;
+      allow update, delete: if false;
     }
 
     // ── Rounds (orders). Ids are generated on the phone, so retries after a reconnect overwrite
@@ -205,6 +233,46 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/rounds/$(roundId)).data.lastEventId == eventId;
         allow update, delete: if false;
       }
+    }
+
+    // ── Payments: immutable. A mistake is corrected by a full reversal with a reason, whose id
+    // is derived from the original ("reversal-<id>"), so a payment can be reversed only once.
+    // Overpayment is blocked in the apps (rules cannot sum payments). ──
+    function isReversal(paymentId) {
+      let d = request.resource.data;
+      let original = get(/databases/$(database)/documents/payments/$(d.reversalOf)).data;
+      return paymentId == 'reversal-' + d.reversalOf
+        && original.amountCents > 0 && d.amountCents == -original.amountCents
+        && d.sessionId == original.sessionId && d.tableId == original.tableId && d.method == original.method
+        && text(d.reason, 1, 200);
+    }
+    function validPayment(paymentId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['tableId', 'tableName', 'sessionId', 'amountCents', 'method', 'reversalOf', 'reason',
+          'createdAt', 'createdBy', 'createdByName', 'clientCreatedAt'])
+        && d.keys().hasAll(['tableId', 'tableName', 'sessionId', 'amountCents', 'method',
+          'createdAt', 'createdBy', 'createdByName', 'clientCreatedAt'])
+        && text(d.tableId, 1, 100) && text(d.tableName, 1, 20) && text(d.sessionId, 10, 64)
+        && d.amountCents is int && d.method in ['cash', 'card']
+        && d.createdBy == request.auth.uid && d.createdAt == request.time
+        && text(d.createdByName, 0, 60) && d.clientCreatedAt is timestamp
+        && (('reversalOf' in d && isReversal(paymentId))
+          || (!('reversalOf' in d) && !('reason' in d) && d.amountCents > 0 && d.amountCents <= 10000000));
+    }
+    match /payments/{paymentId} {
+      allow read: if isStaff();
+      allow create: if isStaff() && validPayment(paymentId);
+      allow update, delete: if false;
+    }
+
+    // ── Settings shown on the non-fiscal summary. Staff read, admin writes. ──
+    match /settings/{id} {
+      allow read: if isStaff();
+      allow write: if isAdmin() && id == 'app'
+        && request.resource.data.keys().hasOnly(['barName', 'address', 'phone', 'receiptFooter', 'updatedAt', 'updatedBy'])
+        && text(request.resource.data.barName, 1, 60) && text(request.resource.data.address, 0, 120)
+        && text(request.resource.data.phone, 0, 40) && text(request.resource.data.receiptFooter, 0, 200)
+        && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
     }
 
     // Everything else stays closed until its milestone adds rules and tests.

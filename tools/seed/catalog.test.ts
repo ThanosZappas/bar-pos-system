@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { seedMenu, seedTables } from './catalog';
+import { seedMenu, seedSettings, seedTables } from './catalog';
 
 const onEmulators = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
 
@@ -31,5 +31,13 @@ describe.skipIf(!onEmulators)('seedMenu and seedTables (emulator)', () => {
     const tables = (await db.collection('tables').orderBy('order').get()).docs;
     expect(tables.map((t) => t.get('name'))).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1)));
     expect(new Set(tables.map((t) => t.get('currentSessionId'))).size).toBe(20);
+  });
+
+  it('creates the receipt settings once', async () => {
+    const db = getFirestore(app);
+    expect(await seedSettings(db)).toBe(true);
+    await db.doc('settings/app').update({ barName: 'Edited' });
+    expect(await seedSettings(db)).toBe(false);
+    expect((await db.doc('settings/app').get()).get('barName')).toBe('Edited');
   });
 });

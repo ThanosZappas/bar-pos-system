@@ -6,7 +6,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { CREDENTIALS_FILE, seedUsers, validateSeedUsers } from './users.ts';
-import { seedMenu, seedTables } from './catalog.ts';
+import { seedMenu, seedSettings, seedTables } from './catalog.ts';
 
 const args = process.argv.slice(2);
 const emulator = args.includes('--emulator');
@@ -44,3 +44,4 @@ const menu = JSON.parse(readFileSync(new URL('menu/menu.json', import.meta.url),
 const added = await seedMenu(getFirestore(app), menu.sections);
 console.log(`Menu added: ${added.sections} sections, ${added.categories} categories, ${added.items} items (existing ones left unchanged)`);
 console.log(`Tables added: ${await seedTables(getFirestore(app))}`);
+console.log(`Settings: ${(await seedSettings(getFirestore(app))) ? 'created' : 'already present (left unchanged)'}`);

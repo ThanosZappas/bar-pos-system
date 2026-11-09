@@ -2,9 +2,13 @@ import { useState } from 'preact/hooks';
 import { t, type Key } from '../i18n';
 import { useCatalog, type Table } from '../data/catalog';
 import { serveRound, useSessionRounds } from '../data/rounds';
+import { useSessionPayments } from '../data/payments';
+import { paidCents, type Payment } from '../domain/payments';
 import { deriveTableState, roundTotal, type Round, type TableState, type TableStatus } from '../domain/rounds';
 import { formatCents } from '../lib/money';
+import { clock } from '../lib/time';
 import type { StaffUser } from '../session';
+import { PaymentsPanel } from './PaymentsPanel';
 import { RoundLines } from './RoundLines';
 
 const statusKey = (s: TableStatus) => `status.${s}` as Key;
@@ -14,12 +18,15 @@ const roundKey = (r: Round) => `round.${r.status}` as Key;
 export function TablesOverview({ user }: { user: StaffUser }) {
   const tables = useCatalog<Table>('tables');
   const rounds = useSessionRounds(tables?.map((x) => x.currentSessionId) ?? []);
+  const payments = useSessionPayments(tables?.map((x) => x.currentSessionId) ?? []);
   const [selected, setSelected] = useState<string | null>(null);
-  if (!tables || !rounds) return <section class="page"><p class="desc">{t('app.loading')}</p></section>;
+  if (!tables || !rounds || !payments) return <section class="page"><p class="desc">{t('app.loading')}</p></section>;
 
   const bySession = new Map<string, Round[]>();
   for (const r of rounds) bySession.set(r.sessionId, [...(bySession.get(r.sessionId) ?? []), r]);
-  const stateOf = (x: Table) => deriveTableState(bySession.get(x.currentSessionId) ?? []);
+  const paysBySession = new Map<string, Payment[]>();
+  for (const p of payments) paysBySession.set(p.sessionId, [...(paysBySession.get(p.sessionId) ?? []), p]);
+  const stateOf = (x: Table) => deriveTableState(bySession.get(x.currentSessionId) ?? [], paidCents(paysBySession.get(x.currentSessionId) ?? []));
   const open = tables.find((x) => x.id === selected);
 
   return (
@@ -42,14 +49,22 @@ export function TablesOverview({ user }: { user: StaffUser }) {
           })}
         </div>
         {open && (
-          <TableDetail table={open} state={stateOf(open)} rounds={bySession.get(open.currentSessionId) ?? []} user={user} onClose={() => setSelected(null)} />
+          <TableDetail
+            table={open}
+            state={stateOf(open)}
+            rounds={bySession.get(open.currentSessionId) ?? []}
+            payments={paysBySession.get(open.currentSessionId) ?? []}
+            user={user}
+            onClose={() => setSelected(null)}
+          />
         )}
       </div>
     </section>
   );
 }
 
-function TableDetail({ table, state, rounds, user, onClose }: { table: Table; state: TableState; rounds: Round[]; user: StaffUser; onClose: () => void }) {
+function TableDetail(props: { table: Table & { id: string }; state: TableState; rounds: Round[]; payments: Payment[]; user: StaffUser; onClose: () => void }) {
+  const { table, state, rounds, payments, user, onClose } = props;
   return (
     <aside class="table-detail">
       <header class="row-head">
@@ -57,14 +72,16 @@ function TableDetail({ table, state, rounds, user, onClose }: { table: Table; st
         <button class="link" onClick={onClose}>{t('tables.close')}</button>
       </header>
       <p class="totals">
-        {t('tables.total')} <strong>{formatCents(state.totalCents)}</strong> · {t('tables.due')} <strong>{formatCents(state.dueCents)}</strong>
+        {t('tables.total')} <strong>{formatCents(state.totalCents)}</strong> · {t('pay.paid')} <strong>{formatCents(state.paidCents)}</strong> ·{' '}
+        {t('tables.due')} <strong>{formatCents(state.dueCents)}</strong>
       </p>
+      {(state.totalCents > 0 || payments.length > 0) && <PaymentsPanel table={table} state={state} rounds={rounds} payments={payments} user={user} />}
       {rounds.length === 0 && <p class="desc">{t('tables.noRounds')}</p>}
       {rounds.map((r) => (
         <div class={`detail-round round-${r.status}`}>
           <div class="row-head">
             <span class="detail-round-meta">
-              {new Date(r.createdAtMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} · {r.createdByName} · {t(roundKey(r))}
+              {clock(r.createdAtMs)} · {r.createdByName} · {t(roundKey(r))}
             </span>
             <span class="line-price">{formatCents(roundTotal(r))}</span>
           </div>

@@ -202,3 +202,37 @@ button.primary.serve { align-self: flex-end; border-color: var(--slate); color: 
   .overview { flex-direction: column; }
   .table-detail { width: 100%; }
 }
+
+/* ── Payments ── */
+.payments { display: flex; flex-direction: column; gap: var(--s-3); border-top: var(--hairline) solid var(--line); padding-top: var(--s-4); }
+.payment-row { display: flex; gap: var(--s-3); align-items: baseline; font-size: 14px; color: var(--soft-text); }
+.payment-row > span:first-child { flex: 1; }
+.payment-row.is-reversed > span:first-child, .payment-row.is-reversed .line-price { text-decoration: line-through; color: var(--faint); }
+.pay-form { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end; }
+.pay-form .field { width: 140px; }
+.method-toggle { display: inline-flex; gap: var(--s-2); }
+.list .num, .summary-lines .num { text-align: right; }
+
+/* ── Non-fiscal summary ── */
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-4); z-index: 200; padding: var(--s-5); }
+.summary { background: #fff; color: #111; width: 320px; max-height: 80vh; overflow: auto; padding: 24px 20px; font-family: var(--font-body); font-weight: 400; }
+.summary .not-fiscal { text-align: center; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: 2px solid #111; padding: 6px; margin: 8px 0; }
+.summary-bar { font-family: var(--font-serif); text-align: center; font-size: 22px; margin-top: 8px; }
+.summary-meta { text-align: center; font-size: 12px; }
+.summary-lines { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+.summary-lines td { padding: 3px 0; vertical-align: top; }
+.summary-lines td:first-child { width: 2.5em; }
+.summary-total, .summary-payment { display: flex; justify-content: space-between; font-size: 14px; }
+.summary-total { font-weight: 700; border-top: 1px dashed #111; padding-top: 6px; margin-top: 6px; }
+.modal-actions { display: flex; gap: var(--s-4); align-items: center; }
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; inset: 0 auto auto 0; width: 80mm; max-height: none; }
+  .no-print { display: none; }
+}
+
+/* ── Late orders (arrived after their table was closed) ── */
+.board-card.is-late { border: 2px dashed var(--rust); }
+.flag-late { color: var(--rust); }
+.late-note { color: var(--rust); font-size: 15px; }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch, type DocumentData, type Query, type Unsubscribe } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch, type DocumentData, type DocumentSnapshot, type Query, type Unsubscribe } from 'firebase/firestore';
 import { firebase } from '../firebase';
 import { roundFromDoc, type Round } from '../domain/rounds';
 
@@ -11,28 +11,46 @@ function me() {
   return u.uid;
 }
 
-/** Merges several live queries into one list keyed by round id, oldest first. */
-function useMergedRounds(queries: () => Query<DocumentData>[], key: string, keep: (r: Round) => boolean): Round[] | null {
-  const [rounds, setRounds] = useState<Round[] | null>(null);
+/** Merges several live queries into one list keyed by document id. */
+export function useMerged<T extends { id: string }>(
+  queries: () => Query<DocumentData>[],
+  key: string,
+  map: (d: DocumentSnapshot) => T,
+  keep: (x: T) => boolean,
+  order: (a: T, b: T) => number,
+): T[] | null {
+  const [rows, setRows] = useState<T[] | null>(null);
   useEffect(() => {
-    const parts = new Map<number, Round[]>();
+    const parts = new Map<number, T[]>();
     const qs = queries();
     if (qs.length === 0) {
-      setRounds([]);
+      setRows([]);
       return;
     }
     const unsubs: Unsubscribe[] = qs.map((q, i) =>
       onSnapshot(q, (snap) => {
-        parts.set(i, snap.docs.map(roundFromDoc));
+        parts.set(i, snap.docs.map(map));
         if (parts.size < qs.length) return; // wait for every query's first snapshot
-        const byId = new Map<string, Round>();
-        for (const list of parts.values()) for (const r of list) byId.set(r.id, r);
-        setRounds([...byId.values()].filter(keep).sort((a, b) => a.createdAtMs - b.createdAtMs));
+        const byId = new Map<string, T>();
+        for (const list of parts.values()) for (const x of list) byId.set(x.id, x);
+        setRows([...byId.values()].filter(keep).sort(order));
       }),
     );
     return () => unsubs.forEach((u) => u());
   }, [key]);
-  return rounds;
+  return rows;
+}
+
+const oldestFirst = (a: Round, b: Round) => a.createdAtMs - b.createdAtMs;
+const useMergedRounds = (queries: () => Query<DocumentData>[], key: string, keep: (r: Round) => boolean) =>
+  useMerged(queries, key, roundFromDoc, keep, oldestFirst);
+
+/** Splits ids into whereIn-sized chunks (Firestore allows at most 30 values). */
+export function chunks(ids: string[]): string[][] {
+  const unique = [...new Set(ids.filter(Boolean))].sort();
+  const out: string[][] = [];
+  for (let i = 0; i < unique.length; i += 30) out.push(unique.slice(i, i + 30));
+  return out;
 }
 
 /**
@@ -52,12 +70,10 @@ export function useBoardRounds(): Round[] | null {
 
 /** All rounds of the given (current) sessions. whereIn takes at most 30 values per query. */
 export function useSessionRounds(sessionIds: string[]): Round[] | null {
-  const ids = [...new Set(sessionIds.filter(Boolean))].sort();
-  const chunks: string[][] = [];
-  for (let i = 0; i < ids.length; i += 30) chunks.push(ids.slice(i, i + 30));
+  const parts = chunks(sessionIds);
   return useMergedRounds(
-    () => chunks.map((c) => query(collection(db(), 'rounds'), where('sessionId', 'in', c))),
-    ids.join(','),
+    () => parts.map((c) => query(collection(db(), 'rounds'), where('sessionId', 'in', c))),
+    parts.flat().join(','),
     () => true,
   );
 }

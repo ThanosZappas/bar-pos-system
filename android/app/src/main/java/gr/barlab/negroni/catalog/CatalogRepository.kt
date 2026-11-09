@@ -24,6 +24,16 @@ class CatalogRepository(private val db: FirebaseFirestore) {
         snap.documents.filter { it.getBoolean("archived") != true }.map { it.toTable() }.sortedBy { it.order }
     }.catch { emit(emptyList()) }
 
+    /** Header for the non-fiscal summary (settings/app, edited by the admin in the dashboard). */
+    val receiptHeader: Flow<ReceiptHeader> = db.document("settings/app").snapshots().map { d ->
+        ReceiptHeader(
+            barName = d.getString("barName") ?: ReceiptHeader.DEFAULT.barName,
+            address = d.getString("address").orEmpty(),
+            phone = d.getString("phone").orEmpty(),
+            footer = d.getString("receiptFooter").orEmpty(),
+        )
+    }.catch { emit(ReceiptHeader.DEFAULT) }
+
     private fun <T> docs(collection: String, map: (DocumentSnapshot) -> T): Flow<List<T>> =
         db.collection(collection).snapshots().map { snap -> snap.documents.map(map) }
             // Access revoked mid-session (deactivated user): stop quietly; the session screen takes over.

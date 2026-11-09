@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { fill } from '../i18n/format';
 import { chimeFor, fingerprint } from '../domain/attention';
-import { elapsed, isChanged, isNew, type Round } from '../domain/rounds';
+import { elapsed, isChanged, isLate, isNew, type Round } from '../domain/rounds';
+import { useCatalog, type Table } from '../data/catalog';
 import { fetchEvent, openRound, serveRound, useBoardRounds, type RoundEvent } from '../data/rounds';
 import { chime } from '../lib/sound';
 import { useNow } from '../lib/useNow';
@@ -12,6 +13,8 @@ import { RoundLines } from './RoundLines';
 /** The barman's live to-do list, oldest first, readable from a distance. */
 export function Board({ user }: { user: StaffUser }) {
   const rounds = useBoardRounds();
+  const tables = useCatalog<Table>('tables');
+  const currentSession = new Map((tables ?? []).map((x) => [x.id, x.currentSessionId]));
   const now = useNow(10_000);
   const [soundOn, setSoundOn] = useState(chime.enabled);
   const seen = useRef<Map<string, string> | null>(null);
@@ -52,6 +55,7 @@ export function Board({ user }: { user: StaffUser }) {
             key={r.id}
             round={r}
             now={now}
+            late={tables !== null && isLate(r, currentSession)}
             onOpen={() => act(() => openRound(r))}
             onServe={() => act(() => serveRound(r, user.displayName))}
           />
@@ -61,11 +65,11 @@ export function Board({ user }: { user: StaffUser }) {
   );
 }
 
-function BoardCard({ round, now, onOpen, onServe }: { round: Round; now: number; onOpen: () => void; onServe: () => void }) {
+function BoardCard({ round, now, late, onOpen, onServe }: { round: Round; now: number; late: boolean; onOpen: () => void; onServe: () => void }) {
   const fresh = isNew(round);
   const changed = isChanged(round);
   const cancelled = round.status === 'cancelled';
-  const cls = ['board-card', fresh && 'is-new', changed && 'is-changed', cancelled && 'is-cancelled'].filter(Boolean).join(' ');
+  const cls = ['board-card', fresh && 'is-new', changed && 'is-changed', cancelled && 'is-cancelled', late && 'is-late'].filter(Boolean).join(' ');
   return (
     <article class={cls}>
       <header class="board-card-head">
@@ -74,10 +78,12 @@ function BoardCard({ round, now, onOpen, onServe }: { round: Round; now: number;
           {fresh && <span class="flag flag-new">{t('board.new')}</span>}
           {changed && !cancelled && <span class="flag flag-changed">{t('board.edited')}</span>}
           {cancelled && <span class="flag flag-changed">{t('board.cancelled')}</span>}
+          {late && <span class="flag flag-late">{t('late.flag')}</span>}
         </span>
         <span class="board-time">{fill(t('board.waiting'), { time: elapsed(round.createdAtMs, now) })}</span>
       </header>
       <p class="board-by">{fill(t('board.by'), { name: round.createdByName })}</p>
+      {late && <p class="late-note">{fill(t('late.explainer'), { name: round.tableName })}</p>}
       <RoundLines round={round} />
       {changed && <ChangeSummary round={round} />}
       <footer class="board-actions">

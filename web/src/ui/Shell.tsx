@@ -5,16 +5,20 @@ import { t, type Key } from '../i18n';
 import type { StaffUser } from '../session';
 import { Board } from './Board';
 import { Menu } from './Menu';
+import { PaymentsPage } from './PaymentsPage';
+import { SettingsPage } from './SettingsPage';
 import { Tables } from './Tables';
 import { TablesOverview } from './TablesOverview';
 import { Users } from './Users';
 
-type Route = 'board' | 'tables' | 'tables-admin' | 'menu' | 'users';
+type Route = 'board' | 'tables' | 'tables-admin' | 'payments' | 'menu' | 'users' | 'settings';
 const ROUTES: { route: Route; label: Key }[] = [
   { route: 'board', label: 'nav.board' },
   { route: 'tables', label: 'nav.tables' },
+  { route: 'payments', label: 'nav.payments' },
   { route: 'menu', label: 'nav.menu' },
   { route: 'users', label: 'nav.users' },
+  { route: 'settings', label: 'nav.settings' },
 ];
 
 function currentRoute(): Route {
@@ -48,6 +52,8 @@ export function Shell({ user }: { user: StaffUser }) {
       {route === 'tables' && <TablesOverview user={user} />}
       {route === 'tables-admin' && <Tables />}
       {route === 'board' && <Board user={user} />}
+      {route === 'payments' && <PaymentsPage />}
+      {route === 'settings' && <SettingsPage />}
     </>
   );
 }

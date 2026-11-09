@@ -128,6 +128,34 @@ current session has any round or payment.
 - Try it without phones: `npm run emulators`, then `npm --prefix tools/seed run seed:emulator`
   and `npm --prefix tools/seed run demo:rounds` (emulator only; refuses a real project).
 
+## Payments and closing a table
+
+- Anyone signed in records payments (amount + cash/card) against a table's current session,
+  as many as needed. The apps refuse more than what is still due (no overpayment, no tips);
+  two offline phones could still overpay together, which is shown as "Overpaid" so the extra
+  payment can be reversed.
+- Payments are immutable (`payments/{id}`, create-only). A mistake is corrected by a full
+  **reversal** with a reason; its id is `reversal-<original id>`, so each payment can be
+  reversed once.
+- Table status: Free → Preparing → Served → Partially paid → Paid, derived from rounds and
+  payments (Preparing wins while anything is still being made).
+- **Close table** (anyone, only when Paid) records `sessions/{sessionId}` with totals and gives
+  the table a fresh session id in one batch; the table is Free again. Closed sessions never change.
+- **Summary**: a clearly labelled "Not a fiscal receipt" view (printable from the dashboard)
+  with the header from Settings (bar name, address, phone, footer).
+- **Late orders**: a round sent offline that reaches the server after its table was closed is
+  accepted and flagged on the board ("Late: table already closed"); it is not added to the
+  closed bill, so settle it separately or cancel it.
+- **Dashboard → Payments** lists today's payments with cash and card totals.
+
+## POS (design only)
+
+`PosGateway` (`sendOrder`, `sendReceipt`) exists in the Android app (`pos/PosGateway.kt`) and the
+dashboard (`domain/pos.ts`). Both use a no-op implementation today; `JsonExportPosGateway`
+(Android) writes one JSON file per order/receipt with integer cents, ISO times and
+`"fiscal": false`. No real POS or fiscal device is connected. Every action carries a timestamp
+and user id, and payments are immutable, so reports can be built later from Firestore.
+
 ## Hosting
 
 The dashboard is a static SPA on Firebase Hosting (`web/dist`, built by the predeploy step).

@@ -114,3 +114,11 @@ export function elapsed(fromMs: number, nowMs: number): string {
   if (m < 60) return `${m} min`;
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
 }
+
+/**
+ * A round is late when it belongs to a session its table has already closed (it was sent
+ * offline and synced after the close), or to a table that no longer exists. Accepted and flagged.
+ */
+export function isLate(r: Round, currentSessionByTable: Map<string, string>): boolean {
+  return currentSessionByTable.get(r.tableId) !== r.sessionId;
+}
