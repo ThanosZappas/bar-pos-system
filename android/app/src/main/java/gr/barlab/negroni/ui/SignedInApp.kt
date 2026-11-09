@@ -28,7 +28,7 @@ import gr.barlab.negroni.ui.components.MessageScreen
 import gr.barlab.negroni.ui.components.SyncBanner
 import kotlinx.coroutines.flow.flowOf
 import gr.barlab.negroni.ui.home.HomeScreen
-import gr.barlab.negroni.ui.nav.Navigator
+import gr.barlab.negroni.ui.nav.rememberNavigator
 import gr.barlab.negroni.ui.nav.Screen
 import gr.barlab.negroni.ui.order.NewOrderScreen
 import gr.barlab.negroni.ui.settings.SettingsScreen
@@ -37,7 +37,7 @@ import gr.barlab.negroni.ui.table.TableScreen
 /** Everything after sign-in: one live subscription each for tables, menu and table states. */
 @Composable
 fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepository, sync: SyncMonitor?, onSignOut: () -> Unit) {
-    val nav = remember { Navigator() }
+    val nav = rememberNavigator()
     val snackbar = remember { SnackbarHostState() }
     val resources = LocalResources.current
     val tables by catalog.tables.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -77,7 +77,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
                 is Screen.NewOrder -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)
-                    else NewOrderScreen(table, menu, onSubmit = { draft -> orders.submit(table, user, draft); nav.back() }, onBack = nav::back)
+                    else NewOrderScreen(table, menu, user.uid, onSubmit = { draft -> orders.submit(table, user, draft); nav.back() }, onBack = nav::back)
                 }
             }
         }

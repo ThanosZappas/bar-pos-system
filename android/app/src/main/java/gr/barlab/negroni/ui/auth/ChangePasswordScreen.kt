@@ -60,7 +60,8 @@ class ChangePasswordViewModel(private val sessions: SessionRepository, private v
 
 @Composable
 fun ChangePasswordScreen(sessions: SessionRepository, user: StaffUser) {
-    val vm = viewModel { ChangePasswordViewModel(sessions, user.username) }
+    // Keyed by user: the activity outlives sign-outs, and the next person must not get this one's form.
+    val vm = viewModel(key = "change-password-${user.uid}") { ChangePasswordViewModel(sessions, user.username) }
     Column(
         modifier = Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(Spacing.xxl),
         verticalArrangement = Arrangement.Center,

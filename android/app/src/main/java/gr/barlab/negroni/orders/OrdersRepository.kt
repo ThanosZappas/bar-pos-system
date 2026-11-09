@@ -118,7 +118,7 @@ class OrdersRepository(
 
     /** Records a payment for the table's current session. Queued offline like every other write. */
     fun addPayment(table: DiningTable, amountCents: Long, method: PaymentMethod, user: StaffUser) {
-        require(amountCents > 0)
+        if (amountCents <= 0) return
         write(Action.Pay, table.name) {
             set(db.collection(PAYMENTS).document(newId()), paymentData(table.id, table.name, table.currentSessionId, amountCents, method, user))
         }
@@ -139,7 +139,11 @@ class OrdersRepository(
     fun close(table: DiningTable, rounds: List<Round>, payments: List<Payment>, user: StaffUser) {
         val paid = Payments.paidCents(payments)
         val state = TableState.derive(rounds, paid)
-        check(state.status == TableStatus.Paid)
+        // Another phone may have reversed a payment a moment ago: refuse quietly, never crash.
+        if (state.status != TableStatus.Paid) {
+            _writeFailures.tryEmit(WriteFailure(Action.Close, table.name))
+            return
+        }
         write(Action.Close, table.name) {
             set(
                 db.collection("sessions").document(table.currentSessionId),
@@ -166,9 +170,9 @@ class OrdersRepository(
         "clientCreatedAt" to Timestamp.now(),
     )
 
-    /** Creates a round in the table's current session. Returns its id at once, also offline. */
-    fun submit(table: DiningTable, user: StaffUser, draft: OrderDraft): String {
-        require(!draft.isEmpty)
+    /** Creates a round in the table's current session. Returns its id at once, also offline (null for an empty draft). */
+    fun submit(table: DiningTable, user: StaffUser, draft: OrderDraft): String? {
+        if (draft.isEmpty) return null
         val roundId = newId()
         val eventId = newId()
         val round = mapOf(
@@ -200,7 +204,8 @@ class OrdersRepository(
 
     /** Saves changed quantities, notes and cancelled lines. No-op when nothing changed. */
     fun edit(round: Round, lines: List<OrderLine>, note: String, user: StaffUser) {
-        check(round.isEditable)
+        // The screen may show a round another phone just served; the rules refuse it anyway.
+        if (!round.isEditable) return
         val changes = RoundEdits.diff(round.lines, lines)
         val noteChanged = note.trim() != round.note
         if (changes.isEmpty() && !noteChanged) return
@@ -229,7 +234,7 @@ class OrdersRepository(
     }
 
     fun serve(round: Round, user: StaffUser) {
-        check(round.isEditable)
+        if (!round.isEditable) return
         val eventId = newId()
         write(Action.Serve, round.tableName) {
             update(
@@ -249,7 +254,7 @@ class OrdersRepository(
     }
 
     fun cancel(round: Round, user: StaffUser) {
-        check(round.isEditable)
+        if (!round.isEditable) return
         val eventId = newId()
         write(Action.Cancel, round.tableName) {
             update(

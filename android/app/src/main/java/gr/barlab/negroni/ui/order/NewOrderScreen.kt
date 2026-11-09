@@ -50,8 +50,9 @@ class NewOrderViewModel : ViewModel() {
 /** Browse the menu, add items with quantity and note, review, then send the round to the bar. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewOrderScreen(table: DiningTable, menu: Menu, onSubmit: (OrderDraft) -> Unit, onBack: () -> Unit) {
-    val vm = viewModel(key = "order-${table.id}") { NewOrderViewModel() }
+fun NewOrderScreen(table: DiningTable, menu: Menu, userId: String, onSubmit: (OrderDraft) -> Unit, onBack: () -> Unit) {
+    // One cart per user and table: a shared phone must not hand one server's cart to the next.
+    val vm = viewModel(key = "order-$userId-${table.id}") { NewOrderViewModel() }
     var picked by remember { mutableStateOf<Menu.Item?>(null) }
     var reviewing by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }

@@ -35,8 +35,9 @@ class SessionRepository(
     private fun profile(uid: String): Flow<Session> = callbackFlow {
         val registration = db.document("users/$uid").addSnapshotListener { snap, error ->
             when {
-                // Denied reads mean the token is no longer valid for this profile.
-                error != null -> trySend(Session.NoProfile)
+                // Denied while signing out is just the race with the auth listener; otherwise the
+                // token no longer grants access to this profile.
+                error != null -> trySend(if (auth.currentUser == null) Session.SignedOut else Session.NoProfile)
                 snap == null -> Unit
                 // Not cached yet and still offline: keep showing Loading.
                 !snap.exists() && snap.metadata.isFromCache -> Unit

@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -117,18 +118,19 @@ fun TableScreen(table: DiningTable, user: StaffUser, orders: OrdersRepository, h
         )
     }
 
-    // Edit the live version: if the round changed meanwhile, the sheet shows the current data.
-    editing?.let { e ->
-        val live = rounds.firstOrNull { it.id == e.id }
-        if (live == null || !live.isEditable) {
-            editing = null
-        } else {
-            EditRoundSheet(
-                round = live,
-                onSave = { lines, note -> orders.edit(live, lines, note, user); editing = null },
-                onCancelRound = { orders.cancel(live, user); editing = null },
-                onDismiss = { editing = null },
-            )
-        }
+    // Edit the live version: if the round changed meanwhile, the sheet shows the current data;
+    // once it is no longer editable (served or cancelled elsewhere) the sheet closes.
+    val live = editing?.let { e -> rounds.firstOrNull { it.id == e.id } }
+    val stillEditable = live?.isEditable == true
+    LaunchedEffect(editing, stillEditable) {
+        if (editing != null && !stillEditable) editing = null
+    }
+    if (live != null && stillEditable) {
+        EditRoundSheet(
+            round = live,
+            onSave = { lines, note -> orders.edit(live, lines, note, user); editing = null },
+            onCancelRound = { orders.cancel(live, user); editing = null },
+            onDismiss = { editing = null },
+        )
     }
 }

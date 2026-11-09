@@ -77,7 +77,7 @@ class OfflineSyncTest {
         // 1. Offline: the writes are accepted locally at once.
         await(db.disableNetwork())
         val orders = OrdersRepository(db, NoOpPosGateway)
-        val roundIds = List(3) { orders.submit(table, user, draft) }
+        val roundIds = List(3) { checkNotNull(orders.submit(table, user, draft)) }
         orders.addPayment(table, 500, PaymentMethod.Cash, user)
         orders.addPayment(table, 700, PaymentMethod.Card, user)
 
