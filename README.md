@@ -128,6 +128,45 @@ current session has any round or payment.
 - Try it without phones: `npm run emulators`, then `npm --prefix tools/seed run seed:emulator`
   and `npm --prefix tools/seed run demo:rounds` (emulator only; refuses a real project).
 
+## Offline sync and its verification
+
+How it works: Firestore keeps an on-disk cache on the phones (and in the dashboard's browser).
+Orders and payments get their ids on the device and are written without waiting for the
+server, so they work offline, survive the app being killed, and are sent on reconnect. A
+retried write targets the same document, so it can never create a copy.
+
+What you see:
+- **Android:** a strip under the status bar: rust "Offline · N changes waiting to sync",
+  slate "Syncing N changes…", hidden when everything is confirmed. Each unconfirmed order or
+  payment also shows "Waiting to sync". If the server refuses a queued change after reconnect
+  (for example an edit to an order that was served meanwhile), a message explains it.
+- **Dashboard:** the same banner under the navigation; buttons do not stay busy while offline.
+
+How it is verified:
+1. `npm run test:rules` runs `firebase/test/offline.sync.test.ts` against the Firestore
+   emulator with the real rules. It checks that offline rounds and payments are visible
+   locally at once and reach the server exactly once, that a double-sent round or retried
+   payment is stored once, that an offline edit to a round served meanwhile is refused, that a
+   late round keeps its old session, that two phones closing the same table offline cannot both
+   win, and that a user deactivated meanwhile cannot sync.
+2. **On the phone** (real app code, including an app kill while offline):
+   `android/app/src/androidTest/.../OfflineSyncTest.kt`. Connect the Mi 10T Pro by USB with
+   USB debugging on, then run:
+
+   ```bash
+   scripts/verify-offline-on-phone.sh
+   ```
+
+   It starts the emulators on this laptop (localhost only), forwards the phone's ports over USB
+   with `adb reverse` (nothing is opened on the Wi-Fi), seeds, installs the debug app plus its
+   test APK, and runs the test: 3 orders and 2 payments taken offline, Firestore killed with
+   them queued, restarted, and every write found on the server exactly once.
+
+Known limits: queued writes are sent only while the app runs (Android may stop a backgrounded
+app; MIUI's battery saver does this aggressively, see "Install on the phone" in milestone 8).
+A user deactivated while their phone is offline loses their queued writes; that is the rules
+working as intended.
+
 ## Payments and closing a table
 
 - Anyone signed in records payments (amount + cash/card) against a table's current session,
@@ -213,6 +252,7 @@ Kept deliberately few. Every addition gets a line here.
 | kotlinx-coroutines-play-services | `await()` on Firebase tasks instead of callbacks |
 | Google Services Gradle plugin | Reads `google-services.json`; applied only when that file exists |
 | JUnit 4 (tests only) | Unit tests |
+| AndroidX Test runner + ext-junit (instrumented tests only) | Runs `OfflineSyncTest` on the phone |
 
 Navigation uses a small back stack held as Compose state (`ui/nav/Navigator.kt`) instead of
 Navigation Compose: a handful of screens and no deep links did not justify the dependency.

@@ -236,3 +236,10 @@ button.primary.serve { align-self: flex-end; border-color: var(--slate); color: 
 .board-card.is-late { border: 2px dashed var(--rust); }
 .flag-late { color: var(--rust); }
 .late-note { color: var(--rust); font-size: 15px; }
+
+/* ── Sync banner ── */
+.sync-banner { position: sticky; top: 61px; z-index: 99; padding: 8px 40px; font-size: 13px; letter-spacing: .5px; color: var(--text); display: flex; gap: var(--s-4); align-items: center; }
+.sync-offline { background: var(--rust); }
+.sync-pending { background: var(--slate); }
+.sync-error { background: var(--error); }
+.sync-error .link { color: var(--text); margin-left: auto; }

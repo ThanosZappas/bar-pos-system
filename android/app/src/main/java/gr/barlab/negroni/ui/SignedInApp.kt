@@ -22,7 +22,11 @@ import gr.barlab.negroni.catalog.Menu
 import gr.barlab.negroni.catalog.ReceiptHeader
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.orders.OrdersRepository.Action
+import gr.barlab.negroni.sync.SyncMonitor
+import gr.barlab.negroni.sync.SyncStatus
 import gr.barlab.negroni.ui.components.MessageScreen
+import gr.barlab.negroni.ui.components.SyncBanner
+import kotlinx.coroutines.flow.flowOf
 import gr.barlab.negroni.ui.home.HomeScreen
 import gr.barlab.negroni.ui.nav.Navigator
 import gr.barlab.negroni.ui.nav.Screen
@@ -31,12 +35,13 @@ import gr.barlab.negroni.ui.table.TableScreen
 
 /** Everything after sign-in: one live subscription each for tables, menu and table states. */
 @Composable
-fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepository, onSignOut: () -> Unit) {
+fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepository, sync: SyncMonitor?, onSignOut: () -> Unit) {
     val nav = remember { Navigator() }
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
     val tables by catalog.tables.collectAsStateWithLifecycle(initialValue = emptyList())
     val menu by catalog.menu.collectAsStateWithLifecycle(initialValue = Menu(emptyList()))
+    val syncStatus by (sync?.status ?: flowOf(SyncStatus.Synced)).collectAsStateWithLifecycle(initialValue = SyncStatus.Synced)
     val header by catalog.receiptHeader.collectAsStateWithLifecycle(initialValue = ReceiptHeader.DEFAULT)
     val sessionKey = tables.joinToString { it.currentSessionId }
     val states by remember(sessionKey) { orders.tableStates(tables) }.collectAsStateWithLifecycle(initialValue = emptyMap())
@@ -58,7 +63,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
     }
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, topBar = { SyncBanner(syncStatus) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (val screen = nav.current) {
                 Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSignOut = onSignOut)

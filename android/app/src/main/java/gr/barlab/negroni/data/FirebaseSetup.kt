@@ -5,6 +5,8 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestoreSettings
+import com.google.firebase.firestore.persistentCacheSettings
 import com.google.firebase.functions.FirebaseFunctions
 import gr.barlab.negroni.BuildConfig
 
@@ -43,7 +45,14 @@ object FirebaseSetup {
 
     private fun services(app: FirebaseApp) = FirebaseServices(
         auth = FirebaseAuth.getInstance(app),
-        firestore = FirebaseFirestore.getInstance(app),
+        firestore = FirebaseFirestore.getInstance(app).apply { firestoreSettings = OFFLINE_SETTINGS },
         functions = FirebaseFunctions.getInstance(app, REGION),
     )
+
+    /**
+     * On-disk cache: data stays readable offline, and queued writes survive the app being killed
+     * (they are sent when the app next runs with a connection). This is Android's default; it is
+     * set explicitly because offline ordering depends on it.
+     */
+    val OFFLINE_SETTINGS = firestoreSettings { setLocalCacheSettings(persistentCacheSettings { }) }
 }

@@ -1,6 +1,6 @@
 import { initializeApp, type FirebaseOptions } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
 export const REGION = 'europe-west8';
@@ -24,7 +24,12 @@ const app = opts ? initializeApp(opts) : null;
 
 /** Null when web/.env.local is missing; the UI then explains what to do. */
 export const firebase = app
-  ? { auth: getAuth(app), db: getFirestore(app), functions: getFunctions(app, REGION) }
+  ? {
+      auth: getAuth(app),
+      // On-disk cache shared by open tabs: queued writes survive a reload while offline.
+      db: initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }),
+      functions: getFunctions(app, REGION),
+    }
   : null;
 
 if (firebase && useEmulators) {

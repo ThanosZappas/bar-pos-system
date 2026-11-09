@@ -4,6 +4,7 @@ import { firebase } from '../firebase';
 import { t, type Key } from '../i18n';
 import type { StaffUser } from '../session';
 import { Board } from './Board';
+import { SyncBanner } from './SyncBanner';
 import { Menu } from './Menu';
 import { PaymentsPage } from './PaymentsPage';
 import { SettingsPage } from './SettingsPage';
@@ -47,6 +48,7 @@ export function Shell({ user }: { user: StaffUser }) {
           <li><button class="link" onClick={() => signOut(firebase!.auth)}>{t('auth.signOut')}</button></li>
         </ul>
       </nav>
+      <SyncBanner />
       {route === 'users' && <Users me={user} />}
       {route === 'menu' && <Menu />}
       {route === 'tables' && <TablesOverview user={user} />}

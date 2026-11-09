@@ -107,6 +107,17 @@
     <string name="edit_save">Save changes</string>
     <string name="edit_all_cancelled">All items are cancelled: this cancels the whole round.</string>
 
+    <!-- Sync banner -->
+    <string name="sync_offline">Offline · changes are saved on this phone</string>
+    <plurals name="sync_offline_pending">
+        <item quantity="one">Offline · %1$d change waiting to sync</item>
+        <item quantity="other">Offline · %1$d changes waiting to sync</item>
+    </plurals>
+    <plurals name="sync_syncing">
+        <item quantity="one">Syncing %1$d change…</item>
+        <item quantity="other">Syncing %1$d changes…</item>
+    </plurals>
+
     <!-- Payments -->
     <string name="pay_title">Payments</string>
     <string name="pay_totals">Total %1$s · Paid %2$s · Due %3$s</string>

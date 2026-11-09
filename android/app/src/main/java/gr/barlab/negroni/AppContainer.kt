@@ -6,6 +6,7 @@ import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.pos.NoOpPosGateway
 import gr.barlab.negroni.pos.PosGateway
+import gr.barlab.negroni.sync.SyncMonitor
 import gr.barlab.negroni.data.FirebaseSetup
 
 /** Manual dependency injection: one instance per process, created by [NegroniApp]. */
@@ -22,5 +23,7 @@ class AppContainer(context: Context) {
     /** No real POS yet (design only). Swap in JsonExportPosGateway(File(context.filesDir, "pos")) to export JSON. */
     private val pos: PosGateway = NoOpPosGateway
 
-    val orders: OrdersRepository? = firebase?.let { OrdersRepository(it.firestore, pos) }
+    val sync: SyncMonitor? = firebase?.let { SyncMonitor(context, it.firestore) }
+
+    val orders: OrdersRepository? = firebase?.let { OrdersRepository(it.firestore, pos, sync) }
 }

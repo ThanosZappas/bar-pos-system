@@ -172,5 +172,9 @@
   "settings.address": "Address",
   "settings.phone": "Phone",
   "settings.footer": "Footer text",
-  "settings.saved": "Saved."
+  "settings.saved": "Saved.",
+  "sync.offline": "Offline · changes are saved in this browser and sent when the connection returns",
+  "sync.offlinePending": "Offline · {count} change(s) waiting to sync",
+  "sync.syncing": "Syncing {count} change(s)…",
+  "sync.refused": "The server refused a change: {error}"
 }

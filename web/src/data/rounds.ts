@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch, type DocumentData, type DocumentSnapshot, type Query, type Unsubscribe } from 'firebase/firestore';
 import { firebase } from '../firebase';
 import { roundFromDoc, type Round } from '../domain/rounds';
+import { send } from './sync';
 
 const db = () => firebase!.db;
 
@@ -83,7 +84,7 @@ export async function openRound(r: Round): Promise<void> {
   const uid = me();
   const b = writeBatch(db());
   b.update(doc(db(), 'rounds', r.id), { openedAt: serverTimestamp(), openedBy: uid, editSeen: true, updatedAt: serverTimestamp(), updatedBy: uid });
-  await b.commit();
+  await send(b.commit());
 }
 
 export async function serveRound(r: Round, byName: string): Promise<void> {
@@ -95,7 +96,7 @@ export async function serveRound(r: Round, byName: string): Promise<void> {
     updatedAt: serverTimestamp(), updatedBy: uid, lastEventId: eventId,
   });
   b.set(doc(db(), 'rounds', r.id, 'events', eventId), { type: 'served', at: serverTimestamp(), by: uid, byName });
-  await b.commit();
+  await send(b.commit());
 }
 
 export interface LineChange {

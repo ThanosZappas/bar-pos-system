@@ -2,6 +2,7 @@ import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firesto
 import { httpsCallable } from 'firebase/functions';
 import { firebase } from '../firebase';
 import { created, updated, useLive } from './live';
+import { send } from './sync';
 
 interface Listed {
   order: number;
@@ -50,11 +51,11 @@ export function nextOrder(rows: { order: number }[]): number {
 }
 
 export async function add(name: CatalogCollection, data: Record<string, unknown>): Promise<void> {
-  await setDoc(doc(collection(db(), name)), { ...data, archived: false, ...created() });
+  await send(setDoc(doc(collection(db(), name)), { ...data, archived: false, ...created() }));
 }
 
 export async function patch(name: CatalogCollection, id: string, data: Record<string, unknown>): Promise<void> {
-  await updateDoc(doc(db(), name, id), { ...data, ...updated() });
+  await send(updateDoc(doc(db(), name, id), { ...data, ...updated() }));
 }
 
 /** Moves one row up (-1) or down (+1) and renumbers the list 0..n-1 in one batch. */
@@ -68,7 +69,7 @@ export async function move(name: CatalogCollection, rows: { id: string; order: n
   list.forEach((r, i) => {
     if (r.order !== i) batch.update(doc(db(), name, r.id), { order: i, ...updated() });
   });
-  await batch.commit();
+  await send(batch.commit());
 }
 
 export async function addTable(name: string, order: number): Promise<void> {

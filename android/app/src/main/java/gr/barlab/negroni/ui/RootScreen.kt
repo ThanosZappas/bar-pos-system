@@ -29,6 +29,6 @@ fun RootScreen(container: AppContainer) {
         Session.NoProfile -> MessageScreen(stringResource(R.string.no_profile_title), stringResource(R.string.no_profile_body), sessions::signOut)
         is Session.Active ->
             if (s.user.mustChangePassword) ChangePasswordScreen(sessions, s.user)
-            else SignedInApp(s.user, catalog, orders, sessions::signOut)
+            else SignedInApp(s.user, catalog, orders, container.sync, sessions::signOut)
     }
 }

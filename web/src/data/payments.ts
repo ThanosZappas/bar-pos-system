@@ -6,6 +6,7 @@ import { noOpPosGateway, type PosGateway } from '../domain/pos';
 import { deriveTableState, type Round } from '../domain/rounds';
 import type { Table } from './catalog';
 import { chunks, useMerged } from './rounds';
+import { send } from './sync';
 
 const db = () => firebase!.db;
 const uid = () => {
@@ -50,16 +51,16 @@ function base(table: Table & { id: string }, byName: string) {
 }
 
 export async function addPayment(table: Table & { id: string }, amountCents: number, method: PaymentMethod, byName: string): Promise<void> {
-  await setDoc(doc(db(), 'payments', crypto.randomUUID()), { ...base(table, byName), amountCents, method });
+  await send(setDoc(doc(db(), 'payments', crypto.randomUUID()), { ...base(table, byName), amountCents, method }));
 }
 
 /** Full reversal of a mistaken payment; its id is derived from the original so it can happen only once. */
 export async function reversePayment(p: Payment, reason: string, byName: string): Promise<void> {
-  await setDoc(doc(db(), 'payments', reversalId(p.id)), {
+  await send(setDoc(doc(db(), 'payments', reversalId(p.id)), {
     tableId: p.tableId, tableName: p.tableName, sessionId: p.sessionId,
     amountCents: -p.amountCents, method: p.method, reversalOf: p.id, reason,
     createdAt: serverTimestamp(), createdBy: uid(), createdByName: byName, clientCreatedAt: Timestamp.now(),
-  });
+  }));
 }
 
 /**
@@ -76,7 +77,7 @@ export async function closeTable(table: Table & { id: string }, rounds: Round[],
     totalCents: state.totalCents, paidCents: paid, roundCount: state.roundCount,
   });
   b.update(doc(db(), 'tables', table.id), { currentSessionId: crypto.randomUUID(), updatedAt: serverTimestamp(), updatedBy: uid() });
-  await b.commit();
+  await send(b.commit());
   await pos.sendReceipt({
     tableId: table.id, tableName: table.name, sessionId: table.currentSessionId,
     lines: summaryLines(rounds), totalCents: state.totalCents, payments, closedAtMs: Date.now(), closedByName: byName,
@@ -99,5 +100,5 @@ export function useSettings(): Settings {
 }
 
 export async function saveSettings(s: Settings): Promise<void> {
-  await setDoc(doc(db(), 'settings', 'app'), { ...s, updatedAt: serverTimestamp(), updatedBy: uid() });
+  await send(setDoc(doc(db(), 'settings', 'app'), { ...s, updatedAt: serverTimestamp(), updatedBy: uid() }));
 }

@@ -23,6 +23,7 @@ import gr.barlab.negroni.domain.TableStatus
 import gr.barlab.negroni.domain.summaryLines
 import gr.barlab.negroni.pos.PosGateway
 import gr.barlab.negroni.pos.Receipt
+import gr.barlab.negroni.sync.SyncMonitor
 import java.util.UUID
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -42,7 +43,11 @@ import kotlinx.coroutines.flow.map
  * If the server refuses a queued write after reconnecting (e.g. the round was already served),
  * it is reported on [writeFailures].
  */
-class OrdersRepository(private val db: FirebaseFirestore, private val pos: PosGateway) {
+class OrdersRepository(
+    private val db: FirebaseFirestore,
+    private val pos: PosGateway,
+    private val sync: SyncMonitor? = null,
+) {
 
     data class WriteFailure(val action: Action, val tableName: String)
     enum class Action { Submit, Edit, Serve, Cancel, Pay, Reverse, Close }
@@ -77,7 +82,7 @@ class OrdersRepository(private val db: FirebaseFirestore, private val pos: PosGa
 
     /** Barman/admin has seen the round and its latest change: clears the highlight (rules allow only those roles). */
     fun open(round: Round, user: StaffUser) {
-        db.collection(ROUNDS).document(round.id).update(
+        val task = db.collection(ROUNDS).document(round.id).update(
             mapOf(
                 "openedAt" to FieldValue.serverTimestamp(),
                 "openedBy" to user.uid,
@@ -86,6 +91,7 @@ class OrdersRepository(private val db: FirebaseFirestore, private val pos: PosGa
                 "updatedBy" to user.uid,
             ),
         )
+        sync?.track(task)
     }
 
     /** Live payments of the given sessions, oldest first. */
@@ -264,7 +270,9 @@ class OrdersRepository(private val db: FirebaseFirestore, private val pos: PosGa
     }
 
     private fun write(action: Action, tableName: String, build: WriteBatch.() -> Unit) {
-        db.batch().apply(build).commit().addOnFailureListener { _writeFailures.tryEmit(WriteFailure(action, tableName)) }
+        val task = db.batch().apply(build).commit()
+        task.addOnFailureListener { _writeFailures.tryEmit(WriteFailure(action, tableName)) }
+        sync?.track(task)
     }
 
     private fun event(roundId: String, eventId: String) = db.collection(ROUNDS).document(roundId).collection("events").document(eventId)
