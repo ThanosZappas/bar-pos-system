@@ -9,10 +9,7 @@ cd "$(dirname "$0")/.."
 . scripts/env.sh
 ADB="${ANDROID_HOME:-$HOME/Android/Sdk}/platform-tools/adb"
 
-if ! "$ADB" get-state >/dev/null 2>&1; then
-  echo "No phone found. Connect it by USB, enable USB debugging and accept the prompt on the phone." >&2
-  exit 1
-fi
+scripts/preflight.sh phone emulators
 [ -f tools/seed/seed-credentials.json ] || npm --prefix tools/seed run init-credentials
 for port in 9099 8080; do "$ADB" reverse "tcp:$port" "tcp:$port"; done
 trap '"$ADB" reverse --remove-all' EXIT

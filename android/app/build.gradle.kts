@@ -11,12 +11,14 @@ if (file("google-services.json").exists()) {
     apply(plugin = libs.plugins.google.services.get().pluginId)
 }
 
-// Optional, per machine, in android/local.properties (git-ignored):
-//   firebase.emulatorHost=192.168.1.20   -> debug builds use the laptop's Firebase emulators
+// Optional: debug builds talk to the laptop's Firebase emulators instead of the real project.
+// Per build: ./gradlew installDebug -Pfirebase.emulatorHost=127.0.0.1 (scripts/try-on-phone.sh),
+// or per machine in android/local.properties (git-ignored): firebase.emulatorHost=127.0.0.1
 val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
-val emulatorHost: String = localProps.getProperty("firebase.emulatorHost", "")
+val emulatorHost: String = providers.gradleProperty("firebase.emulatorHost").orNull
+    ?: localProps.getProperty("firebase.emulatorHost", "")
 
 android {
     namespace = "gr.barlab.negroni"

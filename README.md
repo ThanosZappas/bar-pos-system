@@ -12,11 +12,42 @@ Not distributed through the Play Store: the debug APK is installed from this lap
 The look (colours, fonts, spacing) comes from https://www.barlab.gr/menu.html, see
 [design/tokens.md](design/tokens.md).
 
-**Contents:** [First-time setup](#first-time-setup) ·
+**Contents:** [Try it without a Firebase project](#try-it-without-a-firebase-project) ·
+[First-time setup](#first-time-setup) ·
 [Install the app on a phone](#install-the-app-on-a-phone) · [Daily use](#daily-use) ·
 [Admin tasks](#admin-tasks) · [How it works](#how-it-works) ·
 [Development](#development) · [Dependencies](#dependencies) ·
 [Known limits](#known-limits) · [Troubleshooting](#troubleshooting)
+
+---
+
+## Try it without a Firebase project
+
+Everything can be tried on the phone before the real project exists, against Firebase
+emulators running on this laptop. Connect the phone by USB (USB debugging on, see
+[Install the app on a phone](#install-the-app-on-a-phone) steps 1–3), then:
+
+```bash
+scripts/try-on-phone.sh
+```
+
+It checks what it needs first, starts the emulators with the seeded accounts, the menu and a
+few demo orders, installs a debug build that talks to them, opens the app, and serves the
+dashboard at http://localhost:5173. The phone reaches the laptop through the USB cable
+(`adb reverse`); nothing is opened on the Wi-Fi. Sign in on the phone as `user1` /
+`user1user1` (server) or `admin` / `adminadmin` (asks for a new password, then shows the order
+board). To test offline: airplane mode on and cable out, take orders and payments, then plug
+back in and turn airplane mode off. Ctrl+C stops everything; emulator data is discarded.
+
+That build stays in emulator mode until you install a normal one with
+`(cd android && ./gradlew installDebug)`.
+
+**Before any task**, `scripts/preflight.sh` tells you what is missing and how to fix it:
+`phone` (USB connection, SDK), `emulators` (ports free), `deploy` (config files, logins).
+
+```bash
+scripts/preflight.sh phone emulators deploy
+```
 
 ---
 
@@ -80,6 +111,10 @@ Pick the project and give it the alias `default` (this writes `.firebaserc`, whi
 committed).
 
 ### 4. Deploy and seed
+
+```bash
+scripts/preflight.sh deploy
+```
 
 ```bash
 npm run deploy:backend
@@ -305,7 +340,7 @@ the bar's Instagram picture (`Resources/`) is planned and not included.
 | `tools/seed/` | Menu import, seed script, emulator-only demo orders |
 | `tools/icon/` | Launcher icon / favicon generator |
 | `design/`     | `tokens.md`, bundled OFL fonts, icon SVG |
-| `scripts/`    | `env.sh` (Node 22 + JDK 21), `verify-offline-on-phone.sh` |
+| `scripts/`    | `env.sh` (Node 22 + JDK 21), `preflight.sh`, `try-on-phone.sh`, `verify-offline-on-phone.sh` |
 | `Resources/`  | Images supplied by the bar (not used yet) |
 
 Checks run at the end of every milestone:
@@ -327,9 +362,9 @@ emulators under the `demo-negroni` project (no login, nothing touches the real p
 
 **Emulators:** `npm run emulators` (UI on http://localhost:4000), then
 `npm --prefix tools/seed run seed:emulator`, `npm --prefix tools/seed run demo:rounds`
-(emulator only) and `VITE_USE_EMULATORS=true npm --prefix web run dev`. Debug Android builds
-use the emulators when `firebase.emulatorHost=<host>` is set in `android/local.properties`
-(with the phone on USB: `adb reverse tcp:9099 tcp:9099` etc. and host `127.0.0.1`).
+(emulator only) and `VITE_USE_EMULATORS=true npm --prefix web run dev`. A debug Android build
+uses the emulators when built with `-Pfirebase.emulatorHost=<host>` (or with that line in
+`android/local.properties`); `scripts/try-on-phone.sh` does all of this for you.
 
 The Gradle settings keep memory low (1.5 GB heap, 2 workers). The Android emulator is not used
 on this laptop; on-device checks run on the phone.
