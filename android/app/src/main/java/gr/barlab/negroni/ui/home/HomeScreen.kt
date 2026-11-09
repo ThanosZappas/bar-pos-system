@@ -18,21 +18,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.Role
 import gr.barlab.negroni.auth.StaffUser
-import gr.barlab.negroni.catalog.CatalogRepository
+import gr.barlab.negroni.catalog.DiningTable
 import gr.barlab.negroni.catalog.Menu
+import gr.barlab.negroni.domain.TableState
 import gr.barlab.negroni.ui.catalog.MenuList
 import gr.barlab.negroni.ui.catalog.TablesGrid
 import gr.barlab.negroni.ui.theme.Spacing
 
-/** Signed-in home: tables and the live menu. Ordering arrives in milestone 4, the board in 5. */
+/** Signed-in home: the table grid (tap a table to order) and the live menu. */
 @Composable
-fun HomeScreen(user: StaffUser, catalog: CatalogRepository, onSignOut: () -> Unit) {
-    val tables by catalog.tables.collectAsStateWithLifecycle(initialValue = emptyList())
-    val menu by catalog.menu.collectAsStateWithLifecycle(initialValue = Menu(emptyList()))
+fun HomeScreen(
+    user: StaffUser,
+    tables: List<DiningTable>,
+    states: Map<String, TableState>,
+    menu: Menu,
+    onTableClick: (DiningTable) -> Unit,
+    onSignOut: () -> Unit,
+) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
     Column(Modifier.fillMaxSize()) {
@@ -52,7 +57,7 @@ fun HomeScreen(user: StaffUser, catalog: CatalogRepository, onSignOut: () -> Uni
             Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.tab_menu).uppercase(), style = MaterialTheme.typography.labelLarge) })
         }
         when (tab) {
-            0 -> TablesGrid(tables)
+            0 -> TablesGrid(tables, states, onTableClick)
             else -> MenuList(menu)
         }
     }

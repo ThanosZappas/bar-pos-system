@@ -93,6 +93,26 @@ reports. "Hide" makes an entry unorderable but keeps it visible to the admin.
 Removing a table goes through the `removeTable` function, which refuses while the table's
 current session has any round or payment.
 
+## Orders (rounds)
+
+- A server picks a table, adds menu items with quantity and an optional note per item plus an
+  order note, and sends it: that is one **round** (`rounds/{id}`), status Preparing → Served
+  (or Cancelled). A table can have many rounds. Names and prices are copied into the round, so
+  later menu edits never change past orders.
+- Each table has a `currentSessionId`; its rounds belong to that session until the table is
+  closed (milestone 6). Table status (Free, Preparing, Served, Partially paid, Paid) is never
+  stored: it is derived from the current session's rounds and payments.
+- While Preparing, anyone can change quantities and notes, cancel single items, or cancel the
+  round; anyone can mark it served. Every change is written in one batch with an event in
+  `rounds/{id}/events`. The rules refuse a change without its event, and refuse any change once
+  the round is Served or Cancelled. Edits and cancellations set `editSeen: false` so the
+  barman's board can highlight them.
+- **Offline:** round and event ids are generated on the phone and writes never wait for the
+  server. Firestore queues them locally and sends them on reconnect; a retry hits the same
+  document, so no duplicates. A round not yet confirmed shows "Waiting to sync". If the server
+  refuses a queued change (for example an edit to a round that was served meanwhile), the app
+  shows a message.
+
 ## Firebase configuration files (never committed)
 
 - `android/app/google-services.json`: from the Firebase console (Android app `gr.barlab.negroni`).
@@ -133,8 +153,10 @@ Kept deliberately few. Every addition gets a line here.
 | Google Services Gradle plugin | Reads `google-services.json`; applied only when that file exists |
 | JUnit 4 (tests only) | Unit tests |
 
-Planned: Navigation Compose (milestone 4), AppCompat (per-app language
-setting below Android 13, milestone 8).
+Navigation uses a small back stack held as Compose state (`ui/nav/Navigator.kt`) instead of
+Navigation Compose: a handful of screens and no deep links did not justify the dependency.
+
+Planned: AppCompat (per-app language setting below Android 13, milestone 8).
 
 **Web** — `preact` (≈4 kB UI layer, saves hand-written DOM code for admin
 forms), `firebase` (official SDK). Dev only: `vite` (bundler/dev server),

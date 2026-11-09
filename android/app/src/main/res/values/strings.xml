@@ -45,6 +45,64 @@
     <string name="tab_tables">Tables</string>
     <string name="tab_menu">Menu</string>
     <string name="table_status_free">Free</string>
+    <string name="table_status_preparing">Preparing</string>
+    <string name="table_status_served">Served</string>
+    <string name="table_status_partially_paid">Partially paid</string>
+    <string name="table_status_paid">Paid</string>
+    <string name="table_title">Table %1$s</string>
+    <string name="table_total">Total %1$s</string>
+    <string name="table_no_rounds">No orders yet.</string>
+    <string name="table_not_found">This table no longer exists.</string>
+
+    <!-- Rounds -->
+    <string name="round_status_preparing">Preparing</string>
+    <string name="round_status_served">Served</string>
+    <string name="round_status_cancelled">Cancelled</string>
+    <string name="round_meta">%1$s · %2$s</string>
+    <string name="round_served_by">Served %1$s by %2$s</string>
+    <string name="round_edited_by">Edited by %1$s</string>
+    <string name="round_pending_sync">Waiting to sync</string>
+    <string name="round_mark_served">Mark served</string>
+    <string name="round_edit">Edit</string>
+    <string name="round_cancel">Cancel round</string>
+    <string name="round_cancel_confirm_title">Cancel this round?</string>
+    <string name="round_cancel_confirm_body">The barman sees the cancellation. This cannot be undone.</string>
+    <string name="round_keep">Keep it</string>
+    <string name="round_line">%1$d × %2$s</string>
+    <string name="round_note">Note: %1$s</string>
+    <string name="round_order_note">Order note: %1$s</string>
+
+    <!-- New order -->
+    <string name="order_new">New order</string>
+    <string name="order_title">New order · Table %1$s</string>
+    <string name="order_add">Add</string>
+    <string name="order_item_note">Note for this item (optional)</string>
+    <string name="order_order_note">Note for the whole order (optional)</string>
+    <string name="order_review">Review · %1$d items · %2$s</string>
+    <string name="order_submit">Send to bar · %1$s</string>
+    <string name="order_empty">Tap items on the menu to add them.</string>
+    <string name="order_discard_title">Discard this order?</string>
+    <string name="order_discard_body">The items you added are not sent.</string>
+    <string name="order_discard">Discard</string>
+    <string name="order_continue">Keep editing</string>
+    <string name="qty_decrease">Decrease quantity</string>
+    <string name="qty_increase">Increase quantity</string>
+    <string name="back">Back</string>
+    <string name="close">Close</string>
+
+    <!-- Edit round -->
+    <string name="edit_title">Edit round</string>
+    <string name="edit_explainer">Change quantities or notes, or cancel single items. The barman sees every change.</string>
+    <string name="edit_cancel_item">Cancel item</string>
+    <string name="edit_restore_item">Undo cancel</string>
+    <string name="edit_save">Save changes</string>
+    <string name="edit_all_cancelled">All items are cancelled: this cancels the whole round.</string>
+
+    <!-- Refused writes after sync -->
+    <string name="failure_submit">The server refused an order for table %1$s.</string>
+    <string name="failure_edit">Your change to table %1$s was refused: the round was already served or cancelled.</string>
+    <string name="failure_serve">Marking a round served at table %1$s was refused: it changed in the meantime.</string>
+    <string name="failure_cancel">Cancelling a round at table %1$s was refused: it was already served.</string>
     <string name="tables_empty">No tables yet. The admin adds them in the dashboard.</string>
 
     <!-- Menu -->

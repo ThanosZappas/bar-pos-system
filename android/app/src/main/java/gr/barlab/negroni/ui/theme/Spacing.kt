@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.dp
 
 // Spacing scale from design/tokens.md.
 object Spacing {
+    val xxs = 2.dp
     val xs = 4.dp
     val s = 8.dp
     val m = 12.dp

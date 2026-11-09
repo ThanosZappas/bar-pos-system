@@ -73,6 +73,6 @@ describe('auditLog', () => {
 describe('everything else', () => {
   it('stays closed', async () => {
     await assertFails(getDoc(doc(db('admin'), 'payments/x')));
-    await assertFails(setDoc(doc(db('admin'), 'rounds/x'), { a: 1 }));
+    await assertFails(setDoc(doc(db('admin'), 'sessions/x'), { a: 1 }));
   });
 });

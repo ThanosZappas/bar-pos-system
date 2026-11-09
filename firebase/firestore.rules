@@ -110,6 +110,103 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ── Rounds (orders). Ids are generated on the phone, so retries after a reconnect overwrite
+    // the same document instead of duplicating it. Every change is written in one batch with an
+    // event in rounds/{id}/events, and the rules check that pairing in both directions. ──
+    function roundKeys() {
+      return ['tableId', 'tableName', 'sessionId', 'status', 'items', 'note',
+        'createdAt', 'createdBy', 'createdByName', 'clientCreatedAt', 'updatedAt', 'updatedBy',
+        'editCount', 'editSeen', 'lastEventId',
+        'openedAt', 'openedBy',
+        'servedAt', 'servedBy', 'servedByName',
+        'cancelledAt', 'cancelledBy', 'cancelledByName',
+        'lastEditAt', 'lastEditBy', 'lastEditByName'];
+    }
+    function eventAfter(roundId, eventId) {
+      return getAfter(/databases/$(database)/documents/rounds/$(roundId)/events/$(eventId)).data;
+    }
+    // The write carries a new lastEventId whose event (of this type) exists once the batch commits.
+    function loggedAs(roundId, type) {
+      let eventId = request.resource.data.lastEventId;
+      return eventId is string
+        && (resource == null || eventId != resource.data.lastEventId)
+        && existsAfter(/databases/$(database)/documents/rounds/$(roundId)/events/$(eventId))
+        && eventAfter(roundId, eventId).type == type;
+    }
+    function validNewRound() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(roundKeys())
+        && d.keys().hasAll(['tableId', 'tableName', 'sessionId', 'status', 'items', 'note', 'createdAt', 'createdBy',
+          'createdByName', 'clientCreatedAt', 'updatedAt', 'updatedBy', 'editCount', 'editSeen', 'lastEventId'])
+        && text(d.tableId, 1, 100) && text(d.tableName, 1, 20) && text(d.sessionId, 10, 64)
+        && d.status == 'preparing'
+        && d.items is list && d.items.size() >= 1 && d.items.size() <= 50
+        && text(d.note, 0, 300) && text(d.createdByName, 0, 60)
+        && d.clientCreatedAt is timestamp
+        && stampedCreate()
+        && d.editCount == 0 && d.editSeen == true;
+    }
+    function roundTouched() {
+      let d = request.resource.data;
+      return d.updatedBy == request.auth.uid && d.updatedAt == request.time;
+    }
+    function wasPreparing() {
+      return resource.data.status == 'preparing';
+    }
+    // Edit quantities, notes or cancel single lines: only while Preparing; flagged for the barman.
+    function isEdit(roundId) {
+      let d = request.resource.data;
+      return wasPreparing() && d.status == 'preparing'
+        && changesOnly(['items', 'note', 'editCount', 'editSeen', 'lastEditAt', 'lastEditBy', 'lastEditByName',
+          'updatedAt', 'updatedBy', 'lastEventId'])
+        && d.items is list && d.items.size() == resource.data.items.size()
+        && text(d.note, 0, 300)
+        && d.editCount == resource.data.editCount + 1 && d.editSeen == false
+        && d.lastEditAt == request.time && d.lastEditBy == request.auth.uid
+        && loggedAs(roundId, 'edited');
+    }
+    function isServe(roundId) {
+      let d = request.resource.data;
+      return wasPreparing() && d.status == 'served'
+        && changesOnly(['status', 'servedAt', 'servedBy', 'servedByName', 'updatedAt', 'updatedBy', 'lastEventId'])
+        && d.servedAt == request.time && d.servedBy == request.auth.uid
+        && loggedAs(roundId, 'served');
+    }
+    function isCancel(roundId) {
+      let d = request.resource.data;
+      return wasPreparing() && d.status == 'cancelled'
+        && changesOnly(['status', 'cancelledAt', 'cancelledBy', 'cancelledByName', 'editSeen',
+          'updatedAt', 'updatedBy', 'lastEventId'])
+        && d.cancelledAt == request.time && d.cancelledBy == request.auth.uid && d.editSeen == false
+        && loggedAs(roundId, 'cancelled');
+    }
+    // The barman (or admin) opening a round on the board: clears the "new"/"edited" highlight.
+    function isOpen() {
+      let d = request.resource.data;
+      return hasRole(['admin', 'barman'])
+        && changesOnly(['openedAt', 'openedBy', 'editSeen', 'updatedAt', 'updatedBy'])
+        && d.openedAt == request.time && d.openedBy == request.auth.uid && d.editSeen == true;
+    }
+    match /rounds/{roundId} {
+      allow read: if isStaff();
+      allow create: if isStaff() && validNewRound() && loggedAs(roundId, 'created');
+      allow update: if isStaff() && roundTouched()
+        && (isEdit(roundId) || isServe(roundId) || isCancel(roundId) || isOpen());
+      allow delete: if false;
+
+      match /events/{eventId} {
+        allow read: if isStaff();
+        allow create: if isStaff()
+          && request.resource.data.keys().hasOnly(['type', 'at', 'by', 'byName', 'changes', 'note'])
+          && request.resource.data.type in ['created', 'edited', 'served', 'cancelled']
+          && request.resource.data.at == request.time
+          && request.resource.data.by == request.auth.uid
+          && text(request.resource.data.byName, 0, 60)
+          && getAfter(/databases/$(database)/documents/rounds/$(roundId)).data.lastEventId == eventId;
+        allow update, delete: if false;
+      }
+    }
+
     // Everything else stays closed until its milestone adds rules and tests.
     match /{document=**} {
       allow read, write: if false;
