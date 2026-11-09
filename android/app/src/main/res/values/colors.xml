@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mirrors design/tokens.md. Only what XML themes and the launcher icon need; Compose uses ui/theme/Color.kt. -->
+<resources>
+    <color name="bg">#FF111008</color>
+    <color name="gold">#FFC9A84C</color>
+    <color name="text">#FFE8DFC8</color>
+</resources>

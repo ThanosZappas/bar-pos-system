@@ -1,0 +1,44 @@
+/* Mirrors design/tokens.md (extracted from barlab.gr/menu.html). Keep in sync. */
+@font-face { font-family: 'Lato'; font-weight: 300; font-display: swap; src: url('../assets/fonts/lato_light.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-weight: 400; font-display: swap; src: url('../assets/fonts/lato_regular.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-weight: 700; font-display: swap; src: url('../assets/fonts/lato_bold.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-weight: 400; font-display: swap; src: url('../assets/fonts/playfair_display_regular.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-weight: 700; font-display: swap; src: url('../assets/fonts/playfair_display_bold.ttf') format('truetype'); }
+@font-face { font-family: 'Dancing Script'; font-weight: 600; font-display: swap; src: url('../assets/fonts/dancing_script_semibold.ttf') format('truetype'); }
+
+:root {
+  --bg: #111008;
+  --surface: rgba(0, 0, 0, 0.7);
+  --text: #e8dfc8;
+  --gold: #c9a84c;
+  --gold-tint: rgba(201, 168, 76, 0.08);
+  --desc: #b8954a;
+  --muted: #8a7a5a;
+  --muted-2: #6a5f45;
+  --faint: #5a4f35;
+  --soft-text: #c8bea8;
+  --line: #2a2416;
+  --line-strong: #4a3f25;
+  --line-faint: #1e1a0f;
+  --green: #6a9a6a;
+  --rust: #9a5a3a;
+  --slate: #6a7a9a;
+  --error: #ed3c0d;
+
+  --status-free: var(--line-strong);
+  --status-preparing: var(--gold);
+  --status-served: var(--slate);
+  --status-partially-paid: var(--rust);
+  --status-paid: var(--green);
+
+  --font-body: 'Lato', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+  --font-script: 'Dancing Script', cursive;
+
+  --hairline: 0.5px;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-15: 60px;
+  --content-max: 720px;
+  --wide-max: 1400px;
+
+  color-scheme: dark;
+}

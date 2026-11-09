@@ -1,0 +1,35 @@
+# Secrets and per-machine config — never commit
+tools/seed/seed-credentials.json
+**/google-services.json
+**/GoogleService-Info.plist
+*.keystore
+*.jks
+service-account*.json
+.env
+.env.*
+!.env.example
+web/src/firebase-config.local.ts
+
+# Node
+node_modules/
+dist/
+lib/
+*.log
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/.kotlin/
+android/captures/
+*.iml
+
+# OS / editors
+.DS_Store
+.vscode/

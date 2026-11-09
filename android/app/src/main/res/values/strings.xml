@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Negroni Bar Lab</string>
+    <string name="skeleton_wordmark">Negroni</string>
+    <string name="skeleton_subtitle">Bar Lab</string>
+    <string name="skeleton_status">Milestone 1 skeleton</string>
+</resources>
