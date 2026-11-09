@@ -10,20 +10,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -31,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.StaffUser
+import gr.barlab.negroni.domain.BoardAlerts
 import gr.barlab.negroni.domain.Round
 import gr.barlab.negroni.domain.RoundStatus
 import gr.barlab.negroni.domain.elapsed
@@ -40,10 +48,35 @@ import gr.barlab.negroni.ui.theme.BarLabColors
 import gr.barlab.negroni.ui.theme.Spacing
 import kotlinx.coroutines.delay
 
-/** Live order board for barman and admin: oldest first, new and changed rounds highlighted. */
+/**
+ * Live order board for barman and admin: oldest first, new and changed rounds highlighted, a beep
+ * and vibration when one arrives, and the screen kept on while the board is open.
+ */
 @Composable
-fun BoardScreen(user: StaffUser, orders: OrdersRepository, currentSessionByTable: Map<String, String>) {
-    val rounds by remember { orders.boardRounds() }.collectAsStateWithLifecycle(initialValue = emptyList())
+fun BoardScreen(user: StaffUser, orders: OrdersRepository, currentSessionByTable: Map<String, String>, onServe: (Round) -> Unit) {
+    // null until Firestore answers, so "no data yet" is never mistaken for "no orders".
+    val loaded by remember { orders.boardRounds() }.collectAsStateWithLifecycle(initialValue = null)
+    val rounds = loaded.orEmpty()
+    val context = LocalContext.current
+    val alerter = remember { BoardAlerter(context.applicationContext) }
+    var alertsOn by remember { mutableStateOf(alerter.enabled) }
+    var seen by remember { mutableStateOf<Map<String, String>?>(null) }
+    var confirmCancel by remember { mutableStateOf<Round?>(null) }
+
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        view.keepScreenOn = true
+        onDispose {
+            view.keepScreenOn = false
+            alerter.release()
+        }
+    }
+    // The first real snapshot only records what is there (alertFor(null) is silent); later ones alert.
+    LaunchedEffect(loaded) {
+        val current = loaded ?: return@LaunchedEffect
+        BoardAlerts.alertFor(seen, current)?.let(alerter::play)
+        seen = current.associate { it.id to BoardAlerts.fingerprint(it) }
+    }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -52,19 +85,44 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository, currentSessionByTable
         }
     }
 
-    if (rounds.isEmpty()) {
-        Text(stringResource(R.string.board_empty), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(Spacing.xxl))
-        return
-    }
-    LazyColumn(contentPadding = PaddingValues(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m), modifier = Modifier.fillMaxSize()) {
-        items(rounds, key = { it.id }) { round ->
-            BoardCard(round, now, late = round.isLate(currentSessionByTable), onOpen = { orders.open(round, user) }, onServe = { orders.serve(round, user) })
+    Column(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.board_alerts), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Switch(checked = alertsOn, onCheckedChange = { alertsOn = it; alerter.enabled = it })
         }
+        if (rounds.isEmpty()) {
+            Text(stringResource(R.string.board_empty), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(Spacing.xxl))
+        } else {
+            LazyColumn(contentPadding = PaddingValues(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m), modifier = Modifier.fillMaxSize()) {
+                items(rounds, key = { it.id }) { round ->
+                    BoardCard(
+                        round, now, late = round.isLate(currentSessionByTable),
+                        onOpen = { orders.open(round, user) },
+                        onServe = { onServe(round) },
+                        onCancel = { confirmCancel = round },
+                    )
+                }
+            }
+        }
+    }
+    confirmCancel?.let { round ->
+        AlertDialog(
+            onDismissRequest = { confirmCancel = null },
+            title = { Text(stringResource(R.string.round_cancel_confirm_title)) },
+            text = { Text(stringResource(R.string.round_cancel_confirm_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmCancel = null
+                    orders.cancel(round, user)
+                }) { Text(stringResource(R.string.round_cancel), color = BarLabColors.Error) }
+            },
+            dismissButton = { TextButton(onClick = { confirmCancel = null }) { Text(stringResource(R.string.round_keep)) } },
+        )
     }
 }
 
 @Composable
-private fun BoardCard(round: Round, now: Long, late: Boolean, onOpen: () -> Unit, onServe: () -> Unit) {
+private fun BoardCard(round: Round, now: Long, late: Boolean, onOpen: () -> Unit, onServe: () -> Unit, onCancel: () -> Unit) {
     val cancelled = round.status == RoundStatus.Cancelled
     val accent = when {
         round.isChanged -> BarLabColors.Error
@@ -111,7 +169,10 @@ private fun BoardCard(round: Round, now: Long, late: Boolean, onOpen: () -> Unit
                 else stringResource(R.string.round_edited_by, round.lastEditByName.orEmpty())
                 Text(who, style = MaterialTheme.typography.bodyMedium, color = BarLabColors.Error)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.End)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                if (round.status == RoundStatus.Preparing) {
+                    TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.board_cancel), color = BarLabColors.Error) }
+                }
                 if (round.isNew || round.isChanged) OutlinedButton(onClick = onOpen) { Text(stringResource(R.string.board_got_it).uppercase(), style = MaterialTheme.typography.labelLarge) }
                 if (round.status == RoundStatus.Preparing) Button(onClick = onServe) { Text(stringResource(R.string.round_mark_served).uppercase(), style = MaterialTheme.typography.labelLarge) }
             }

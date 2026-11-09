@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDocs, collection, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch, deleteDoc, type Firestore } from 'firebase/firestore';
+import { deleteField, doc, getDocs, collection, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch, deleteDoc, type Firestore } from 'firebase/firestore';
 
 let env: RulesTestEnvironment;
 const db = (uid: string) => env.authenticatedContext(uid).firestore() as unknown as Firestore;
@@ -115,6 +115,29 @@ describe('serving', () => {
     await assertFails(write(db('server'), 'r1', 'e3', edit('server', 'e3', { editCount: 1 }), 'edited', false));
     await assertFails(write(db('server'), 'r1', 'e3', { status: 'cancelled', cancelledAt: serverTimestamp(), cancelledBy: 'server', cancelledByName: 'server', editSeen: false, ...touched('server', 'e3') }, 'cancelled', false));
     await assertFails(write(db('server'), 'r1', 'e3', serve('server', 'e3'), 'served', false));
+  });
+});
+
+describe('undoing an accidental "Served"', () => {
+  const serve = (uid: string, eventId: string) => ({ status: 'served', servedAt: serverTimestamp(), servedBy: uid, servedByName: uid, ...touched(uid, eventId) });
+  const unserve = (uid: string, eventId: string) => ({
+    status: 'preparing', servedAt: deleteField(), servedBy: deleteField(), servedByName: deleteField(), ...touched(uid, eventId),
+  });
+
+  it('anyone may undo within two minutes, logged', async () => {
+    await write(db('barman'), 'r1', 'e2', serve('barman', 'e2'), 'served', false);
+    await assertSucceeds(write(db('server'), 'r1', 'e3', unserve('server', 'e3'), 'unserved', false));
+  });
+
+  it('is refused after two minutes, without its event, or for a round that was not served', async () => {
+    await assertFails(write(db('server'), 'r1', 'e2', unserve('server', 'e2'), 'unserved', false)); // still preparing
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      updateDoc(doc(ctx.firestore(), 'rounds/r1'), { status: 'served', servedAt: Timestamp.fromMillis(Date.now() - 3 * 60_000), servedBy: 'barman', servedByName: 'barman' }),
+    );
+    await assertFails(write(db('server'), 'r1', 'e3', unserve('server', 'e3'), 'unserved', false));
+    await env.withSecurityRulesDisabled(async (ctx) => updateDoc(doc(ctx.firestore(), 'rounds/r1'), { servedAt: Timestamp.now() }));
+    await assertFails(updateDoc(doc(db('server'), 'rounds/r1'), unserve('server', 'e4')));
+    await assertSucceeds(write(db('server'), 'r1', 'e5', unserve('server', 'e5'), 'unserved', false));
   });
 });
 

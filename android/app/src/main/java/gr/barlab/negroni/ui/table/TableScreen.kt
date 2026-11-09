@@ -40,7 +40,15 @@ import gr.barlab.negroni.ui.theme.Spacing
 
 /** A table's current session: rounds, payments, summary, closing, and the button for a new order. */
 @Composable
-fun TableScreen(table: DiningTable, user: StaffUser, orders: OrdersRepository, header: ReceiptHeader, onBack: () -> Unit, onNewOrder: () -> Unit) {
+fun TableScreen(
+    table: DiningTable,
+    user: StaffUser,
+    orders: OrdersRepository,
+    header: ReceiptHeader,
+    onBack: () -> Unit,
+    onNewOrder: () -> Unit,
+    onServe: (Round) -> Unit,
+) {
     val rounds by remember(table.currentSessionId) { orders.roundsForSessions(listOf(table.currentSessionId)) }
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val payments by remember(table.currentSessionId) { orders.paymentsForSessions(listOf(table.currentSessionId)) }
@@ -73,7 +81,7 @@ fun TableScreen(table: DiningTable, user: StaffUser, orders: OrdersRepository, h
             items(rounds, key = { it.id }) { round ->
                 RoundCard(
                     round = round,
-                    onServe = { orders.serve(round, user) },
+                    onServe = { onServe(round) },
                     onEdit = { editing = round },
                     onCancel = { orders.cancel(round, user) },
                 )

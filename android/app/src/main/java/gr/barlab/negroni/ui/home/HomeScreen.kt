@@ -23,6 +23,7 @@ import gr.barlab.negroni.auth.Role
 import gr.barlab.negroni.auth.StaffUser
 import gr.barlab.negroni.catalog.DiningTable
 import gr.barlab.negroni.catalog.Menu
+import gr.barlab.negroni.domain.Round
 import gr.barlab.negroni.domain.TableState
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.ui.board.BoardScreen
@@ -42,6 +43,7 @@ fun HomeScreen(
     orders: OrdersRepository,
     onTableClick: (DiningTable) -> Unit,
     onSettings: () -> Unit,
+    onServe: (Round) -> Unit,
 ) {
     val tabs = if (user.role.seesOrderBoard) HomeTab.entries else listOf(HomeTab.Tables, HomeTab.Menu)
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -64,7 +66,7 @@ fun HomeScreen(
             }
         }
         when (tabs[tab.coerceIn(tabs.indices)]) {
-            HomeTab.Board -> BoardScreen(user, orders, tables.associate { it.id to it.currentSessionId })
+            HomeTab.Board -> BoardScreen(user, orders, tables.associate { it.id to it.currentSessionId }, onServe)
             HomeTab.Tables -> TablesGrid(tables, states, onTableClick)
             HomeTab.Menu -> MenuList(menu)
         }

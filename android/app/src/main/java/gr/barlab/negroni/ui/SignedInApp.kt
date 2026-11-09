@@ -6,11 +6,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -20,6 +23,7 @@ import gr.barlab.negroni.auth.StaffUser
 import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.catalog.Menu
 import gr.barlab.negroni.catalog.ReceiptHeader
+import gr.barlab.negroni.domain.Round
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.orders.OrdersRepository.Action
 import gr.barlab.negroni.sync.SyncMonitor
@@ -27,6 +31,8 @@ import gr.barlab.negroni.sync.SyncStatus
 import gr.barlab.negroni.ui.components.MessageScreen
 import gr.barlab.negroni.ui.components.SyncBanner
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import gr.barlab.negroni.ui.home.HomeScreen
 import gr.barlab.negroni.ui.nav.rememberNavigator
 import gr.barlab.negroni.ui.nav.Screen
@@ -54,6 +60,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
                 Action.Submit -> R.string.failure_submit
                 Action.Edit -> R.string.failure_edit
                 Action.Serve -> R.string.failure_serve
+                Action.Unserve -> R.string.failure_unserve
                 Action.Cancel -> R.string.failure_cancel
                 Action.Pay -> R.string.failure_pay
                 Action.Reverse -> R.string.failure_reverse
@@ -64,15 +71,33 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
     }
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
+    // "Served" everywhere goes through here: serve, then offer Undo for 30 s (the rules allow 120 s).
+    val scope = rememberCoroutineScope()
+    val serveWithUndo: (Round) -> Unit = { round ->
+        orders.serve(round, user)
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            val result = withTimeoutOrNull(30_000) {
+                snackbar.showSnackbar(
+                    resources.getString(R.string.served_undo_message, round.tableName),
+                    actionLabel = resources.getString(R.string.served_undo),
+                    duration = SnackbarDuration.Indefinite,
+                )
+            }
+            if (result == SnackbarResult.ActionPerformed) orders.unserve(round, user)
+            else if (result == null) snackbar.currentSnackbarData?.dismiss()
+        }
+    }
+
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }, topBar = { SyncBanner(syncStatus) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) })
+                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo)
                 Screen.Settings -> SettingsScreen(user, onBack = nav::back, onSignOut = onSignOut)
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)
-                    else TableScreen(table, user, orders, header, onBack = nav::back, onNewOrder = { nav.go(Screen.NewOrder(table.id)) })
+                    else TableScreen(table, user, orders, header, onBack = nav::back, onNewOrder = { nav.go(Screen.NewOrder(table.id)) }, onServe = serveWithUndo)
                 }
                 is Screen.NewOrder -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }

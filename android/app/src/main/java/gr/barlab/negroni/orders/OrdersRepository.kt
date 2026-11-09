@@ -50,7 +50,7 @@ class OrdersRepository(
 ) {
 
     data class WriteFailure(val action: Action, val tableName: String)
-    enum class Action { Submit, Edit, Serve, Cancel, Pay, Reverse, Close }
+    enum class Action { Submit, Edit, Serve, Unserve, Cancel, Pay, Reverse, Close }
 
     private val _writeFailures = MutableSharedFlow<WriteFailure>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val writeFailures: SharedFlow<WriteFailure> = _writeFailures
@@ -250,6 +250,26 @@ class OrdersRepository(
                 ),
             )
             set(event(round.id, eventId), eventData("served", user))
+        }
+    }
+
+    /** Undo an accidental "Served" (the rules allow it for two minutes after serving). */
+    fun unserve(round: Round, user: StaffUser) {
+        val eventId = newId()
+        write(Action.Unserve, round.tableName) {
+            update(
+                db.collection(ROUNDS).document(round.id),
+                mapOf(
+                    "status" to RoundStatus.Preparing.wire,
+                    "servedAt" to FieldValue.delete(),
+                    "servedBy" to FieldValue.delete(),
+                    "servedByName" to FieldValue.delete(),
+                    "updatedAt" to FieldValue.serverTimestamp(),
+                    "updatedBy" to user.uid,
+                    "lastEventId" to eventId,
+                ),
+            )
+            set(event(round.id, eventId), eventData("unserved", user))
         }
     }
 

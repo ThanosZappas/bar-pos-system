@@ -119,3 +119,25 @@ class LateRoundTest {
     @Test fun closedSessionIsLate() = assertTrue(r.isLate(mapOf("t1" to "s2")))
     @Test fun removedTableIsLate() = assertTrue(r.isLate(emptyMap()))
 }
+
+// Same cases as web/src/domain/attention.test.ts.
+class BoardAlertsTest {
+    private val base = Round("r1", "t", "1", "s", RoundStatus.Preparing, emptyList(), "", 0, "S")
+    private fun seen(vararg rs: Round) = rs.associate { it.id to BoardAlerts.fingerprint(it) }
+
+    @Test fun silentOnFirstSnapshot() = assertEquals(null, BoardAlerts.alertFor(null, listOf(base)))
+    @Test fun newRoundAlertsNew() = assertEquals(BoardAlerts.Alert.New, BoardAlerts.alertFor(seen(), listOf(base)))
+    @Test fun unchangedIsSilent() = assertEquals(null, BoardAlerts.alertFor(seen(base), listOf(base)))
+    @Test fun editOrCancelAlertsChanged() {
+        assertEquals(BoardAlerts.Alert.Changed, BoardAlerts.alertFor(seen(base), listOf(base.copy(editCount = 1, editSeen = false))))
+        assertEquals(BoardAlerts.Alert.Changed, BoardAlerts.alertFor(seen(base), listOf(base.copy(status = RoundStatus.Cancelled, editSeen = false))))
+    }
+    @Test fun openingIsSilent() = assertEquals(
+        null,
+        BoardAlerts.alertFor(seen(base.copy(editSeen = false, editCount = 1)), listOf(base.copy(editSeen = true, editCount = 1, openedAtMs = 5))),
+    )
+    @Test fun changedWinsOverNew() = assertEquals(
+        BoardAlerts.Alert.Changed,
+        BoardAlerts.alertFor(seen(base), listOf(base.copy(id = "r2"), base.copy(editCount = 1, editSeen = false))),
+    )
+}

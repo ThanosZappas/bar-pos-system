@@ -4,7 +4,8 @@ import { fill } from '../i18n/format';
 import { chimeFor, fingerprint } from '../domain/attention';
 import { elapsed, isChanged, isLate, isNew, type Round } from '../domain/rounds';
 import { useCatalog, type Table } from '../data/catalog';
-import { fetchEvent, openRound, serveRound, useBoardRounds, type RoundEvent } from '../data/rounds';
+import { cancelRound, fetchEvent, openRound, serveRound, unserveRound, useBoardRounds, UNDO_SERVED_SECONDS, type RoundEvent } from '../data/rounds';
+import { useWakeLock } from '../lib/wakeLock';
 import { chime } from '../lib/sound';
 import { useNow } from '../lib/useNow';
 import type { StaffUser } from '../session';
@@ -15,10 +16,18 @@ export function Board({ user }: { user: StaffUser }) {
   const rounds = useBoardRounds();
   const tables = useCatalog<Table>('tables');
   const currentSession = new Map((tables ?? []).map((x) => [x.id, x.currentSessionId]));
-  const now = useNow(10_000);
   const [soundOn, setSoundOn] = useState(chime.enabled);
   const seen = useRef<Map<string, string> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recentlyServed, setRecentlyServed] = useState<{ round: Round; at: number }[]>([]);
+  const awake = useWakeLock();
+  // One clock: every second while an undo is offered (countdown), otherwise every 10 s.
+  const now = useNow(recentlyServed.length > 0 ? 1_000 : 10_000);
+  const tick = now;
+  const undoable = recentlyServed.filter((x) => tick - x.at < UNDO_SERVED_SECONDS * 1000);
+  useEffect(() => {
+    if (undoable.length !== recentlyServed.length) setRecentlyServed(undoable); // drop expired offers
+  }, [tick]);
 
   useEffect(() => {
     if (!rounds) return;
@@ -40,6 +49,7 @@ export function Board({ user }: { user: StaffUser }) {
     <section class="page board">
       <div class="board-head">
         <h1 class="section-label">{t('board.title')}{rounds && rounds.length > 0 && ` · ${fill(t('board.count'), { count: String(rounds.filter((r) => r.status === 'preparing').length) })}`}</h1>
+        {awake && <span class="sound-on">☀ {t('board.awake')}</span>}
         {soundOn ? (
           <span class="sound-on">♪ {t('board.soundOn')}</span>
         ) : (
@@ -47,6 +57,20 @@ export function Board({ user }: { user: StaffUser }) {
         )}
       </div>
       {error && <p class="error">{error}</p>}
+      {undoable.map(({ round: r, at }) => (
+        <p class="undo-bar">
+          {fill(t('board.servedUndo'), { name: r.tableName })}
+          <button
+            class="primary"
+            onClick={() => {
+              setRecentlyServed((list) => list.filter((x) => x.round.id !== r.id));
+              act(() => unserveRound(r, user.displayName));
+            }}
+          >
+            {fill(t('board.undo'), { seconds: String(Math.max(0, UNDO_SERVED_SECONDS - Math.floor((tick - at) / 1000))) })}
+          </button>
+        </p>
+      ))}
       {rounds === null && <p class="desc">{t('app.loading')}</p>}
       {rounds?.length === 0 && <p class="board-empty">{t('board.empty')}</p>}
       <div class="board-grid">
@@ -57,7 +81,11 @@ export function Board({ user }: { user: StaffUser }) {
             now={now}
             late={tables !== null && isLate(r, currentSession)}
             onOpen={() => act(() => openRound(r))}
-            onServe={() => act(() => serveRound(r, user.displayName))}
+            onServe={() => {
+              setRecentlyServed((list) => [...list, { round: r, at: Date.now() }]);
+              act(() => serveRound(r, user.displayName));
+            }}
+            onCancel={() => confirm(fill(t('board.confirmCancel'), { name: r.tableName })) && act(() => cancelRound(r, user.displayName))}
           />
         ))}
       </div>
@@ -65,7 +93,8 @@ export function Board({ user }: { user: StaffUser }) {
   );
 }
 
-function BoardCard({ round, now, late, onOpen, onServe }: { round: Round; now: number; late: boolean; onOpen: () => void; onServe: () => void }) {
+function BoardCard(props: { round: Round; now: number; late: boolean; onOpen: () => void; onServe: () => void; onCancel: () => void }) {
+  const { round, now, late, onOpen, onServe, onCancel } = props;
   const fresh = isNew(round);
   const changed = isChanged(round);
   const cancelled = round.status === 'cancelled';
@@ -87,6 +116,7 @@ function BoardCard({ round, now, late, onOpen, onServe }: { round: Round; now: n
       <RoundLines round={round} />
       {changed && <ChangeSummary round={round} />}
       <footer class="board-actions">
+        {round.status === 'preparing' && <button class="link danger" onClick={onCancel}>{t('board.cancel')}</button>}
         {(fresh || changed) && <button class="primary" onClick={onOpen}>{t('board.gotIt')}</button>}
         {round.status === 'preparing' && <button class="primary serve" onClick={onServe}>{t('board.served')}</button>}
       </footer>

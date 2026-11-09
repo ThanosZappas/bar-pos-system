@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { collection, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch, type DocumentData, type DocumentSnapshot, type Query, type Unsubscribe } from 'firebase/firestore';
+import { collection, deleteField, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch, type DocumentData, type DocumentSnapshot, type Query, type Unsubscribe } from 'firebase/firestore';
 import { firebase } from '../firebase';
 import { roundFromDoc, type Round } from '../domain/rounds';
 import { send } from './sync';
@@ -99,6 +99,36 @@ export async function serveRound(r: Round, byName: string): Promise<void> {
   await send(b.commit());
 }
 
+/** Seconds the board offers "Undo" after Served; the rules allow 120 s, leaving room for slow networks. */
+export const UNDO_SERVED_SECONDS = 60;
+
+/** Undo an accidental "Served": back to Preparing, logged. */
+export async function unserveRound(r: Round, byName: string): Promise<void> {
+  const uid = me();
+  const eventId = crypto.randomUUID();
+  const b = writeBatch(db());
+  b.update(doc(db(), 'rounds', r.id), {
+    status: 'preparing', servedAt: deleteField(), servedBy: deleteField(), servedByName: deleteField(),
+    updatedAt: serverTimestamp(), updatedBy: uid, lastEventId: eventId,
+  });
+  b.set(doc(db(), 'rounds', r.id, 'events', eventId), { type: 'unserved', at: serverTimestamp(), by: uid, byName });
+  await send(b.commit());
+}
+
+/** The barman cannot make it: cancel, logged; acknowledged at once since he did it himself. */
+export async function cancelRound(r: Round, byName: string): Promise<void> {
+  const uid = me();
+  const eventId = crypto.randomUUID();
+  const b = writeBatch(db());
+  b.update(doc(db(), 'rounds', r.id), {
+    status: 'cancelled', cancelledAt: serverTimestamp(), cancelledBy: uid, cancelledByName: byName, editSeen: false,
+    updatedAt: serverTimestamp(), updatedBy: uid, lastEventId: eventId,
+  });
+  b.set(doc(db(), 'rounds', r.id, 'events', eventId), { type: 'cancelled', at: serverTimestamp(), by: uid, byName });
+  await send(b.commit());
+  await send(writeBatch(db()).update(doc(db(), 'rounds', r.id), { openedAt: serverTimestamp(), openedBy: uid, editSeen: true, updatedAt: serverTimestamp(), updatedBy: uid }).commit());
+}
+
 export interface LineChange {
   lineId: string;
   name: string;
@@ -109,7 +139,7 @@ export interface LineChange {
   cancelled: boolean;
 }
 export interface RoundEvent {
-  type: 'created' | 'edited' | 'served' | 'cancelled';
+  type: 'created' | 'edited' | 'served' | 'cancelled' | 'unserved';
   byName: string;
   changes?: LineChange[];
   note?: string;

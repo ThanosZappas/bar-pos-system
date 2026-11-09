@@ -243,3 +243,8 @@ button.primary.serve { align-self: flex-end; border-color: var(--slate); color: 
 .sync-pending { background: var(--slate); }
 .sync-error { background: var(--error); }
 .sync-error .link { color: var(--text); margin-left: auto; }
+
+/* ── Undo "Served" ── */
+.undo-bar { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-3); padding: var(--s-3) var(--s-4); border: 1px solid var(--slate); color: var(--soft-text); font-size: 16px; }
+.undo-bar .primary { margin-left: auto; }
+.board-actions .link.danger { margin-right: auto; }

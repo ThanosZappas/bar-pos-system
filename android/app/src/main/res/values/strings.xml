@@ -86,6 +86,10 @@
     <string name="board_waiting">waiting %1$s</string>
     <string name="board_got_it">Got it</string>
     <string name="board_by">by %1$s</string>
+    <string name="board_cancel">Cancel</string>
+    <string name="board_alerts">Sound and vibration for new or changed orders</string>
+    <string name="served_undo_message">Served table %1$s</string>
+    <string name="served_undo">Undo</string>
 
     <!-- New order -->
     <string name="order_new">New order</string>
@@ -178,6 +182,7 @@
     <string name="failure_edit">Your change to table %1$s was refused: the round was already served or cancelled.</string>
     <string name="failure_serve">Marking a round served at table %1$s was refused: it changed in the meantime.</string>
     <string name="failure_cancel">Cancelling a round at table %1$s was refused: it was already served.</string>
+    <string name="failure_unserve">Undo at table %1$s was refused: more than two minutes had passed.</string>
     <string name="failure_pay">A payment for table %1$s was refused by the server.</string>
     <string name="failure_reverse">A reversal at table %1$s was refused: that payment was already reversed.</string>
     <string name="failure_close">Closing table %1$s was refused: someone else closed it first, or it was not fully paid.</string>

@@ -178,5 +178,10 @@
   "sync.syncing": "Syncing {count} change(s)…",
   "sync.refused": "The server refused a change: {error}",
   "settings.language": "Language",
-  "settings.languageNote": "The Greek translation is in progress: untranslated text stays in English. The page reloads to apply."
+  "settings.languageNote": "The Greek translation is in progress: untranslated text stays in English. The page reloads to apply.",
+  "board.cancel": "Cancel",
+  "board.confirmCancel": "Cancel this round for table {name}? The server sees it as cancelled.",
+  "board.servedUndo": "Served table {name}",
+  "board.undo": "Undo ({seconds} s)",
+  "board.awake": "Screen stays on"
 }
