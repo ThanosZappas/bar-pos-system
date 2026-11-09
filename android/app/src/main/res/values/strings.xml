@@ -42,6 +42,7 @@
     <string name="not_configured_body">Add android/app/google-services.json, or set firebase.emulatorHost in android/local.properties, then rebuild.</string>
 
     <!-- Home -->
+    <string name="tab_board">Board</string>
     <string name="tab_tables">Tables</string>
     <string name="tab_menu">Menu</string>
     <string name="table_status_free">Free</string>
@@ -71,6 +72,15 @@
     <string name="round_line">%1$d × %2$s</string>
     <string name="round_note">Note: %1$s</string>
     <string name="round_order_note">Order note: %1$s</string>
+
+    <!-- Order board (barman, admin) -->
+    <string name="board_empty">Nothing to prepare.</string>
+    <string name="board_new">New</string>
+    <string name="board_edited">Edited</string>
+    <string name="board_cancelled_by">Cancelled by %1$s</string>
+    <string name="board_waiting">waiting %1$s</string>
+    <string name="board_got_it">Got it</string>
+    <string name="board_by">by %1$s</string>
 
     <!-- New order -->
     <string name="order_new">New order</string>

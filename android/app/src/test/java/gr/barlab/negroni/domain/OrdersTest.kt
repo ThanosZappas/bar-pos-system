@@ -86,3 +86,28 @@ class TableStatusTest {
         assertEquals(1500, TableState.derive(rounds, paidCents = 500).dueCents)
     }
 }
+
+class BoardTest {
+    private val base = Round("r", "t", "1", "s", RoundStatus.Preparing, emptyList(), "", 0, "Server 1")
+
+    @Test fun newUntilOpened() {
+        assertTrue(base.isNew)
+        assertEquals(false, base.copy(openedAtMs = 5).isNew)
+    }
+
+    @Test fun boardKeepsPreparingAndUnacknowledgedCancellations() {
+        assertTrue(base.isOnBoard)
+        assertTrue(base.copy(status = RoundStatus.Cancelled, editSeen = false).isOnBoard)
+        assertEquals(false, base.copy(status = RoundStatus.Cancelled, editSeen = true).isOnBoard)
+        assertEquals(false, base.copy(status = RoundStatus.Served).isOnBoard)
+    }
+
+    // Same cases as web/src/domain/rounds.test.ts.
+    @Test fun elapsedFormatting() {
+        assertEquals("0 s", elapsed(0, 0))
+        assertEquals("45 s", elapsed(0, 45_000))
+        assertEquals("12 min", elapsed(0, 12 * 60_000 + 5_000))
+        assertEquals("1 h 05", elapsed(0, 65 * 60_000))
+        assertEquals("0 s", elapsed(0, -5_000))
+    }
+}

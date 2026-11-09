@@ -56,7 +56,7 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, onTableClick = { nav.go(Screen.Table(it.id)) }, onSignOut = onSignOut)
+                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSignOut = onSignOut)
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)

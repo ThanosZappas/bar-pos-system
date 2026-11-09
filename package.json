@@ -10,7 +10,9 @@
     "build:web": "npm --prefix web run build",
     "build:functions": "npm --prefix functions run build",
     "emulators": "firebase emulators:start --project demo-negroni",
-    "test:backend": "firebase emulators:exec --only auth,firestore --project demo-negroni \"npm --prefix functions test && npm --prefix firebase test && npm --prefix tools/seed test\""
+    "test:backend": "firebase emulators:exec --only auth,firestore --project demo-negroni \"npm --prefix functions test && npm --prefix firebase test && npm --prefix tools/seed test\"",
+    "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,functions",
+    "deploy:hosting": "firebase deploy --only hosting"
   },
   "devDependencies": {
     "firebase-tools": "15.35.0"

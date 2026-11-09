@@ -47,12 +47,31 @@ data class Round(
     val editCount: Int = 0,
     val editSeen: Boolean = true,
     val lastEditByName: String? = null,
+    val cancelledByName: String? = null,
     /** Written on this phone but not yet confirmed by the server (offline or in flight). */
     val pendingSync: Boolean = false,
 ) {
     val totalCents: Long get() = if (status == RoundStatus.Cancelled) 0 else lines.sumOf { it.totalCents }
     val activeLines: List<OrderLine> get() = lines.filter { !it.cancelled }
     val isEditable: Boolean get() = status == RoundStatus.Preparing
+
+    /** Not yet looked at by the barman. */
+    val isNew: Boolean get() = openedAtMs == null && status == RoundStatus.Preparing
+
+    /** Edited or cancelled since the barman last looked. */
+    val isChanged: Boolean get() = !editSeen
+
+    /** On the bar's to-do list: still Preparing, or cancelled and not yet acknowledged. */
+    val isOnBoard: Boolean get() = status == RoundStatus.Preparing || (status == RoundStatus.Cancelled && !editSeen)
+}
+
+/** "45 s", "12 min", "1 h 05": how long a round has been waiting. Same as the dashboard. */
+fun elapsed(fromMs: Long, nowMs: Long): String {
+    val s = ((nowMs - fromMs) / 1000).coerceAtLeast(0)
+    if (s < 60) return "$s s"
+    val m = s / 60
+    if (m < 60) return "$m min"
+    return "${m / 60} h ${(m % 60).toString().padStart(2, '0')}"
 }
 
 /**

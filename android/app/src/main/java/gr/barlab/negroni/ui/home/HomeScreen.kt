@@ -24,20 +24,26 @@ import gr.barlab.negroni.auth.StaffUser
 import gr.barlab.negroni.catalog.DiningTable
 import gr.barlab.negroni.catalog.Menu
 import gr.barlab.negroni.domain.TableState
+import gr.barlab.negroni.orders.OrdersRepository
+import gr.barlab.negroni.ui.board.BoardScreen
 import gr.barlab.negroni.ui.catalog.MenuList
 import gr.barlab.negroni.ui.catalog.TablesGrid
 import gr.barlab.negroni.ui.theme.Spacing
 
-/** Signed-in home: the table grid (tap a table to order) and the live menu. */
+private enum class HomeTab(val label: Int) { Board(R.string.tab_board), Tables(R.string.tab_tables), Menu(R.string.tab_menu) }
+
+/** Signed-in home: the order board (barman and admin only), the table grid (tap to order) and the menu. */
 @Composable
 fun HomeScreen(
     user: StaffUser,
     tables: List<DiningTable>,
     states: Map<String, TableState>,
     menu: Menu,
+    orders: OrdersRepository,
     onTableClick: (DiningTable) -> Unit,
     onSignOut: () -> Unit,
 ) {
+    val tabs = if (user.role.seesOrderBoard) HomeTab.entries else listOf(HomeTab.Tables, HomeTab.Menu)
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
     Column(Modifier.fillMaxSize()) {
@@ -52,13 +58,15 @@ fun HomeScreen(
             )
             TextButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out)) }
         }
-        PrimaryTabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.tab_tables).uppercase(), style = MaterialTheme.typography.labelLarge) })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.tab_menu).uppercase(), style = MaterialTheme.typography.labelLarge) })
+        PrimaryTabRow(selectedTabIndex = tab.coerceIn(tabs.indices)) {
+            tabs.forEachIndexed { i, t ->
+                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(t.label).uppercase(), style = MaterialTheme.typography.labelLarge) })
+            }
         }
-        when (tab) {
-            0 -> TablesGrid(tables, states, onTableClick)
-            else -> MenuList(menu)
+        when (tabs[tab.coerceIn(tabs.indices)]) {
+            HomeTab.Board -> BoardScreen(user, orders)
+            HomeTab.Tables -> TablesGrid(tables, states, onTableClick)
+            HomeTab.Menu -> MenuList(menu)
         }
     }
 }

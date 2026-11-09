@@ -57,6 +57,30 @@ class OrdersRepository(private val db: FirebaseFirestore) {
         return combine(flows) { parts -> parts.flatMap { it }.sortedBy { it.createdAtMs } }
     }
 
+    /**
+     * The bar's to-do list, oldest first: Preparing rounds plus unacknowledged cancellations.
+     * Two single-field queries, so Firestore needs no composite index.
+     */
+    fun boardRounds(): Flow<List<Round>> = combine(
+        db.collection(ROUNDS).whereEqualTo("status", RoundStatus.Preparing.wire).snapshots(MetadataChanges.INCLUDE)
+            .map { snap -> snap.documents.map { it.toRound() } }.catch { emit(emptyList()) },
+        db.collection(ROUNDS).whereEqualTo("editSeen", false).snapshots(MetadataChanges.INCLUDE)
+            .map { snap -> snap.documents.map { it.toRound() } }.catch { emit(emptyList()) },
+    ) { preparing, unseen -> (preparing + unseen).associateBy { it.id }.values.filter { it.isOnBoard }.sortedBy { it.createdAtMs } }
+
+    /** Barman/admin has seen the round and its latest change: clears the highlight (rules allow only those roles). */
+    fun open(round: Round, user: StaffUser) {
+        db.collection(ROUNDS).document(round.id).update(
+            mapOf(
+                "openedAt" to FieldValue.serverTimestamp(),
+                "openedBy" to user.uid,
+                "editSeen" to true,
+                "updatedAt" to FieldValue.serverTimestamp(),
+                "updatedBy" to user.uid,
+            ),
+        )
+    }
+
     fun tableStates(tables: List<DiningTable>): Flow<Map<String, TableState>> =
         roundsForSessions(tables.map { it.currentSessionId }).map { rounds ->
             val bySession = rounds.groupBy { it.sessionId }
@@ -207,6 +231,7 @@ class OrdersRepository(private val db: FirebaseFirestore) {
             editCount = getLong("editCount")?.toInt() ?: 0,
             editSeen = getBoolean("editSeen") != false,
             lastEditByName = getString("lastEditByName"),
+            cancelledByName = getString("cancelledByName"),
             pendingSync = metadata.hasPendingWrites(),
         )
 

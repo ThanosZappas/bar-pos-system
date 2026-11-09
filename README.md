@@ -113,6 +113,39 @@ current session has any round or payment.
   refuses a queued change (for example an edit to a round that was served meanwhile), the app
   shows a message.
 
+## Order board and dashboard
+
+- **Order board** (dashboard home, and the first tab in the Android app for barman/admin):
+  every Preparing round plus unacknowledged cancellations, oldest first, with waiting time.
+  A round nobody has opened is highlighted gold ("New"); an edited or cancelled one red
+  ("Edited"/"Cancelled"), with the exact change read from its event log. "Got it" clears the
+  highlight (only barman/admin may), "Served" moves it off the board.
+- **Sound:** browsers block audio until the page gets a click, so the board shows
+  "Enable sound" once per page load. New orders play two rising notes; edits and
+  cancellations three falling notes.
+- **Tables:** live grid with the derived status colours and the amount due; click a table for
+  its rounds and totals. "Manage tables" leads to add/rename/reorder/remove.
+- Try it without phones: `npm run emulators`, then `npm --prefix tools/seed run seed:emulator`
+  and `npm --prefix tools/seed run demo:rounds` (emulator only; refuses a real project).
+
+## Hosting
+
+The dashboard is a static SPA on Firebase Hosting (`web/dist`, built by the predeploy step).
+It uses hash routes (`#/board`, `#/tables`, …), so it works on any domain without server
+rewrites. The Firebase web config is baked in at build time from `web/.env.local`.
+
+```bash
+npm run deploy:backend    # Firestore rules + indexes, Cloud Functions
+```
+
+```bash
+npm run deploy:hosting    # builds web/ and publishes it
+```
+
+To attach a custom subdomain later (e.g. `bar.example.gr`): Firebase console → Hosting →
+Add custom domain, create the DNS records it shows, then add the domain under
+Authentication → Settings → Authorized domains.
+
 ## Firebase configuration files (never committed)
 
 - `android/app/google-services.json`: from the Firebase console (Android app `gr.barlab.negroni`).
