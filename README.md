@@ -37,9 +37,60 @@ Checks run at the end of every milestone:
 ```bash
 (cd android && ./gradlew assembleDebug testDebugUnitTest && ./gradlew --stop)
 npm run test:web && npm run build:web
-npm run build:functions && npm run test:functions
-npm run test:rules        # starts the Firestore emulator (demo project, no login needed)
+npm run build:functions
+npm run test:backend      # functions + rules + seed tests in the Auth/Firestore emulators (demo project, no login)
 ```
+
+## Accounts and login
+
+- Staff log in with a **username**; Firebase Auth sees `<username>@users.negronibarlab.invalid`
+  (reserved `.invalid` domain, so no mail can ever be sent). Passwords live only in Firebase Auth (hashed).
+- Roles: `admin` (the barman/owner: everything), `barman` (order board in the Android app),
+  `server`. The dashboard is admin-only.
+- Role, active state and `mustChangePassword` live in `users/{uid}`. Security rules read that
+  document on every request, so deactivation and role changes apply at once. Only Cloud
+  Functions write it: `createUser`, `updateUser`, `resetPassword`, `changeOwnPassword`.
+  Every change is written to `auditLog`.
+- Anyone with `mustChangePassword` (the seeded admin, and anyone after a reset) can do nothing
+  except change their password.
+
+## Seeding
+
+Seed credentials live in `tools/seed/seed-credentials.json`, which is git-ignored. Create it
+with the initial accounts (admin + user1..user5, password = username twice):
+
+```bash
+npm --prefix tools/seed run init-credentials
+```
+
+Seed the emulators, or the real project once `gcloud auth application-default login` is done:
+
+```bash
+npm --prefix tools/seed run seed:emulator
+```
+
+```bash
+npm --prefix tools/seed run seed -- --project <projectId>
+```
+
+The seed is idempotent: existing accounts keep their passwords and flags.
+
+## Firebase configuration files (never committed)
+
+- `android/app/google-services.json`: from the Firebase console (Android app `gr.barlab.negroni`).
+  Without it the app builds but shows "Firebase is not configured".
+- `web/.env.local`: copy `web/.env.example` and fill in the web app's config.
+
+## Local development with the emulators
+
+```bash
+npm run emulators         # Auth, Firestore, Functions, UI on http://localhost:4000
+```
+
+Then run the dashboard against them with `VITE_USE_EMULATORS=true npm --prefix web run dev`.
+Debug Android builds use the emulators when `firebase.emulatorHost=<laptop LAN IP>` is set in
+`android/local.properties`; the emulators must then listen on the LAN (decided per session,
+not enabled by default).
 
 The Gradle settings keep memory low (1.5 GB heap, 2 workers). The Android
 emulator is not used for development on this laptop; on-device checks run on
@@ -58,11 +109,14 @@ Kept deliberately few. Every addition gets a line here.
 | Lifecycle Runtime Compose | Lifecycle-aware collection of data streams in the UI |
 | Compose BOM, UI, Material 3 | The required UI toolkit; the BOM pins compatible versions |
 | Compose UI Tooling (debug only) | Previews and layout inspection in Android Studio; debug builds only |
+| Lifecycle ViewModel Compose | Screen state that survives rotation; `viewModel {}` factories without a DI library |
+| Firebase BoM: Auth, Firestore, Functions | Login, data with offline cache, and the user-management callables |
+| kotlinx-coroutines-play-services | `await()` on Firebase tasks instead of callbacks |
+| Google Services Gradle plugin | Reads `google-services.json`; applied only when that file exists |
 | JUnit 4 (tests only) | Unit tests |
 
-Planned: Firebase BoM (Auth, Firestore, Functions), Navigation Compose,
-Lifecycle ViewModel Compose, kotlinx-coroutines-play-services, AppCompat
-(per-app language setting below Android 13).
+Planned: Navigation Compose (milestone 4), AppCompat (per-app language
+setting below Android 13, milestone 8).
 
 **Web** — `preact` (≈4 kB UI layer, saves hand-written DOM code for admin
 forms), `firebase` (official SDK). Dev only: `vite` (bundler/dev server),
@@ -72,6 +126,8 @@ forms), `firebase` (official SDK). Dev only: `vite` (bundler/dev server),
 Auth users and custom claims). Dev only: `typescript`, `vitest`.
 
 **Rules tests** — `@firebase/rules-unit-testing`, `firebase`, `vitest`.
+**Seed** — `firebase-admin` (creates Auth users and profile docs); dev only `vitest`.
+Runs with Node 22's built-in TypeScript support, so no build step.
 **Root** — `firebase-tools` (CLI, emulators, deploy), pinned per project.
 
 ## Fonts

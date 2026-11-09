@@ -1,0 +1,15 @@
+package gr.barlab.negroni
+
+import android.content.Context
+import gr.barlab.negroni.auth.SessionRepository
+import gr.barlab.negroni.data.FirebaseSetup
+
+/** Manual dependency injection: one instance per process, created by [NegroniApp]. */
+class AppContainer(context: Context) {
+    private val firebase = FirebaseSetup.init(context)
+
+    /** False when neither google-services.json nor an emulator host is configured. */
+    val isConfigured: Boolean = firebase != null
+
+    val sessions: SessionRepository? = firebase?.let { SessionRepository(it.auth, it.firestore, it.functions) }
+}

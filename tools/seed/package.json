@@ -1,0 +1,20 @@
+{
+  "name": "negroni-bar-lab-seed",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "init-credentials": "node init-credentials.ts",
+    "seed:emulator": "node seed.ts --emulator",
+    "seed": "node seed.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.0"
+  },
+  "devDependencies": {
+    "vitest": "5.1.0"
+  }
+}

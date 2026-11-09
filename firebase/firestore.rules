@@ -1,9 +1,43 @@
 rules_version = '2';
 
-// Milestone 1: everything denied. Role-based rules arrive with each feature milestone,
-// always together with emulator tests in firebase/test/.
+// Role and active state come from users/{uid}, not from token claims, so deactivation
+// and role changes apply immediately. users/* and auditLog/* are written only by
+// Cloud Functions (Admin SDK bypasses these rules).
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function me() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isStaff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && me().active == true
+        && me().mustChangePassword == false;
+    }
+    function hasRole(roles) {
+      return isStaff() && me().role in roles;
+    }
+    function isAdmin() {
+      return hasRole(['admin']);
+    }
+
+    match /users/{uid} {
+      // Everyone may read their own profile (needed for the forced password change screen).
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /auditLog/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Everything else stays closed until its milestone adds rules and tests.
     match /{document=**} {
       allow read, write: if false;
     }

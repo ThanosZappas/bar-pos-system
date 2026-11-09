@@ -3,5 +3,5 @@ import { t } from './index';
 
 describe('t', () => {
   it('returns English by default', () => expect(t('app.name', 'en')).toBe('Negroni Bar Lab'));
-  it('falls back to English for untranslated Greek keys', () => expect(t('skeleton.status', 'el')).toBe('Milestone 1 skeleton'));
+  it('falls back to English for untranslated Greek keys', () => expect(t('auth.signIn', 'el')).toBe('Sign in'));
 });
