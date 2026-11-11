@@ -1,7 +1,9 @@
 package gr.barlab.negroni
 
 import android.content.Context
+import gr.barlab.negroni.auth.DeviceLogin
 import gr.barlab.negroni.auth.SessionRepository
+import gr.barlab.negroni.shift.ShiftRepository
 import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.pos.NoOpPosGateway
@@ -16,7 +18,9 @@ class AppContainer(context: Context) {
     /** False when neither google-services.json nor an emulator host is configured. */
     val isConfigured: Boolean = firebase != null
 
-    val sessions: SessionRepository? = firebase?.let { SessionRepository(it.auth, it.firestore, it.functions) }
+    val sessions: SessionRepository? = firebase?.let { SessionRepository(DeviceLogin(context), it.auth, it.firestore, it.functions) }
+
+    val shifts: ShiftRepository? = firebase?.let { ShiftRepository(it.firestore) }
 
     val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore, it.functions) }
 

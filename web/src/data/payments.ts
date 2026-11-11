@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
-import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, Timestamp, where, writeBatch } from 'firebase/firestore';
+import { listen } from './live';
+import { collection, doc, orderBy, query, serverTimestamp, setDoc, Timestamp, where, writeBatch } from 'firebase/firestore';
 import { firebase } from '../firebase';
 import { paidCents, paymentFromDoc, reversalId, summaryLines, type Payment, type PaymentMethod } from '../domain/payments';
 import { noOpPosGateway, type PosGateway } from '../domain/pos';
@@ -38,7 +39,7 @@ export function useTodayPayments(): Payment[] | null {
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
     const q = query(collection(db(), 'payments'), where('createdAt', '>=', Timestamp.fromDate(midnight)), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snap) => setRows(snap.docs.map(paymentFromDoc)));
+    return listen(q, (snap) => setRows(snap.docs.map(paymentFromDoc)));
   }, []);
   return rows;
 }
@@ -95,7 +96,7 @@ export const DEFAULT_SETTINGS: Settings = { barName: 'Negroni Bar Lab', address:
 
 export function useSettings(): Settings {
   const [s, setS] = useState<Settings>(DEFAULT_SETTINGS);
-  useEffect(() => onSnapshot(doc(db(), 'settings', 'app'), (snap) => setS({ ...DEFAULT_SETTINGS, ...(snap.data() as Partial<Settings>) })), []);
+  useEffect(() => listen(doc(db(), 'settings', 'app'), (snap) => setS({ ...DEFAULT_SETTINGS, ...(snap.data() as Partial<Settings>) })), []);
   return s;
 }
 
@@ -120,7 +121,7 @@ export function useTodaySessions(): ClosedSession[] | null {
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
     const q = query(collection(db(), 'sessions'), where('closedAt', '>=', Timestamp.fromDate(midnight)), orderBy('closedAt', 'desc'));
-    return onSnapshot(q, (snap) =>
+    return listen(q, (snap) =>
       setRows(
         snap.docs.map((d) => {
           const x = d.data({ serverTimestamps: 'estimate' });

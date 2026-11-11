@@ -207,4 +207,25 @@
     <string name="role_admin">Admin</string>
     <string name="role_barman">Barman</string>
     <string name="role_server">Server</string>
+    <!-- Staff, permission to work, shift change -->
+    <string name="staff">Staff</string>
+    <string name="staff_explainer">Servers need your permission each shift (until 18:00). Allow them here, even before they ask.</string>
+    <string name="staff_trusted">Works without asking</string>
+    <string name="staff_approved">Can work until %1$s · allowed by %2$s</string>
+    <string name="staff_asked">Asked at %1$s</string>
+    <string name="staff_denied">Not allowed this shift</string>
+    <string name="staff_revoked">Permission taken back</string>
+    <string name="staff_not_started">Not started</string>
+    <string name="staff_revoke">Take back</string>
+    <string name="permission_hello">Hello, %1$s</string>
+    <string name="permission_explainer">Ask the barman for permission to start working this shift.</string>
+    <string name="permission_request">Request permission</string>
+    <string name="permission_waiting">Waiting for the barman…</string>
+    <string name="permission_denied">%1$s did not allow it. You can ask again.</string>
+    <string name="permission_revoked">%1$s took your permission back. You can ask again.</string>
+    <string name="permission_popup_title">Permission to work</string>
+    <string name="permission_popup_body">%1$s asks to start working.</string>
+    <string name="permission_allow">Allow</string>
+    <string name="permission_deny">Not now</string>
+    <string name="shift_over">The shift changed at 18:00. You will be signed out once everything is sent.</string>
 </resources>

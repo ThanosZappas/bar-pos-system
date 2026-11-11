@@ -195,4 +195,25 @@
     <string name="role_admin">Διαχειριστής</string>
     <string name="role_barman">Μπάρμαν</string>
     <string name="role_server">Σερβιτόρος</string>
+    <!-- Staff, permission to work, shift change -->
+    <string name="staff">Προσωπικό</string>
+    <string name="staff_explainer">Οι σερβιτόροι χρειάζονται την άδειά σας σε κάθε βάρδια (έως τις 18:00). Δώστε την εδώ, ακόμη και πριν τη ζητήσουν.</string>
+    <string name="staff_trusted">Δουλεύει χωρίς άδεια</string>
+    <string name="staff_approved">Μπορεί να δουλέψει έως %1$s · άδεια από %2$s</string>
+    <string name="staff_asked">Ζήτησε άδεια στις %1$s</string>
+    <string name="staff_denied">Χωρίς άδεια σε αυτή τη βάρδια</string>
+    <string name="staff_revoked">Η άδεια ανακλήθηκε</string>
+    <string name="staff_not_started">Δεν έχει ξεκινήσει</string>
+    <string name="staff_revoke">Ανάκληση</string>
+    <string name="permission_hello">Γεια σας, %1$s</string>
+    <string name="permission_explainer">Ζητήστε άδεια από τον μπάρμαν για να ξεκινήσετε τη βάρδια.</string>
+    <string name="permission_request">Αίτημα άδειας</string>
+    <string name="permission_waiting">Αναμονή για τον μπάρμαν…</string>
+    <string name="permission_denied">Ο/Η %1$s δεν έδωσε άδεια. Μπορείτε να ζητήσετε ξανά.</string>
+    <string name="permission_revoked">Ο/Η %1$s ανακάλεσε την άδειά σας. Μπορείτε να ζητήσετε ξανά.</string>
+    <string name="permission_popup_title">Άδεια για δουλειά</string>
+    <string name="permission_popup_body">Ο/Η %1$s ζητά να ξεκινήσει.</string>
+    <string name="permission_allow">Άδεια</string>
+    <string name="permission_deny">Όχι τώρα</string>
+    <string name="shift_over">Η βάρδια άλλαξε στις 18:00. Θα αποσυνδεθείτε μόλις σταλούν όλα.</string>
 </resources>

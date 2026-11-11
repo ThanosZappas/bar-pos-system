@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
-import { requireAdmin, type Deps } from './users.js';
+import { requireAdmin, RIGHT_DEFAULTS, type Deps, type Right, type Rights } from './users.js';
 
 /**
  * A table's open bill is its current session: every round and payment carries the session id.
@@ -15,12 +15,26 @@ async function sessionIsEmpty(deps: Deps, tx: Transaction, sessionId: string): P
   return true;
 }
 
-/** Any active staff member who has set their own password. */
-async function requireStaff(deps: Deps, callerUid: string | undefined): Promise<string> {
+/**
+ * Active staff member who has set their own password, is on shift (barman/admin, a trusted
+ * server, or a server approved until the next 18:00, with the same 2 h grace as the rules) and
+ * holds `right`. Mirrors canWork() and may() in firestore.rules.
+ */
+async function requireWorking(deps: Deps, callerUid: string | undefined, right: Right): Promise<string> {
   if (!callerUid) throw new HttpsError('unauthenticated', 'Sign in first.');
   const me = (await deps.db.doc(`users/${callerUid}`).get()).data();
   if (!me || me.active !== true) throw new HttpsError('permission-denied', 'This account is deactivated.');
   if (me.mustChangePassword !== false) throw new HttpsError('failed-precondition', 'Change your password first.');
+  if (me.role === 'admin' || me.role === 'barman') return callerUid;
+  const rights = (me.rights ?? {}) as Rights;
+  if (!(rights.noApproval ?? RIGHT_DEFAULTS.noApproval)) {
+    const shift = (await deps.db.doc(`shifts/${callerUid}`).get()).data();
+    const until = shift?.approvedUntil?.toMillis?.() ?? 0;
+    if (shift?.status !== 'approved' || Date.now() >= until + 2 * 3_600_000) {
+      throw new HttpsError('permission-denied', 'Ask the barman for permission first.');
+    }
+  }
+  if (!(rights[right] ?? RIGHT_DEFAULTS[right])) throw new HttpsError('permission-denied', 'You do not have this right.');
   return callerUid;
 }
 
@@ -57,7 +71,7 @@ export async function removeTable(deps: Deps, callerUid: string | undefined, raw
  * Refused unless the target is free (its current session has no rounds or payments).
  */
 export async function moveTable(deps: Deps, callerUid: string | undefined, raw: unknown): Promise<void> {
-  const actor = await requireStaff(deps, callerUid);
+  const actor = await requireWorking(deps, callerUid, 'moveTables');
   const fromId = stringArg(raw, 'fromTableId');
   const toId = stringArg(raw, 'toTableId');
   if (fromId === toId) throw new HttpsError('invalid-argument', 'Pick a different table.');

@@ -40,7 +40,8 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const fs = ctx.firestore();
-    const profile = (role: string) => ({ username: role, displayName: role, role, active: true, mustChangePassword: false });
+    // These tests are about orders and money, not permission: servers here work without asking.
+    const profile = (role: string) => ({ username: role, displayName: role, role, active: true, mustChangePassword: false, rights: { noApproval: true } });
     for (const r of ['admin', 'barman', 'server', 'server2']) await setDoc(doc(fs, 'users', r), profile(r === 'server2' ? 'server' : r));
     await setDoc(doc(fs, 'users/gone'), { ...profile('server'), active: false });
   });

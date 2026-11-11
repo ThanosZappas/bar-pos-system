@@ -22,12 +22,39 @@ export interface Deps {
   db: Firestore;
 }
 
+/**
+ * What a server may do, set by the admin. A missing entry means its default (see RIGHT_DEFAULTS);
+ * barman and admin always have every right. The Firestore rules enforce the same table.
+ */
+export const RIGHT_DEFAULTS = {
+  noApproval: false, // works without asking the barman for permission each shift
+  payments: true,
+  reversePayments: true,
+  closeTables: true,
+  cancelOrders: true,
+  moveTables: true,
+} as const;
+export type Right = keyof typeof RIGHT_DEFAULTS;
+export type Rights = Partial<Record<Right, boolean>>;
+
 export interface UserDoc {
   username: string;
   displayName: string;
   role: Role;
   active: boolean;
   mustChangePassword: boolean;
+  rights?: Rights;
+}
+
+export function parseRights(raw: unknown): Rights {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new HttpsError('invalid-argument', '"rights" must be an object.');
+  const rights: Rights = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (!(key in RIGHT_DEFAULTS)) throw new HttpsError('invalid-argument', `Unknown right "${key}".`);
+    if (typeof value !== 'boolean') throw new HttpsError('invalid-argument', `Right "${key}" must be true or false.`);
+    rights[key as Right] = value;
+  }
+  return rights;
 }
 
 type Data = Record<string, unknown>;
@@ -102,6 +129,7 @@ export async function createUser(deps: Deps, callerUid: string | undefined, raw:
   const displayName = parseDisplayName(requireString(data, 'displayName'));
   const role = parseRole(data.role);
   const password = checkPassword(data.password);
+  const rights = data.rights === undefined ? undefined : parseRights(data.rights);
 
   let uid: string;
   try {
@@ -117,6 +145,7 @@ export async function createUser(deps: Deps, callerUid: string | undefined, raw:
     role,
     active: true,
     mustChangePassword: true, // the admin's chosen password is temporary
+    ...(rights && { rights }),
     createdAt: now,
     createdBy: actor,
     updatedAt: now,
@@ -140,6 +169,8 @@ export async function updateUser(deps: Deps, callerUid: string | undefined, raw:
     if (typeof data.active !== 'boolean') throw new HttpsError('invalid-argument', '"active" must be true or false.');
     changes.active = data.active;
   }
+  // Rights are merged: the call names only the rights it changes.
+  if (data.rights !== undefined) changes.rights = { ...(target.rights ?? {}), ...parseRights(data.rights) };
   if (Object.keys(changes).length === 0) throw new HttpsError('invalid-argument', 'Nothing to change.');
   if (uid === actor && (changes.active === false || (changes.role !== undefined && changes.role !== 'admin'))) {
     throw new HttpsError('failed-precondition', 'You cannot deactivate yourself or remove your own admin role.');

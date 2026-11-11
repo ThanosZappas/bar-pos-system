@@ -29,7 +29,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.catch
+import gr.barlab.negroni.data.keepAlive
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -64,7 +64,7 @@ class OrdersRepository(
             db.collection(ROUNDS).whereIn("sessionId", chunk)
                 .snapshots(MetadataChanges.INCLUDE)
                 .map { snap -> snap.documents.map { it.toRound() } }
-                .catch { emit(emptyList()) }
+                .keepAlive()
         }
         return combine(flows) { parts -> parts.flatMap { it }.sortedBy { it.createdAtMs } }
     }
@@ -75,9 +75,9 @@ class OrdersRepository(
      */
     fun boardRounds(): Flow<List<Round>> = combine(
         db.collection(ROUNDS).whereEqualTo("status", RoundStatus.Preparing.wire).snapshots(MetadataChanges.INCLUDE)
-            .map { snap -> snap.documents.map { it.toRound() } }.catch { emit(emptyList()) },
+            .map { snap -> snap.documents.map { it.toRound() } }.keepAlive(),
         db.collection(ROUNDS).whereEqualTo("editSeen", false).snapshots(MetadataChanges.INCLUDE)
-            .map { snap -> snap.documents.map { it.toRound() } }.catch { emit(emptyList()) },
+            .map { snap -> snap.documents.map { it.toRound() } }.keepAlive(),
     ) { preparing, unseen -> (preparing + unseen).associateBy { it.id }.values.filter { it.isOnBoard }.sortedBy { it.createdAtMs } }
 
     /** Barman/admin has seen the round and its latest change: clears the highlight (rules allow only those roles). */
@@ -102,7 +102,7 @@ class OrdersRepository(
             db.collection(PAYMENTS).whereIn("sessionId", chunk)
                 .snapshots(MetadataChanges.INCLUDE)
                 .map { snap -> snap.documents.map { it.toPayment() } }
-                .catch { emit(emptyList()) }
+                .keepAlive()
         }
         return combine(flows) { parts -> parts.flatMap { it }.sortedBy { it.createdAtMs } }
     }

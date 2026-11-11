@@ -42,7 +42,7 @@ fun clock(ms: Long): String = TIME.format(Instant.ofEpochMilli(ms).atZone(ZoneId
 
 /** One round on a table: status, lines, notes, and the actions allowed while it is Preparing. */
 @Composable
-fun RoundCard(round: Round, onServe: () -> Unit, onEdit: () -> Unit, onCancel: () -> Unit, modifier: Modifier = Modifier) {
+fun RoundCard(round: Round, onServe: () -> Unit, onEdit: () -> Unit, onCancel: () -> Unit, modifier: Modifier = Modifier, canCancel: Boolean = true) {
     var confirmCancel by remember { mutableStateOf(false) }
     OutlinedCard(border = BorderStroke(Spacing.hairline, round.status.color()), modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
@@ -73,7 +73,7 @@ fun RoundCard(round: Round, onServe: () -> Unit, onEdit: () -> Unit, onCancel: (
             if (round.isEditable) {
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = onEdit) { Text(stringResource(R.string.round_edit)) }
-                    TextButton(onClick = { confirmCancel = true }) { Text(stringResource(R.string.round_cancel), color = BarLabColors.Error) }
+                    if (canCancel) TextButton(onClick = { confirmCancel = true }) { Text(stringResource(R.string.round_cancel), color = BarLabColors.Error) }
                     Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
                         Button(onClick = onServe) { Text(stringResource(R.string.round_mark_served).caps(), style = MaterialTheme.typography.labelLarge) }
                     }

@@ -6,6 +6,7 @@ import type { StaffUser } from '../session';
 import { Analytics } from './Analytics';
 import { Board } from './Board';
 import { SyncBanner } from './SyncBanner';
+import { RequestPopup } from './RequestPopup';
 import { Menu } from './Menu';
 import { PaymentsPage } from './PaymentsPage';
 import { SettingsPage } from './SettingsPage';
@@ -51,6 +52,7 @@ export function Shell({ user }: { user: StaffUser }) {
         </ul>
       </nav>
       <SyncBanner />
+      <RequestPopup user={user} />
       {route === 'users' && <Users me={user} />}
       {route === 'menu' && <Menu />}
       {route === 'tables' && <TablesOverview user={user} />}

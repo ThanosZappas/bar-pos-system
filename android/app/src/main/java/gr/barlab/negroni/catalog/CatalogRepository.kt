@@ -6,7 +6,7 @@ import com.google.firebase.firestore.snapshots
 import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
+import gr.barlab.negroni.data.keepAlive
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
@@ -24,7 +24,7 @@ class CatalogRepository(private val db: FirebaseFirestore, private val functions
 
     val tables: Flow<List<DiningTable>> = db.collection("tables").snapshots().map { snap ->
         snap.documents.filter { it.getBoolean("archived") != true }.map { it.toTable() }.sortedBy { it.order }
-    }.catch { emit(emptyList()) }
+    }.keepAlive()
 
     /** Header for the non-fiscal summary (settings/app, edited by the admin in the dashboard). */
     val receiptHeader: Flow<ReceiptHeader> = db.document("settings/app").snapshots().map { d ->
@@ -34,7 +34,7 @@ class CatalogRepository(private val db: FirebaseFirestore, private val functions
             phone = d.getString("phone").orEmpty(),
             footer = d.getString("receiptFooter").orEmpty(),
         )
-    }.catch { emit(ReceiptHeader.DEFAULT) }
+    }.keepAlive()
 
     /**
      * Guests change table: the open bill moves to a free table. The server checks the target is
@@ -48,7 +48,7 @@ class CatalogRepository(private val db: FirebaseFirestore, private val functions
     private fun <T> docs(collection: String, map: (DocumentSnapshot) -> T): Flow<List<T>> =
         db.collection(collection).snapshots().map { snap -> snap.documents.map(map) }
             // Access revoked mid-session (deactivated user): stop quietly; the session screen takes over.
-            .catch { emit(emptyList()) }
+            .keepAlive()
 
     private fun DocumentSnapshot.str(field: String) = getString(field).orEmpty()
     private fun DocumentSnapshot.num(field: String) = getLong(field) ?: 0L

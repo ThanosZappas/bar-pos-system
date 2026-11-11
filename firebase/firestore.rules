@@ -24,6 +24,29 @@ service cloud.firestore {
     function isAdmin() {
       return hasRole(['admin']);
     }
+    // Barman and admin run the bar: they never need permission and have every right.
+    function isLead() {
+      return hasRole(['admin', 'barman']);
+    }
+
+    // ── Rights per server (users/{uid}.rights, set by the admin through Cloud Functions).
+    // A missing right means its default: everything allowed except working without approval. ──
+    function may(right) {
+      return isLead() || me().get('rights', {}).get(right, true) == true;
+    }
+    // A server works only with today's approval (shifts/{uid}, valid until the next 18:00) or with
+    // the "works without asking" right. Two hours of grace let writes queued offline just before
+    // 18:00 still sync.
+    function onShift() {
+      let shift = /databases/$(database)/documents/shifts/$(request.auth.uid);
+      return isLead()
+        || me().get('rights', {}).get('noApproval', false) == true
+        || (exists(shift) && get(shift).data.status == 'approved'
+          && request.time < get(shift).data.approvedUntil + duration.value(2, 'h'));
+    }
+    function canWork() {
+      return isStaff() && onShift();
+    }
 
     // Every client write carries who and when (reportable later); the server clock is enforced.
     function stampedUpdate() {
@@ -52,7 +75,8 @@ service cloud.firestore {
     match /users/{uid} {
       // Everyone may read their own profile (needed for the forced password change screen).
       allow get: if signedIn() && request.auth.uid == uid;
-      allow read: if isAdmin();
+      // The barman lists servers to give them permission.
+      allow read: if isLead();
       allow write: if false;
     }
 
@@ -116,7 +140,7 @@ service cloud.firestore {
     function isClosing(tableId) {
       let old = resource.data.currentSessionId;
       let next = request.resource.data.currentSessionId;
-      return isStaff() && stampedUpdate()
+      return canWork() && may('closeTables') && stampedUpdate()
         && changesOnly(['currentSessionId', 'updatedAt', 'updatedBy'])
         && text(next, 10, 64) && next != old
         && existsAfter(/databases/$(database)/documents/sessions/$(old))
@@ -124,7 +148,7 @@ service cloud.firestore {
     }
     match /sessions/{sessionId} {
       allow read: if isStaff();
-      allow create: if isStaff()
+      allow create: if canWork() && may('closeTables')
         && request.resource.data.keys().hasOnly(['tableId', 'tableName', 'closedAt', 'closedBy', 'closedByName',
           'totalCents', 'paidCents', 'roundCount'])
         && request.resource.data.closedBy == request.auth.uid
@@ -206,6 +230,7 @@ service cloud.firestore {
         && changesOnly(['status', 'cancelledAt', 'cancelledBy', 'cancelledByName', 'editSeen',
           'updatedAt', 'updatedBy', 'lastEventId'])
         && d.cancelledAt == request.time && d.cancelledBy == request.auth.uid && d.editSeen == false
+        && may('cancelOrders')
         && loggedAs(roundId, 'cancelled');
     }
     // Undo an accidental "Served" within 2 minutes (server clock): back to Preparing, logged.
@@ -238,14 +263,14 @@ service cloud.firestore {
     }
     match /rounds/{roundId} {
       allow read: if isStaff();
-      allow create: if isStaff() && validNewRound() && loggedAs(roundId, 'created');
-      allow update: if isStaff() && roundTouched()
+      allow create: if canWork() && validNewRound() && loggedAs(roundId, 'created');
+      allow update: if canWork() && roundTouched()
         && (isEdit(roundId) || isServe(roundId) || isCancel(roundId) || isUnserve(roundId) || isRebill(roundId) || isOpen());
       allow delete: if false;
 
       match /events/{eventId} {
         allow read: if isStaff();
-        allow create: if isStaff()
+        allow create: if canWork()
           && request.resource.data.keys().hasOnly(['type', 'at', 'by', 'byName', 'changes', 'note'])
           && request.resource.data.type in ['created', 'edited', 'served', 'cancelled', 'unserved', 'moved']
           && request.resource.data.at == request.time
@@ -277,13 +302,42 @@ service cloud.firestore {
         && d.amountCents is int && d.method in ['cash', 'card']
         && d.createdBy == request.auth.uid && d.createdAt == request.time
         && text(d.createdByName, 0, 60) && d.clientCreatedAt is timestamp
-        && (('reversalOf' in d && isReversal(paymentId))
-          || (!('reversalOf' in d) && !('reason' in d) && d.amountCents > 0 && d.amountCents <= 10000000));
+        && (('reversalOf' in d && may('reversePayments') && isReversal(paymentId))
+          || (!('reversalOf' in d) && !('reason' in d) && may('payments') && d.amountCents > 0 && d.amountCents <= 10000000));
     }
     match /payments/{paymentId} {
       allow read: if isStaff();
-      allow create: if isStaff() && validPayment(paymentId);
+      allow create: if canWork() && validPayment(paymentId);
       allow update, delete: if false;
+    }
+
+    // ── Permission to work, one document per server. The server asks ("requested"); the barman
+    // or admin decides ("approved" until the next 18:00, "denied", or later "revoked") and may
+    // also approve without being asked. ──
+    function shiftKeys() {
+      return ['uid', 'displayName', 'shiftDay', 'status', 'requestedAt', 'decidedAt', 'decidedBy', 'decidedByName', 'approvedUntil'];
+    }
+    function isShiftRequest(uid) {
+      let d = request.resource.data;
+      return request.auth.uid == uid && d.status == 'requested' && d.requestedAt == request.time
+        && !d.keys().hasAny(['decidedAt', 'decidedBy', 'decidedByName', 'approvedUntil']);
+    }
+    function isShiftDecision() {
+      let d = request.resource.data;
+      return isLead() && d.status in ['approved', 'denied', 'revoked']
+        && d.decidedBy == request.auth.uid && d.decidedAt == request.time && text(d.decidedByName, 0, 60)
+        && (d.status != 'approved'
+          || (d.approvedUntil is timestamp && d.approvedUntil > request.time
+            && d.approvedUntil < request.time + duration.value(25, 'h')));
+    }
+    match /shifts/{uid} {
+      allow read: if isStaff() && (request.auth.uid == uid || isLead());
+      allow create, update: if isStaff()
+        && request.resource.data.keys().hasOnly(shiftKeys())
+        && request.resource.data.uid == uid
+        && text(request.resource.data.displayName, 0, 60) && text(request.resource.data.shiftDay, 10, 10)
+        && (isShiftRequest(uid) || isShiftDecision());
+      allow delete: if false;
     }
 
     // ── Settings shown on the non-fiscal summary. Staff read, admin writes. ──

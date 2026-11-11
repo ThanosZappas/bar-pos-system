@@ -41,7 +41,7 @@ import gr.barlab.negroni.ui.theme.Spacing
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditRoundSheet(round: Round, onSave: (List<OrderLine>, String) -> Unit, onCancelRound: () -> Unit, onDismiss: () -> Unit) {
+fun EditRoundSheet(round: Round, onSave: (List<OrderLine>, String) -> Unit, onCancelRound: () -> Unit, onDismiss: () -> Unit, canCancel: Boolean = true) {
     val lines = remember(round.id) { mutableStateListOf(*round.lines.toTypedArray()) }
     var note by remember(round.id) { mutableStateOf(round.note) }
     val allCancelled = lines.all { it.cancelled }
@@ -65,7 +65,7 @@ fun EditRoundSheet(round: Round, onSave: (List<OrderLine>, String) -> Unit, onCa
                 if (!savedCancelled) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         QtyStepper(line.qty, { lines[i] = line.copy(qty = it) }, min = 1, enabled = !line.cancelled)
-                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
+                        if (canCancel) Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
                             TextButton(onClick = { lines[i] = line.copy(cancelled = !line.cancelled) }) {
                                 Text(
                                     stringResource(if (line.cancelled) R.string.edit_restore_item else R.string.edit_cancel_item),

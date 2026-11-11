@@ -37,13 +37,36 @@ import kotlinx.coroutines.withTimeoutOrNull
 import gr.barlab.negroni.ui.home.HomeScreen
 import gr.barlab.negroni.ui.nav.rememberNavigator
 import gr.barlab.negroni.ui.nav.Screen
+import gr.barlab.negroni.shift.Shift
+import gr.barlab.negroni.shift.ShiftAccess
+import gr.barlab.negroni.shift.ShiftRepository
 import gr.barlab.negroni.ui.order.NewOrderScreen
+import gr.barlab.negroni.ui.shift.PermissionScreen
+import gr.barlab.negroni.ui.shift.RequestPopup
+import gr.barlab.negroni.ui.shift.StaffScreen
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.fillMaxWidth
+import gr.barlab.negroni.ui.theme.BarLabColors
+import gr.barlab.negroni.ui.theme.Spacing
+import kotlinx.coroutines.flow.map
 import gr.barlab.negroni.ui.settings.SettingsScreen
 import gr.barlab.negroni.ui.table.TableScreen
 
 /** Everything after sign-in: one live subscription each for tables, menu and table states. */
 @Composable
-fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepository, sync: SyncMonitor?, onSignOut: () -> Unit) {
+fun SignedInApp(
+    user: StaffUser,
+    catalog: CatalogRepository,
+    orders: OrdersRepository,
+    shifts: ShiftRepository,
+    sync: SyncMonitor?,
+    nowMs: Long,
+    shiftOver: Boolean,
+    onSignOut: () -> Unit,
+) {
     val nav = rememberNavigator()
     val snackbar = remember { SnackbarHostState() }
     val resources = LocalResources.current
@@ -91,11 +114,30 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, topBar = { SyncBanner(syncStatus) }) { padding ->
+    // Servers work only with today's permission (or the "works without asking" right).
+    val myShift by remember(user.uid) { shifts.myShift(user.uid).map { MyShift(it) } }.collectAsStateWithLifecycle(initialValue = null)
+    val canWork = ShiftAccess.canWork(user, myShift?.shift, nowMs)
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
+        topBar = {
+            Column {
+                SyncBanner(syncStatus)
+                if (shiftOver) ShiftOverBanner()
+            }
+        },
+    ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
+            if (user.isLead) RequestPopup(user, shifts)
+            if (!canWork) {
+                // Until the first snapshot arrives, show nothing rather than flash the request screen.
+                if (myShift != null) PermissionScreen(user, myShift?.shift, nowMs, onRequest = { shifts.request(user) }, onSignOut = onSignOut)
+                return@Box
+            }
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo)
+                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) })
                 Screen.Settings -> SettingsScreen(user, onBack = nav::back, onSignOut = onSignOut)
+                Screen.Staff -> StaffScreen(user, shifts, nowMs, onBack = nav::back)
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)
@@ -126,4 +168,18 @@ fun SignedInApp(user: StaffUser, catalog: CatalogRepository, orders: OrdersRepos
             }
         }
     }
+}
+
+/** "Loaded" wrapper so the first snapshot (possibly no document) differs from "not loaded yet". */
+private data class MyShift(val shift: Shift?)
+
+/** 18:00 passed: the phone signs out as soon as everything is sent, so nothing is lost. */
+@Composable
+private fun ShiftOverBanner() {
+    Text(
+        stringResource(R.string.shift_over),
+        style = MaterialTheme.typography.labelLarge,
+        color = BarLabColors.Text,
+        modifier = Modifier.fillMaxWidth().background(BarLabColors.Slate).padding(horizontal = Spacing.l, vertical = Spacing.s),
+    )
 }

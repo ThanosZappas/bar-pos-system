@@ -35,7 +35,7 @@ class ChangePasswordTest {
         val functions = FirebaseFunctions.getInstance(app, FirebaseSetup.REGION).apply { useEmulator("127.0.0.1", 5001) }
         Tasks.await(auth.signInWithEmailAndPassword("user3@users.negronibarlab.invalid", "user3user3"), 30, TimeUnit.SECONDS)
 
-        val result = SessionRepository(auth, db, functions).changePassword("user3", "user3user3", "phone-test-74", "phone-test-74")
+        val result = SessionRepository(gr.barlab.negroni.auth.DeviceLogin(context), auth, db, functions).changePassword("user3", "user3user3", "phone-test-74", "phone-test-74")
         val error = result.exceptionOrNull()
         assertTrue("changePassword failed: ${error?.javaClass?.name}: ${error?.message} / cause ${error?.cause}", result.isSuccess)
     }

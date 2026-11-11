@@ -89,18 +89,19 @@ fun TableScreen(
                     onServe = { onServe(round) },
                     onEdit = { editing = round },
                     onCancel = { orders.cancel(round, user) },
+                    canCancel = user.may { it.cancelOrders },
                 )
             }
             if (state.totalCents > 0 || payments.isNotEmpty()) {
                 item(key = "payments") {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                        PaymentsSection(state, payments, onReverse = { p, reason -> orders.reverse(p, reason, user) })
+                        PaymentsSection(state, payments, onReverse = { p, reason -> orders.reverse(p, reason, user) }, canReverse = user.may { it.reversePayments })
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                            if (state.dueCents > 0) OutlinedButton(onClick = { paying = true }) { Text(stringResource(R.string.pay_record).caps(), style = MaterialTheme.typography.labelLarge) }
+                            if (state.dueCents > 0 && user.may { it.payments }) OutlinedButton(onClick = { paying = true }) { Text(stringResource(R.string.pay_record).caps(), style = MaterialTheme.typography.labelLarge) }
                             TextButton(onClick = { showSummary = true }) { Text(stringResource(R.string.summary_button)) }
-                            TextButton(onClick = { moving = true }) { Text(stringResource(R.string.move_table)) }
+                            if (user.may { it.moveTables }) TextButton(onClick = { moving = true }) { Text(stringResource(R.string.move_table)) }
                         }
-                        if (state.status == TableStatus.Paid) {
+                        if (state.status == TableStatus.Paid && user.may { it.closeTables }) {
                             Button(onClick = { confirmClose = true }, modifier = Modifier.fillMaxWidth()) {
                                 Text(stringResource(R.string.close_table).caps(), style = MaterialTheme.typography.labelLarge)
                             }
@@ -157,6 +158,7 @@ fun TableScreen(
             round = live,
             onSave = { lines, note -> orders.edit(live, lines, note, user); editing = null },
             onCancelRound = { orders.cancel(live, user); editing = null },
+            canCancel = user.may { it.cancelOrders },
             onDismiss = { editing = null },
         )
     }

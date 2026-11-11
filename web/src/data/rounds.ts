@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
-import { collection, deleteField, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch, type DocumentData, type DocumentSnapshot, type Query, type Unsubscribe } from 'firebase/firestore';
+import { listen } from './live';
+import { collection, deleteField, doc, getDoc, query, serverTimestamp, where, writeBatch, type DocumentData, type DocumentSnapshot, type Query, type Unsubscribe } from 'firebase/firestore';
 import { firebase } from '../firebase';
 import { roundFromDoc, type Round } from '../domain/rounds';
 import { send } from './sync';
@@ -29,7 +30,7 @@ export function useMerged<T extends { id: string }>(
       return;
     }
     const unsubs: Unsubscribe[] = qs.map((q, i) =>
-      onSnapshot(q, (snap) => {
+      listen(q, (snap) => {
         parts.set(i, snap.docs.map(map));
         if (parts.size < qs.length) return; // wait for every query's first snapshot
         const byId = new Map<string, T>();

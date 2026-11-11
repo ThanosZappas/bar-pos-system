@@ -201,6 +201,17 @@ manager): `android/app/build/outputs/apk/debug/app-debug.apk`, built by
 
 ## Daily use
 
+**Shifts change at 18:00.** A login on a phone or the dashboard lasts until the next 18:00; then
+it asks for the password again (the username is remembered). If orders or payments are still
+waiting to sync at 18:00, the phone first sends them, then signs out.
+
+**Permission to work.** After the day's login a server sees one button, **Request permission**.
+The barman (Android board) and the admin (dashboard, on any page) get a popup with a sound:
+**Allow** / **Not now**. Permission lasts until 18:00. The barman can also allow servers before
+they ask, or take permission back: Android → **Staff**, dashboard → **Users** ("This shift").
+Barman and admin never need permission. Servers with the right "Works without asking" don't
+either.
+
 **Servers (Android):** sign in → **Tables** → tap a table → **New order** → tap items (set
 quantity and an optional note) → **Review** (order note) → **Send to bar**. While a round is
 Preparing it can be edited, items cancelled, or marked served (tapped "Served" by mistake?
@@ -227,7 +238,10 @@ All in the dashboard (admin account only):
 
 - **Users**: create (username, display name, role, temporary password), rename, change role,
   deactivate/activate, reset password. Roles: `admin` (everything, the barman/owner),
-  `barman` (order board in the Android app, no admin work), `server`.
+  `barman` (order board and staff permissions in the Android app, no admin work), `server`.
+  **Rights** per server: works without asking (off by default), take payments, reverse
+  payments, close tables, cancel orders, move tables (on by default, as before). The phone hides
+  what a server may not do, and the security rules refuse it anyway.
 - **Menu**: sections (tabs) → categories → items. Add, edit, hide (not orderable), reorder,
   delete (archived: gone everywhere, kept for reports), change prices ("8,50" or "8.50").
   Changes appear live on every phone.
@@ -279,6 +293,20 @@ on or off in Settings → Order board.
   the description.
 - Removing a table goes through the `removeTable` function, which refuses while the table's
   current session (its open bill) has any round or payment.
+
+### Shifts, permission and rights
+
+- `ShiftClock` (Android) / `domain/shift.ts` (dashboard): the shift key is the date whose 18:00
+  started the current shift. A login stores it on the device (before signing in, so the check
+  never races the sign-in); a different key means the login has expired.
+- `shifts/{uid}`: the server writes only `status: requested`; barman/admin write `approved`
+  (with `approvedUntil` = next 18:00, at most 25 h ahead), `denied` or `revoked`. Nobody deletes.
+- The rules' `canWork()` (orders, payments, closing, every round change) needs barman/admin, the
+  `noApproval` right, or an approval that runs out less than 2 hours ago: the grace lets orders
+  taken offline just before 18:00 still sync. `may(right)` checks the rights; a missing right
+  means its default. `moveTable` checks the same in the function.
+- Live listeners on both apps re-attach themselves after an error (e.g. a "permission denied"
+  right after sign-in), so the request popup and the board never go silently stale.
 
 ### Orders (rounds)
 

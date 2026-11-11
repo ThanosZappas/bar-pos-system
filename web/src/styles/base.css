@@ -299,3 +299,13 @@ button.primary.serve { align-self: flex-end; border-color: var(--slate); color: 
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
 .nav { gap: var(--s-6); }
 .nav-links { flex-wrap: wrap; justify-content: flex-end; row-gap: var(--s-2); }
+
+/* ── Permission to work, rights ── */
+.request-card { max-width: 420px; width: 100%; display: flex; flex-direction: column; gap: var(--s-4); background: var(--bg); }
+.request-card .title { font-size: 26px; }
+.request-card .desc { font-size: 18px; color: var(--text); }
+.shift-cell { display: inline-flex; gap: var(--s-3); align-items: baseline; flex-wrap: wrap; }
+.shift-cell .ok { color: var(--green); font-size: 13px; }
+.rights { border: none; display: flex; flex-direction: column; gap: var(--s-2); min-width: 320px; }
+.check { display: flex; gap: var(--s-2); align-items: baseline; font-size: 14px; color: var(--soft-text); cursor: pointer; }
+.check input { width: auto; flex: none; accent-color: var(--gold); }

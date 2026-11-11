@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'preact/hooks';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { listen } from '../data/live';
+import { collection, orderBy, query } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { firebase } from '../firebase';
 import { t, type Key } from '../i18n';
 import { MIN_PASSWORD_LENGTH } from '../lib/passwords';
 import type { Role, StaffUser } from '../session';
+import { hasRight, RIGHTS, type Rights } from '../domain/rights';
+import { decide, isApproved, useShifts, type Shift } from '../data/shifts';
+import { shiftKey } from '../domain/shift';
+import { useNow } from '../lib/useNow';
+import { clock } from '../lib/time';
+import { fill } from '../i18n/format';
 import { errorKey } from './errors';
 import { ErrorText, Field } from './Fields';
 
@@ -15,6 +22,7 @@ interface UserRow {
   role: Role;
   active: boolean;
   mustChangePassword: boolean;
+  rights?: Rights;
 }
 
 const ROLES: Role[] = ['admin', 'barman', 'server'];
@@ -32,11 +40,13 @@ function messageOf(err: unknown): string {
 
 export function Users({ me }: { me: StaffUser }) {
   const [rows, setRows] = useState<UserRow[]>([]);
+  const shifts = useShifts();
+  const now = useNow(30_000);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(
     () =>
-      onSnapshot(query(collection(firebase!.db, 'users'), orderBy('username')), (snap) =>
+      listen(query(collection(firebase!.db, 'users'), orderBy('username')), (snap) =>
         setRows(snap.docs.map((d) => ({ uid: d.id, ...(d.data() as Omit<UserRow, 'uid'>) }))),
       ),
     [],
@@ -53,12 +63,13 @@ export function Users({ me }: { me: StaffUser }) {
             <th>{t('users.displayName')}</th>
             <th>{t('users.role')}</th>
             <th>{t('users.status')}</th>
+            <th>{t('users.thisShift')}</th>
             <th />
           </tr>
         </thead>
         <tbody>
           {rows.map((u) => (
-            <UserRowView key={u.uid} row={u} isMe={u.uid === me.uid} onNotice={setNotice} />
+            <UserRowView key={u.uid} row={u} me={me} shift={shifts.get(u.uid)} now={now} onNotice={setNotice} />
           ))}
         </tbody>
       </table>
@@ -67,8 +78,10 @@ export function Users({ me }: { me: StaffUser }) {
   );
 }
 
-function UserRowView({ row, isMe, onNotice }: { row: UserRow; isMe: boolean; onNotice: (s: string) => void }) {
-  const [mode, setMode] = useState<'view' | 'edit' | 'reset'>('view');
+function UserRowView({ row, me, shift, now, onNotice }: { row: UserRow; me: StaffUser; shift?: Shift; now: number; onNotice: (s: string) => void }) {
+  const isMe = row.uid === me.uid;
+  const [mode, setMode] = useState<'view' | 'edit' | 'reset' | 'rights'>('view');
+  const [rights, setRights] = useState<Rights>(row.rights ?? {});
   const [displayName, setDisplayName] = useState(row.displayName);
   const [role, setRole] = useState<Role>(row.role);
   const [password, setPassword] = useState('');
@@ -101,8 +114,10 @@ function UserRowView({ row, isMe, onNotice }: { row: UserRow; isMe: boolean; onN
         <td>{row.displayName}</td>
         <td>{t(roleKey(row.role))}</td>
         <td>{status}</td>
+        <td>{row.role === 'server' && row.active && <ShiftCell row={row} shift={shift} now={now} me={me} />}</td>
         <td class="actions">
           <button class="link" onClick={() => setMode(mode === 'edit' ? 'view' : 'edit')}>{t('users.edit')}</button>
+          {row.role === 'server' && <button class="link" onClick={() => { setRights(row.rights ?? {}); setMode(mode === 'rights' ? 'view' : 'rights'); }}>{t('users.rights')}</button>}
           <button class="link" onClick={() => setMode(mode === 'reset' ? 'view' : 'reset')}>{t('users.resetPassword')}</button>
           {!isMe && (
             <button
@@ -120,16 +135,30 @@ function UserRowView({ row, isMe, onNotice }: { row: UserRow; isMe: boolean; onN
       </tr>
       {mode !== 'view' && (
         <tr class="editor">
-          <td colSpan={5}>
+          <td colSpan={6}>
             <form
               class="inline-form"
               onSubmit={(e) => {
                 e.preventDefault();
                 if (mode === 'edit') run(() => call('updateUser', { uid: row.uid, displayName, role }), 'users.saved');
+                else if (mode === 'rights') run(() => call('updateUser', { uid: row.uid, rights: Object.fromEntries(RIGHTS.map((r) => [r, hasRight(rights, r)])) }), 'users.saved');
                 else run(() => call('resetPassword', { uid: row.uid, password }), 'users.passwordReset');
               }}
             >
-              {mode === 'edit' ? (
+              {mode === 'rights' ? (
+                <fieldset class="rights">
+                  <legend class="field-label">{t('users.rightsTitle')}</legend>
+                  {RIGHTS.map((r) => (
+                    <label class="check">
+                      <input type="checkbox" checked={hasRight(rights, r)} onChange={(e) => setRights({ ...rights, [r]: (e.target as HTMLInputElement).checked })} />
+                      <span>
+                        {t(`right.${r}` as Key)}
+                        <span class="field-hint"> · {t(`right.${r}.hint` as Key)}</span>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+              ) : mode === 'edit' ? (
                 <>
                   <Field label={t('users.displayName')} value={displayName} onInput={setDisplayName} />
                   <label class="field">
@@ -195,5 +224,29 @@ function CreateUser({ onNotice }: { onNotice: (s: string) => void }) {
       <ErrorText text={error} />
       <button class="primary" disabled={busy || !username || !displayName || password.length < MIN_PASSWORD_LENGTH}>{t('users.create')}</button>
     </form>
+  );
+}
+
+/** This shift's permission for a server, with the action that fits: allow (also unasked) or take back. */
+function ShiftCell({ row, shift, now, me }: { row: UserRow; shift?: Shift; now: number; me: StaffUser }) {
+  if (hasRight(row.rights, 'noApproval')) return <span class="field-hint">{t('shift.trusted')}</span>;
+  const current = shift?.shiftDay === shiftKey(now) ? shift : undefined;
+  if (isApproved(current, now)) {
+    return (
+      <span class="shift-cell">
+        <span class="ok">{fill(t('shift.until'), { time: clock(current!.approvedUntilMs!) })}</span>
+        <button class="link danger" onClick={() => decide(row.uid, row.displayName, 'revoked', me)}>{t('shift.revoke')}</button>
+      </span>
+    );
+  }
+  const label = current?.status === 'requested' ? fill(t('shift.asked'), { time: clock(current.requestedAtMs ?? now) })
+    : current?.status === 'denied' ? t('shift.denied')
+    : current?.status === 'revoked' ? t('shift.revoked')
+    : t('shift.notStarted');
+  return (
+    <span class="shift-cell">
+      <span class="field-hint">{label}</span>
+      <button class="link" onClick={() => decide(row.uid, row.displayName, 'approved', me)}>{t('permission.allow')}</button>
+    </span>
   );
 }

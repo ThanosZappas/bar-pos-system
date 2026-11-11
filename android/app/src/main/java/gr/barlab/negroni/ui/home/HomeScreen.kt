@@ -45,6 +45,7 @@ fun HomeScreen(
     onTableClick: (DiningTable) -> Unit,
     onSettings: () -> Unit,
     onServe: (Round) -> Unit,
+    onStaff: () -> Unit,
 ) {
     val tabs = if (user.role.seesOrderBoard) HomeTab.entries else listOf(HomeTab.Tables, HomeTab.Menu)
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -59,6 +60,7 @@ fun HomeScreen(
                 modifier = Modifier.weight(1f).padding(start = Spacing.m),
                 maxLines = 1,
             )
+            if (user.isLead) TextButton(onClick = onStaff) { Text(stringResource(R.string.staff)) }
             TextButton(onClick = onSettings) { Text(stringResource(R.string.settings)) }
         }
         PrimaryTabRow(selectedTabIndex = tab.coerceIn(tabs.indices)) {

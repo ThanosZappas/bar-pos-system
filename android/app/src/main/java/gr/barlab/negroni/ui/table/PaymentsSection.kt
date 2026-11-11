@@ -42,7 +42,7 @@ import gr.barlab.negroni.ui.theme.Spacing
 
 /** Totals and payments of the current session, with reverse buttons. */
 @Composable
-fun PaymentsSection(state: TableState, payments: List<Payment>, onReverse: (Payment, String) -> Unit) {
+fun PaymentsSection(state: TableState, payments: List<Payment>, onReverse: (Payment, String) -> Unit, canReverse: Boolean = true) {
     var reversing by remember { mutableStateOf<Payment?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
         Text(stringResource(R.string.pay_title).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
@@ -66,7 +66,7 @@ fun PaymentsSection(state: TableState, payments: List<Payment>, onReverse: (Paym
                 if (p.pendingSync) Badge(stringResource(R.string.round_pending_sync), BarLabColors.Rust)
                 Text(Money.format(p.amountCents), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 if (reversed) Badge(stringResource(R.string.pay_reversed), BarLabColors.Faint)
-                else if (p.reversalOf == null) TextButton(onClick = { reversing = p }) { Text(stringResource(R.string.pay_reverse), color = BarLabColors.Error) }
+                else if (p.reversalOf == null && canReverse) TextButton(onClick = { reversing = p }) { Text(stringResource(R.string.pay_reverse), color = BarLabColors.Error) }
             }
         }
         val overpaid = state.paidCents - state.totalCents

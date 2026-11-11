@@ -37,7 +37,8 @@ import gr.barlab.negroni.ui.theme.Spacing
 import kotlinx.coroutines.launch
 
 class LoginViewModel(private val sessions: SessionRepository) : ViewModel() {
-    var username by mutableStateOf("")
+    // The phone remembers who signed in last; only the password is needed.
+    var username by mutableStateOf(sessions.lastUsername)
     var password by mutableStateOf("")
     var busy by mutableStateOf(false)
         private set

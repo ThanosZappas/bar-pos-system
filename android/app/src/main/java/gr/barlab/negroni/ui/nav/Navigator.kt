@@ -11,6 +11,7 @@ sealed interface Screen {
     data class Table(val tableId: String) : Screen
     data class NewOrder(val tableId: String) : Screen
     data object Settings : Screen
+    data object Staff : Screen
 }
 
 /**
@@ -36,6 +37,7 @@ internal object ScreenCodec {
     fun encode(s: Screen): String = when (s) {
         Screen.Home -> "home"
         Screen.Settings -> "settings"
+        Screen.Staff -> "staff"
         is Screen.Table -> "table:${s.tableId}"
         is Screen.NewOrder -> "order:${s.tableId}"
     }
@@ -43,6 +45,7 @@ internal object ScreenCodec {
     fun decode(code: String): Screen? = when {
         code == "home" -> Screen.Home
         code == "settings" -> Screen.Settings
+        code == "staff" -> Screen.Staff
         code.startsWith("table:") -> Screen.Table(code.removePrefix("table:"))
         code.startsWith("order:") -> Screen.NewOrder(code.removePrefix("order:"))
         else -> null

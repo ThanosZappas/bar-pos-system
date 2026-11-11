@@ -76,6 +76,14 @@ describe.skipIf(!onEmulators)('user management (emulators)', () => {
     expect((await deps.auth.getUser(uid)).disabled).toBe(false);
   });
 
+  it('sets rights on create and merges them on update; refuses unknown or non-boolean rights', async () => {
+    const { uid } = await createUser(deps, adminUid, { username: 'user1', displayName: 'Server 1', role: 'server', password: 'user1user1', rights: { noApproval: true } });
+    await updateUser(deps, adminUid, { uid, rights: { payments: false } });
+    expect((await deps.db.doc(`users/${uid}`).get()).get('rights')).toEqual({ noApproval: true, payments: false });
+    await expect(updateUser(deps, adminUid, { uid, rights: { fly: true } })).rejects.toMatchObject({ code: 'invalid-argument' });
+    await expect(updateUser(deps, adminUid, { uid, rights: { payments: 'yes' } })).rejects.toMatchObject({ code: 'invalid-argument' });
+  });
+
   it('admin cannot lock themselves out', async () => {
     await expect(updateUser(deps, adminUid, { uid: adminUid, active: false })).rejects.toMatchObject({ code: 'failed-precondition' });
     await expect(updateUser(deps, adminUid, { uid: adminUid, role: 'server' })).rejects.toMatchObject({ code: 'failed-precondition' });

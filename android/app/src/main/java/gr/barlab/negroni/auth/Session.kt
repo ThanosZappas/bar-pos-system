@@ -19,7 +19,41 @@ data class StaffUser(
     val displayName: String,
     val role: Role,
     val mustChangePassword: Boolean,
-)
+    val rights: Rights = Rights(),
+) {
+    /** Barman and admin run the bar: they never ask for permission and have every right. */
+    val isLead: Boolean get() = role != Role.Server
+
+    fun may(right: (Rights) -> Boolean): Boolean = isLead || right(rights)
+}
+
+/**
+ * What a server may do, set by the admin in the dashboard. Defaults match the Firestore rules and
+ * functions/src/users.ts RIGHT_DEFAULTS: everything allowed except working without approval.
+ */
+data class Rights(
+    val noApproval: Boolean = false,
+    val payments: Boolean = true,
+    val reversePayments: Boolean = true,
+    val closeTables: Boolean = true,
+    val cancelOrders: Boolean = true,
+    val moveTables: Boolean = true,
+) {
+    companion object {
+        fun from(map: Map<*, *>?): Rights {
+            fun flag(key: String, default: Boolean) = map?.get(key) as? Boolean ?: default
+            val d = Rights()
+            return Rights(
+                noApproval = flag("noApproval", d.noApproval),
+                payments = flag("payments", d.payments),
+                reversePayments = flag("reversePayments", d.reversePayments),
+                closeTables = flag("closeTables", d.closeTables),
+                cancelOrders = flag("cancelOrders", d.cancelOrders),
+                moveTables = flag("moveTables", d.moveTables),
+            )
+        }
+    }
+}
 
 sealed interface Session {
     data object Loading : Session

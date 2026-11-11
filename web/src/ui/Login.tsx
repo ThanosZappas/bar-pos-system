@@ -3,11 +3,12 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebase } from '../firebase';
 import { t } from '../i18n';
 import { usernameToEmail } from '../lib/usernames';
+import { lastUsername, rememberUsername, startShift } from '../lib/deviceLogin';
 import { errorKey } from './errors';
 import { ErrorText, Field } from './Fields';
 
 export function Login() {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(lastUsername());
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +21,9 @@ export function Login() {
     if (!email) return setError(t('error.wrongCredentials'));
     setBusy(true);
     try {
+      startShift();
       await signInWithEmailAndPassword(firebase.auth, email, password);
+      rememberUsername(username.trim().toLowerCase());
     } catch (err) {
       setError(t(errorKey(err) ?? 'error.unknown'));
     } finally {

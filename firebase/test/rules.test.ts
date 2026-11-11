@@ -43,9 +43,10 @@ describe('users', () => {
     await assertSucceeds(getDoc(doc(db('newAdmin'), 'users/newAdmin')));
     await assertSucceeds(getDoc(doc(db('gone'), 'users/gone')));
   });
-  it('non-admins cannot read other profiles or list users', async () => {
+  it('servers cannot read other profiles or list users; the barman can list them', async () => {
     await assertFails(getDoc(doc(db('server'), 'users/admin')));
-    await assertFails(getDocs(collection(db('barman'), 'users')));
+    await assertSucceeds(getDocs(collection(db('barman'), 'users'))); // to give servers permission
+    await assertFails(getDocs(collection(db('server'), 'users')));
     await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'users/server')));
   });
   it('active admin lists users; deactivated or unconfirmed admin cannot', async () => {
