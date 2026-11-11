@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -72,11 +73,18 @@ fun HomeScreen(
             else if (user.isLead) TextButton(onClick = onStaff) { Text(stringResource(R.string.staff)) }
             TextButton(onClick = onSettings) { Text(stringResource(R.string.settings)) }
         }
-        PrimaryTabRow(selectedTabIndex = tab.coerceIn(tabs.indices)) {
+        // Four spaced-out labels (admin) do not fit a phone's width, so the row scrolls; never wrap a label.
+        val tabItems: @Composable () -> Unit = {
             tabs.forEachIndexed { i, t ->
-                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(t.label).caps(), style = MaterialTheme.typography.labelLarge) })
+                Tab(
+                    selected = tab == i,
+                    onClick = { tab = i },
+                    text = { Text(stringResource(t.label).caps(), style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false) },
+                )
             }
         }
+        if (tabs.size > 3) PrimaryScrollableTabRow(selectedTabIndex = tab.coerceIn(tabs.indices), edgePadding = Spacing.l, tabs = tabItems)
+        else PrimaryTabRow(selectedTabIndex = tab.coerceIn(tabs.indices), tabs = tabItems)
         when (tabs[tab.coerceIn(tabs.indices)]) {
             HomeTab.Board -> BoardScreen(user, orders, tables, onServe)
             HomeTab.Tables -> TablesGrid(tables, states, onTableClick)

@@ -4,6 +4,7 @@ import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -184,9 +185,15 @@ private fun BoardCard(
                 else stringResource(R.string.round_edited_by, round.lastEditByName.orEmpty())
                 Text(who, style = MaterialTheme.typography.bodyMedium, color = BarLabColors.Error)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+            // Cancel on the left, the main actions on the right; buttons keep their natural width and
+            // wrap to a second line on narrow screens instead of squeezing a label letter by letter.
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+            ) {
                 if (round.status == RoundStatus.Preparing) {
-                    TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.board_cancel), color = BarLabColors.Error) }
+                    TextButton(onClick = onCancel) { Text(stringResource(R.string.board_cancel), color = BarLabColors.Error, maxLines = 1, softWrap = false) }
                 }
                 if (round.isNew || round.isChanged) OutlinedButton(onClick = onOpen) { Text(stringResource(R.string.board_got_it).caps(), style = MaterialTheme.typography.labelLarge) }
                 if (round.status == RoundStatus.Preparing) Button(onClick = onServe) { Text(stringResource(R.string.round_mark_served).caps(), style = MaterialTheme.typography.labelLarge) }
