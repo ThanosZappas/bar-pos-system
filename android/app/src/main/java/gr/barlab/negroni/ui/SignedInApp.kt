@@ -44,6 +44,9 @@ import gr.barlab.negroni.ui.order.NewOrderScreen
 import gr.barlab.negroni.ui.shift.PermissionScreen
 import gr.barlab.negroni.ui.shift.RequestPopup
 import gr.barlab.negroni.ui.shift.StaffScreen
+import gr.barlab.negroni.ui.admin.UsersScreen
+import gr.barlab.negroni.admin.UsersRepository
+import gr.barlab.negroni.auth.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +65,7 @@ fun SignedInApp(
     catalog: CatalogRepository,
     orders: OrdersRepository,
     shifts: ShiftRepository,
+    users: UsersRepository?,
     sync: SyncMonitor?,
     nowMs: Long,
     shiftOver: Boolean,
@@ -135,9 +139,12 @@ fun SignedInApp(
                 return@Box
             }
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) })
+                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs)
                 Screen.Settings -> SettingsScreen(user, onBack = nav::back, onSignOut = onSignOut)
                 Screen.Staff -> StaffScreen(user, shifts, nowMs, onBack = nav::back)
+                Screen.Users ->
+                    if (users != null && user.role == Role.Admin) UsersScreen(user, users, shifts, nowMs, onBack = nav::back)
+                    else LaunchedEffect(Unit) { nav.back() }
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }
                     if (table == null) MessageScreen(stringResource(R.string.table_not_found), onSignOut = null)

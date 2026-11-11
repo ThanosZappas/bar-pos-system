@@ -225,4 +225,49 @@
     <string name="staff_blocked">Μπλοκαρισμένος/η έως %1$s (δύο φορές «όχι τώρα»)</string>
     <string name="staff_cleared">Ξεμπλοκαρίστηκε, μπορεί να ζητήσει ξανά</string>
     <string name="staff_unblock">Ξεμπλοκάρισμα</string>
+    <!-- Admin on the phone: users and payments -->
+    <string name="tab_payments">Πληρωμές</string>
+    <string name="users">Χρήστες</string>
+    <string name="users_new">Νέος χρήστης</string>
+    <string name="users_deactivated">απενεργοποιημένος</string>
+    <string name="users_must_change">πρέπει να αλλάξει κωδικό</string>
+    <string name="users_you">εσείς</string>
+    <string name="users_name_role">Όνομα και ρόλος</string>
+    <string name="users_display_name">Εμφανιζόμενο όνομα</string>
+    <string name="users_save">Αποθήκευση</string>
+    <string name="users_saved">Αποθηκεύτηκε.</string>
+    <string name="users_rights">Δικαιώματα</string>
+    <string name="users_save_rights">Αποθήκευση δικαιωμάτων</string>
+    <string name="users_reset_password">Επαναφορά κωδικού</string>
+    <string name="users_temp_password">Προσωρινός κωδικός</string>
+    <plurals name="users_temp_password_hint">
+        <item quantity="one">Τουλάχιστον %1$d χαρακτήρας. Ορίζει δικό του στην πρώτη σύνδεση.</item>
+        <item quantity="other">Τουλάχιστον %1$d χαρακτήρες. Ορίζει δικό του στην πρώτη σύνδεση.</item>
+    </plurals>
+    <string name="users_password_reset">Ο κωδικός επαναφέρθηκε. Δώστε του τον προσωρινό κωδικό.</string>
+    <string name="users_account">Λογαριασμός</string>
+    <string name="users_deactivate">Απενεργοποίηση</string>
+    <string name="users_activate">Ενεργοποίηση</string>
+    <string name="users_delete">Διαγραφή</string>
+    <string name="users_delete_title">Διαγραφή του/της %1$s;</string>
+    <string name="users_delete_body">Η σύνδεσή του διαγράφεται και το όνομα χρήστη μπορεί να ξαναχρησιμοποιηθεί. Το όνομά του μένει στις παλιές παραγγελίες και πληρωμές.</string>
+    <string name="users_deleted">Διαγράφηκε.</string>
+    <string name="users_create">Δημιουργία χρήστη</string>
+    <string name="users_username_hint">3–32 πεζά λατινικά, ψηφία, τελεία, παύλα ή κάτω παύλα</string>
+    <string name="staff_no_login">Η σύνδεση είναι κλειστή</string>
+    <string name="right_log_in">Μπορεί να συνδεθεί</string>
+    <string name="right_no_approval">Δουλεύει χωρίς άδεια</string>
+    <string name="right_payments">Πληρωμές</string>
+    <string name="right_reverse_payments">Αντιλογισμός πληρωμών</string>
+    <string name="right_close_tables">Κλείσιμο τραπεζιών</string>
+    <string name="right_cancel_orders">Ακύρωση παραγγελιών</string>
+    <string name="right_move_tables">Μεταφορά τραπεζιών</string>
+    <string name="admin_payments_tonight">Πληρωμές απόψε</string>
+    <string name="admin_payments_totals">Μετρητά %1$s · Κάρτα %2$s · Σύνολο %3$s</string>
+    <string name="admin_closed_tonight">Τραπέζια που έκλεισαν απόψε</string>
+    <string name="admin_closed_none">Κανένα τραπέζι δεν έκλεισε ακόμη απόψε.</string>
+    <plurals name="admin_closed_row">
+        <item quantity="one">%1$s · τραπέζι %2$s · %3$d παραγγελία · %4$s</item>
+        <item quantity="other">%1$s · τραπέζι %2$s · %3$d παραγγελίες · %4$s</item>
+    </plurals>
 </resources>

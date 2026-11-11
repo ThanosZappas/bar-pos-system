@@ -237,4 +237,49 @@
     <string name="staff_blocked">Blocked until %1$s (said not now twice)</string>
     <string name="staff_cleared">Unblocked, may ask again</string>
     <string name="staff_unblock">Unblock</string>
+    <!-- Admin on the phone: users and payments -->
+    <string name="tab_payments">Payments</string>
+    <string name="users">Users</string>
+    <string name="users_new">New user</string>
+    <string name="users_deactivated">deactivated</string>
+    <string name="users_must_change">must change password</string>
+    <string name="users_you">you</string>
+    <string name="users_name_role">Name and role</string>
+    <string name="users_display_name">Display name</string>
+    <string name="users_save">Save</string>
+    <string name="users_saved">Saved.</string>
+    <string name="users_rights">Rights</string>
+    <string name="users_save_rights">Save rights</string>
+    <string name="users_reset_password">Reset password</string>
+    <string name="users_temp_password">Temporary password</string>
+    <plurals name="users_temp_password_hint">
+        <item quantity="one">At least %1$d character. They choose their own at first sign-in.</item>
+        <item quantity="other">At least %1$d characters. They choose their own at first sign-in.</item>
+    </plurals>
+    <string name="users_password_reset">Password reset. Give them the temporary password.</string>
+    <string name="users_account">Account</string>
+    <string name="users_deactivate">Deactivate</string>
+    <string name="users_activate">Activate</string>
+    <string name="users_delete">Delete</string>
+    <string name="users_delete_title">Delete %1$s?</string>
+    <string name="users_delete_body">Their login is removed and the username can be used again. Their name stays on past orders and payments.</string>
+    <string name="users_deleted">Deleted.</string>
+    <string name="users_create">Create user</string>
+    <string name="users_username_hint">3–32 lowercase letters, digits, dot, dash or underscore</string>
+    <string name="staff_no_login">Signing in turned off</string>
+    <string name="right_log_in">Can sign in</string>
+    <string name="right_no_approval">Works without asking</string>
+    <string name="right_payments">Take payments</string>
+    <string name="right_reverse_payments">Reverse payments</string>
+    <string name="right_close_tables">Close tables</string>
+    <string name="right_cancel_orders">Cancel orders</string>
+    <string name="right_move_tables">Move tables</string>
+    <string name="admin_payments_tonight">Payments tonight</string>
+    <string name="admin_payments_totals">Cash %1$s · Card %2$s · Total %3$s</string>
+    <string name="admin_closed_tonight">Tables closed tonight</string>
+    <string name="admin_closed_none">No table closed yet tonight.</string>
+    <plurals name="admin_closed_row">
+        <item quantity="one">%1$s · table %2$s · %3$d order · %4$s</item>
+        <item quantity="other">%1$s · table %2$s · %3$d orders · %4$s</item>
+    </plurals>
 </resources>

@@ -236,10 +236,13 @@ when the connection returns.
 
 ## Admin tasks
 
-All in the dashboard (admin account only):
+In the dashboard, and for the admin also in the Android app (**Users** in the top bar,
+**Payments** tab). User changes go through Cloud Functions, so they need a connection.
 
 - **Users**: create (username, display name, role, temporary password), rename, change role,
-  deactivate/activate, reset password. Roles: `admin` (everything, the barman/owner),
+  deactivate/activate, reset password, **delete** (removes the login so the username can be
+  reused; the name stays on past orders and payments; you cannot delete yourself or the last
+  admin). Roles: `admin` (everything, the barman/owner),
   `barman` (order board and staff permissions in the Android app, no admin work), `server`.
   **Rights** per server: can sign in (on by default; off means the server cannot use the app at
   all, a quick switch unlike deactivating the account), works without asking (off by default),
@@ -250,8 +253,8 @@ All in the dashboard (admin account only):
   Changes appear live on every phone.
 - **Tables → Manage tables**: add, rename, reorder, remove (refused while the table has an
   open order).
-- **Payments**: today's payments with cash and card totals, and today's closed bills (open one
-  to see its lines and payments).
+- **Payments**: tonight's payments (since 06:00, so 01:00 still counts as tonight) with cash and
+  card totals, and tonight's closed bills (open one to see its lines and payments).
 - **Analytics**: per day, week, month or year (a business day runs 06:00–06:00): income with
   cash/card split, tables closed, average bill, items sold, median time to serve, income over
   time, most popular items, sales by category, busiest hours, staff, cancellations and changes.
@@ -465,13 +468,12 @@ claims). Dev only: `typescript`, `vitest`.
 **Icon**: `opentype.js` (dev only, reads the font outlines).
 **Root**: `firebase-tools` (CLI, emulators, deploy), pinned per project.
 
-**Fonts**: Lato, Playfair Display and Dancing Script, SIL Open Font License 1.1, bundled
-unmodified (licences in `design/fonts/`). They have no Greek glyphs; Greek text falls back to
-the system font.
+**Fonts**: Lato, Playfair Display and Dancing Script (the site's), plus Greek-only subsets of
+Commissioner and Noto Serif Display for Greek letters; all SIL Open Font License 1.1, licences in
+`design/fonts/`. How they are combined: `design/tokens.md`.
 
 ## Known limits
 
-- The bundled fonts have no Greek letters, so Greek text uses the system font.
 - No reports yet, no real POS or fiscal integration (design seam only).
 - Two phones paying the same table while both offline can overpay; it is shown as "Overpaid"
   and corrected with a reversal.

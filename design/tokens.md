@@ -62,9 +62,18 @@ and letter-spacing stay the same.
 
 Spacing scale derived from the above (dp/px): 4, 8, 12, 16, 20, 24, 32, 40, 60.
 
-## Glyph coverage note
+## Greek letters
 
-The Google Fonts builds of Lato and Playfair Display bundled here have no Greek
-glyphs. Greek text (menu items now, the Greek UI later) falls back per glyph to
-the system font on Android and in browsers. Fonts are bundled unmodified, as
-required by the OFL's Reserved Font Name clause; licences are in `design/fonts/`.
+Lato and Playfair Display have no Greek glyphs. Greek (the Greek UI and Greek menu entries) comes
+from matching fonts, letter by letter, while Latin keeps the site's fonts:
+
+| Site font        | Greek from           | Why |
+|------------------|----------------------|-----|
+| Lato 300/400/700 | Commissioner 300/400/700 | Humanist sans with the same x-height as Lato (0.50 em) and a similar light colour |
+| Playfair Display 400/700 | Noto Serif Display 400/700 | Upright high-contrast display serif like Playfair (GFS Didot's Greek is more calligraphic) |
+
+The Greek fonts are Greek-only subsets (U+0370–03FF, about 15–20 KB each) served by Google Fonts'
+text subsetting; both are SIL OFL 1.1 without Reserved Font Names. Android combines them with
+`Typeface.CustomFallbackBuilder` (`ui/theme/Type.kt`), the dashboard with `unicode-range`
+(`web/src/styles/tokens.css`). Dancing Script (wordmark) is Latin-only. The site's own fonts are
+bundled unmodified, as their Reserved Font Name clause requires; licences are in `design/fonts/`.

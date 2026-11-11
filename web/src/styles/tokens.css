@@ -4,6 +4,14 @@
 @font-face { font-family: 'Lato'; font-weight: 700; font-display: swap; src: url('../assets/fonts/lato_bold.ttf') format('truetype'); }
 @font-face { font-family: 'Playfair Display'; font-weight: 400; font-display: swap; src: url('../assets/fonts/playfair_display_regular.ttf') format('truetype'); }
 @font-face { font-family: 'Playfair Display'; font-weight: 700; font-display: swap; src: url('../assets/fonts/playfair_display_bold.ttf') format('truetype'); }
+/* Greek letters: the site's fonts have none, so each family gets a Greek-only face from a matching
+   font (Commissioner under Lato, Noto Serif Display under Playfair Display). unicode-range makes
+   the browser use it per letter; Latin keeps the original fonts. See design/tokens.md. */
+@font-face { font-family: 'Lato'; font-weight: 300; font-display: swap; unicode-range: U+0370-03FF; src: url('../assets/fonts/commissioner_greek_light.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-weight: 400; font-display: swap; unicode-range: U+0370-03FF; src: url('../assets/fonts/commissioner_greek_regular.ttf') format('truetype'); }
+@font-face { font-family: 'Lato'; font-weight: 700; font-display: swap; unicode-range: U+0370-03FF; src: url('../assets/fonts/commissioner_greek_bold.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-weight: 400; font-display: swap; unicode-range: U+0370-03FF; src: url('../assets/fonts/noto_serif_display_greek_regular.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-weight: 700; font-display: swap; unicode-range: U+0370-03FF; src: url('../assets/fonts/noto_serif_display_greek_bold.ttf') format('truetype'); }
 @font-face { font-family: 'Dancing Script'; font-weight: 600; font-display: swap; src: url('../assets/fonts/dancing_script_semibold.ttf') format('truetype'); }
 
 :root {

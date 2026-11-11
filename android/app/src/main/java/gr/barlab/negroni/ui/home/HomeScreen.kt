@@ -27,12 +27,13 @@ import gr.barlab.negroni.catalog.Menu
 import gr.barlab.negroni.domain.Round
 import gr.barlab.negroni.domain.TableState
 import gr.barlab.negroni.orders.OrdersRepository
+import gr.barlab.negroni.ui.admin.PaymentsTab
 import gr.barlab.negroni.ui.board.BoardScreen
 import gr.barlab.negroni.ui.catalog.MenuList
 import gr.barlab.negroni.ui.catalog.TablesGrid
 import gr.barlab.negroni.ui.theme.Spacing
 
-private enum class HomeTab(val label: Int) { Board(R.string.tab_board), Tables(R.string.tab_tables), Menu(R.string.tab_menu) }
+private enum class HomeTab(val label: Int) { Board(R.string.tab_board), Tables(R.string.tab_tables), Menu(R.string.tab_menu), Payments(R.string.tab_payments) }
 
 /** Signed-in home: the order board (barman and admin only), the table grid (tap to order) and the menu. */
 @Composable
@@ -46,8 +47,14 @@ fun HomeScreen(
     onSettings: () -> Unit,
     onServe: (Round) -> Unit,
     onStaff: () -> Unit,
+    onUsers: () -> Unit,
+    nowMs: Long,
 ) {
-    val tabs = if (user.role.seesOrderBoard) HomeTab.entries else listOf(HomeTab.Tables, HomeTab.Menu)
+    val tabs = when (user.role) {
+        Role.Admin -> HomeTab.entries
+        Role.Barman -> listOf(HomeTab.Board, HomeTab.Tables, HomeTab.Menu)
+        Role.Server -> listOf(HomeTab.Tables, HomeTab.Menu)
+    }
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
     Column(Modifier.fillMaxSize()) {
@@ -60,7 +67,9 @@ fun HomeScreen(
                 modifier = Modifier.weight(1f).padding(start = Spacing.m),
                 maxLines = 1,
             )
-            if (user.isLead) TextButton(onClick = onStaff) { Text(stringResource(R.string.staff)) }
+            // The admin manages users (with each server's shift permission); the barman only permissions.
+            if (user.role == Role.Admin) TextButton(onClick = onUsers) { Text(stringResource(R.string.users)) }
+            else if (user.isLead) TextButton(onClick = onStaff) { Text(stringResource(R.string.staff)) }
             TextButton(onClick = onSettings) { Text(stringResource(R.string.settings)) }
         }
         PrimaryTabRow(selectedTabIndex = tab.coerceIn(tabs.indices)) {
@@ -72,6 +81,7 @@ fun HomeScreen(
             HomeTab.Board -> BoardScreen(user, orders, tables, onServe)
             HomeTab.Tables -> TablesGrid(tables, states, onTableClick)
             HomeTab.Menu -> MenuList(menu)
+            HomeTab.Payments -> PaymentsTab(orders, nowMs)
         }
     }
 }

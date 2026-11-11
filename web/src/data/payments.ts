@@ -4,6 +4,7 @@ import { collection, doc, orderBy, query, serverTimestamp, setDoc, Timestamp, wh
 import { firebase } from '../firebase';
 import { paidCents, paymentFromDoc, reversalId, summaryLines, type Payment, type PaymentMethod } from '../domain/payments';
 import { noOpPosGateway, type PosGateway } from '../domain/pos';
+import { periodRange } from '../domain/analytics';
 import { deriveTableState, type Round } from '../domain/rounds';
 import type { Table } from './catalog';
 import { chunks, useMerged } from './rounds';
@@ -32,13 +33,16 @@ export function useSessionPayments(sessionIds: string[]): Payment[] | null {
   );
 }
 
-/** Payments recorded since local midnight, newest first. */
+/** Start of tonight: the bar's business day begins at 06:00 (01:00 belongs to the evening before). */
+function tonightStart(): Date {
+  return periodRange('day', new Date()).start;
+}
+
+/** Payments recorded tonight (since 06:00), newest first. */
 export function useTodayPayments(): Payment[] | null {
   const [rows, setRows] = useState<Payment[] | null>(null);
   useEffect(() => {
-    const midnight = new Date();
-    midnight.setHours(0, 0, 0, 0);
-    const q = query(collection(db(), 'payments'), where('createdAt', '>=', Timestamp.fromDate(midnight)), orderBy('createdAt', 'desc'));
+    const q = query(collection(db(), 'payments'), where('createdAt', '>=', Timestamp.fromDate(tonightStart())), orderBy('createdAt', 'desc'));
     return listen(q, (snap) => setRows(snap.docs.map(paymentFromDoc)));
   }, []);
   return rows;
@@ -114,13 +118,11 @@ export interface ClosedSession {
   roundCount: number;
 }
 
-/** Bills closed since local midnight, newest first. */
+/** Bills closed tonight (since 06:00), newest first. */
 export function useTodaySessions(): ClosedSession[] | null {
   const [rows, setRows] = useState<ClosedSession[] | null>(null);
   useEffect(() => {
-    const midnight = new Date();
-    midnight.setHours(0, 0, 0, 0);
-    const q = query(collection(db(), 'sessions'), where('closedAt', '>=', Timestamp.fromDate(midnight)), orderBy('closedAt', 'desc'));
+    const q = query(collection(db(), 'sessions'), where('closedAt', '>=', Timestamp.fromDate(tonightStart())), orderBy('closedAt', 'desc'));
     return listen(q, (snap) =>
       setRows(
         snap.docs.map((d) => {

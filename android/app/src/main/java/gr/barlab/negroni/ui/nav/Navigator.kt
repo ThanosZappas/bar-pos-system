@@ -12,6 +12,7 @@ sealed interface Screen {
     data class NewOrder(val tableId: String) : Screen
     data object Settings : Screen
     data object Staff : Screen
+    data object Users : Screen
 }
 
 /**
@@ -38,6 +39,7 @@ internal object ScreenCodec {
         Screen.Home -> "home"
         Screen.Settings -> "settings"
         Screen.Staff -> "staff"
+        Screen.Users -> "users"
         is Screen.Table -> "table:${s.tableId}"
         is Screen.NewOrder -> "order:${s.tableId}"
     }
@@ -46,6 +48,7 @@ internal object ScreenCodec {
         code == "home" -> Screen.Home
         code == "settings" -> Screen.Settings
         code == "staff" -> Screen.Staff
+        code == "users" -> Screen.Users
         code.startsWith("table:") -> Screen.Table(code.removePrefix("table:"))
         code.startsWith("order:") -> Screen.NewOrder(code.removePrefix("order:"))
         else -> null

@@ -43,6 +43,9 @@ import kotlinx.coroutines.flow.map
  * If the server refuses a queued write after reconnecting (e.g. the round was already served),
  * it is reported on [writeFailures].
  */
+/** A closed table's bill (sessions/{id}). */
+data class ClosedBill(val sessionId: String, val tableName: String, val closedAtMs: Long, val closedByName: String, val totalCents: Long, val roundCount: Int)
+
 class OrdersRepository(
     private val db: FirebaseFirestore,
     private val pos: PosGateway,
@@ -106,6 +109,31 @@ class OrdersRepository(
         }
         return combine(flows) { parts -> parts.flatMap { it }.sortedBy { it.createdAtMs } }
     }
+
+    /** Payments recorded since [sinceMs], newest first (live). */
+    fun paymentsSince(sinceMs: Long): Flow<List<Payment>> =
+        db.collection(PAYMENTS).whereGreaterThanOrEqualTo("createdAt", Timestamp(java.util.Date(sinceMs)))
+            .snapshots(MetadataChanges.INCLUDE)
+            .map { snap -> snap.documents.map { it.toPayment() }.sortedByDescending { it.createdAtMs } }
+            .keepAlive()
+
+    /** Bills closed since [sinceMs], newest first (live). */
+    fun closedBillsSince(sinceMs: Long): Flow<List<ClosedBill>> =
+        db.collection("sessions").whereGreaterThanOrEqualTo("closedAt", Timestamp(java.util.Date(sinceMs)))
+            .snapshots()
+            .map { snap ->
+                snap.documents.map { d ->
+                    ClosedBill(
+                        sessionId = d.id,
+                        tableName = d.getString("tableName").orEmpty(),
+                        closedAtMs = d.getTimestamp("closedAt", DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)?.toDate()?.time ?: 0L,
+                        closedByName = d.getString("closedByName").orEmpty(),
+                        totalCents = d.getLong("totalCents") ?: 0L,
+                        roundCount = d.getLong("roundCount")?.toInt() ?: 0,
+                    )
+                }.sortedByDescending { it.closedAtMs }
+            }
+            .keepAlive()
 
     fun tableStates(tables: List<DiningTable>): Flow<Map<String, TableState>> {
         val sessions = tables.map { it.currentSessionId }

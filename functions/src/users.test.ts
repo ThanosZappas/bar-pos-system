@@ -2,7 +2,7 @@ import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { changeOwnPassword, createUser, resetPassword, updateUser, type Deps } from './users';
+import { changeOwnPassword, createUser, deleteUser, resetPassword, updateUser, type Deps } from './users';
 
 // Runs only inside `firebase emulators:exec --only auth,firestore` (see root package.json).
 const onEmulators = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST && process.env.FIRESTORE_EMULATOR_HOST);
@@ -82,6 +82,26 @@ describe.skipIf(!onEmulators)('user management (emulators)', () => {
     expect((await deps.db.doc(`users/${uid}`).get()).get('rights')).toEqual({ noApproval: true, payments: false });
     await expect(updateUser(deps, adminUid, { uid, rights: { fly: true } })).rejects.toMatchObject({ code: 'invalid-argument' });
     await expect(updateUser(deps, adminUid, { uid, rights: { payments: 'yes' } })).rejects.toMatchObject({ code: 'invalid-argument' });
+  });
+
+  it('deletes the login but keeps the profile; the username can be used again', async () => {
+    const { uid } = await createUser(deps, adminUid, { username: 'user1', displayName: 'Server 1', role: 'server', password: 'user1user1' });
+    await deleteUser(deps, adminUid, { uid });
+    await expect(deps.auth.getUser(uid)).rejects.toMatchObject({ code: 'auth/user-not-found' });
+    expect((await deps.db.doc(`users/${uid}`).get()).data()).toMatchObject({ deleted: true, active: false, username: 'user1', deletedBy: adminUid });
+    const again = await createUser(deps, adminUid, { username: 'user1', displayName: 'New Server 1', role: 'server', password: 'user1user1' });
+    expect(again.uid).not.toBe(uid);
+    await expect(deleteUser(deps, adminUid, { uid })).rejects.toMatchObject({ code: 'not-found' });
+  });
+
+  it('refuses to delete yourself or the last admin, and is admin-only', async () => {
+    await expect(deleteUser(deps, adminUid, { uid: adminUid })).rejects.toMatchObject({ code: 'failed-precondition' });
+    const { uid: second } = await createUser(deps, adminUid, { username: 'boss2', displayName: 'Boss 2', role: 'admin', password: 'boss2boss2' });
+    await deps.db.doc(`users/${second}`).update({ mustChangePassword: false });
+    await expect(deleteUser(deps, second, { uid: adminUid })).resolves.toBeUndefined(); // another admin remains (second)
+    const { uid: server } = await createUser(deps, second, { username: 'user2', displayName: 'S', role: 'server', password: 'user2user2' });
+    await deps.db.doc(`users/${server}`).update({ mustChangePassword: false });
+    await expect(deleteUser(deps, server, { uid: second })).rejects.toMatchObject({ code: 'permission-denied' });
   });
 
   it('admin cannot lock themselves out', async () => {

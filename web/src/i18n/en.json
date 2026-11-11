@@ -148,7 +148,7 @@
   "pay.reasonPrompt": "Why is this payment reversed? (required)",
   "pay.none": "No payments yet.",
   "pay.overpaid": "Overpaid by {amount}: reverse the extra payment.",
-  "pay.today": "Today",
+  "pay.today": "Tonight (since 06:00)",
   "pay.todayTotals": "Cash {cash} · Card {card} · Total {total}",
   "pay.table": "Table",
   "pay.by": "By",
@@ -188,8 +188,8 @@
   "move.label": "Move guests to",
   "move.button": "Move",
   "move.none": "No free table to move to.",
-  "closed.title": "Closed tables today",
-  "closed.none": "No table closed yet today.",
+  "closed.title": "Closed tables tonight",
+  "closed.none": "No table closed yet tonight.",
   "closed.row": "{time} · table {name} · {rounds} rounds · by {by}",
   "closed.show": "Show",
   "closed.hide": "Hide",
@@ -272,5 +272,8 @@
   "shift.unblock": "Unblock",
   "shift.deniedCount": "Not allowed ({n} of {max})",
   "shift.cleared": "Unblocked, may ask again",
-  "permission.lastChance": "Saying \"Not now\" again blocks {name} from asking until 18:00."
+  "permission.lastChance": "Saying \"Not now\" again blocks {name} from asking until 18:00.",
+  "users.delete": "Delete",
+  "users.confirmDelete": "Delete {name}? Their login is removed and the username can be used again. Their name stays on past orders and payments.",
+  "users.deleted": "Deleted."
 }

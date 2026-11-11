@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 
 // The site is dark-only, so the app is too.
@@ -40,9 +42,11 @@ private val BarLabShapes = Shapes(
 
 @Composable
 fun BarLabTheme(content: @Composable () -> Unit) {
+    val resources = LocalResources.current
+    val typography = remember(resources) { barLabTypography(BarLabFonts(resources)) }
     MaterialTheme(
         colorScheme = BarLabColorScheme,
-        typography = BarLabTypography,
+        typography = typography,
         shapes = BarLabShapes,
         content = content,
     )

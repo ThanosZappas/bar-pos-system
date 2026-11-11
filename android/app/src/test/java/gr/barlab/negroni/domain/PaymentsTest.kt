@@ -56,3 +56,14 @@ class PaymentsTest {
         )
     }
 }
+
+class BusinessDayTest {
+    private val athens = java.time.ZoneId.of("Europe/Athens")
+    private fun at(d: Int, h: Int) = java.time.LocalDateTime.of(2026, 11, d, h, 0).atZone(athens).toInstant().toEpochMilli()
+
+    @Test fun tonightStartsAt0600() {
+        assertEquals(at(11, 6), businessDayStart(at(11, 22), athens))
+        assertEquals(at(11, 6), businessDayStart(at(12, 1), athens)) // 01:00 still belongs to the evening before
+        assertEquals(at(12, 6), businessDayStart(at(12, 6), athens))
+    }
+}

@@ -65,3 +65,16 @@ fun summaryLines(rounds: List<Round>): List<SummaryLine> {
     }
     return merged.values.toList()
 }
+
+/**
+ * Start of the bar's business day (06:00 local; a night runs past midnight), as epoch ms. The
+ * phone's and the dashboard's "today" lists use it, like the dashboard analytics.
+ */
+fun businessDayStart(nowMs: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): Long {
+    val t = java.time.Instant.ofEpochMilli(nowMs).atZone(zone)
+    var start = t.toLocalDate().atTime(BUSINESS_DAY_START_HOUR, 0).atZone(zone)
+    if (t.isBefore(start)) start = start.minusDays(1)
+    return start.toInstant().toEpochMilli()
+}
+
+const val BUSINESS_DAY_START_HOUR = 6

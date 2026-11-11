@@ -53,6 +53,6 @@ fun RootScreen(container: AppContainer) {
         Session.LoginNotAllowed -> MessageScreen(stringResource(R.string.login_not_allowed_title), stringResource(R.string.login_not_allowed_body), sessions::signOut)
         is Session.Active ->
             if (s.user.mustChangePassword) ChangePasswordScreen(sessions, s.user)
-            else SignedInApp(s.user, catalog, orders, shifts, container.sync, now, shiftOver, sessions::signOut)
+            else SignedInApp(s.user, catalog, orders, shifts, container.users, container.sync, now, shiftOver, sessions::signOut)
     }
 }

@@ -1,6 +1,7 @@
 package gr.barlab.negroni
 
 import android.content.Context
+import gr.barlab.negroni.admin.UsersRepository
 import gr.barlab.negroni.auth.DeviceLogin
 import gr.barlab.negroni.auth.SessionRepository
 import gr.barlab.negroni.shift.ShiftRepository
@@ -21,6 +22,8 @@ class AppContainer(context: Context) {
     val sessions: SessionRepository? = firebase?.let { SessionRepository(DeviceLogin(context), it.auth, it.firestore, it.functions) }
 
     val shifts: ShiftRepository? = firebase?.let { ShiftRepository(it.firestore) }
+
+    val users: UsersRepository? = firebase?.let { UsersRepository(it.firestore, it.functions) }
 
     val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore, it.functions) }
 

@@ -23,13 +23,14 @@ interface UserRow {
   active: boolean;
   mustChangePassword: boolean;
   rights?: Rights;
+  deleted?: boolean;
 }
 
 const ROLES: Role[] = ['admin', 'barman', 'server'];
 const roleKey = (r: Role) => `role.${r}` as Key;
 
 /** All user changes go through Cloud Functions; Firestore rules forbid client writes to users/*. */
-function call(name: 'createUser' | 'updateUser' | 'resetPassword', data: Record<string, unknown>) {
+function call(name: 'createUser' | 'updateUser' | 'resetPassword' | 'deleteUser', data: Record<string, unknown>) {
   return httpsCallable(firebase!.functions, name)(data);
 }
 
@@ -68,7 +69,7 @@ export function Users({ me }: { me: StaffUser }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((u) => (
+          {rows.filter((u) => !u.deleted).map((u) => (
             <UserRowView key={u.uid} row={u} me={me} shift={shifts.get(u.uid)} now={now} onNotice={setNotice} />
           ))}
         </tbody>
@@ -129,6 +130,15 @@ function UserRowView({ row, me, shift, now, onNotice }: { row: UserRow; me: Staf
               }}
             >
               {row.active ? t('users.deactivate') : t('users.activate')}
+            </button>
+          )}
+          {!isMe && (
+            <button
+              class="link danger"
+              disabled={busy}
+              onClick={() => confirm(fill(t('users.confirmDelete'), { name: row.displayName })) && run(() => call('deleteUser', { uid: row.uid }), 'users.deleted')}
+            >
+              {t('users.delete')}
             </button>
           )}
         </td>

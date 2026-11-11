@@ -45,6 +45,7 @@ export interface UserDoc {
   active: boolean;
   mustChangePassword: boolean;
   rights?: Rights;
+  deleted?: boolean;
 }
 
 export function parseRights(raw: unknown): Rights {
@@ -233,4 +234,30 @@ export async function changeOwnPassword(deps: Deps, callerUid: string | undefine
     updatedBy: callerUid,
   });
   await audit(deps, 'user.changeOwnPassword', callerUid, callerUid);
+}
+
+/**
+ * Deletes a user's login (so the username can be used again) and marks the profile deleted. The
+ * profile stays, so names on past orders, payments and the audit log keep making sense. Refuses
+ * to delete yourself or the last active admin.
+ */
+export async function deleteUser(deps: Deps, callerUid: string | undefined, raw: unknown): Promise<void> {
+  const actor = await requireAdmin(deps, callerUid);
+  const uid = requireString(asData(raw), 'uid');
+  if (uid === actor) throw new HttpsError('failed-precondition', 'You cannot delete yourself.');
+  const target = await loadUser(deps, uid);
+  if (!target || target.deleted) throw new HttpsError('not-found', 'User not found.');
+  if (target.role === 'admin') {
+    const admins = await deps.db.collection('users').where('role', '==', 'admin').get();
+    const others = admins.docs.filter((d) => d.id !== uid && d.get('active') === true && d.get('deleted') !== true);
+    if (others.length === 0) throw new HttpsError('failed-precondition', 'Keep at least one admin.');
+  }
+  try {
+    await deps.auth.deleteUser(uid);
+  } catch (e) {
+    if ((e as { code?: string }).code !== 'auth/user-not-found') throw e;
+  }
+  const now = FieldValue.serverTimestamp();
+  await deps.db.doc(`users/${uid}`).update({ active: false, deleted: true, deletedAt: now, deletedBy: actor, updatedAt: now, updatedBy: actor });
+  await audit(deps, 'user.delete', actor, uid, { username: target.username });
 }
