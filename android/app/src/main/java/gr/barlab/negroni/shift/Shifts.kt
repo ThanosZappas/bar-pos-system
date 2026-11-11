@@ -12,9 +12,12 @@ data class Shift(
     val decidedByName: String?,
     val approvedUntilMs: Long?,
     val pendingSync: Boolean = false,
+    val denials: Int = 0,
+    val lastDeniedAtMs: Long? = null,
+    val blockedUntilMs: Long? = null,
 ) {
     enum class Status(val wire: String) {
-        Requested("requested"), Approved("approved"), Denied("denied"), Revoked("revoked");
+        Requested("requested"), Approved("approved"), Denied("denied"), Revoked("revoked"), Cleared("cleared");
 
         companion object {
             fun fromWire(value: String?) = entries.firstOrNull { it.wire == value }
@@ -22,6 +25,11 @@ data class Shift(
     }
 
     fun approvedAt(nowMs: Long): Boolean = status == Status.Approved && (approvedUntilMs ?: 0) > nowMs
+
+    /** Two "Not now" in a row: no more requests until the block runs out (18:00) or is cleared. */
+    fun blockedAt(nowMs: Long): Boolean = (blockedUntilMs ?: 0) > nowMs
+
+    fun denialsThisShift(nowMs: Long): Int = gr.barlab.negroni.auth.ShiftClock.denialsThisShift(denials, lastDeniedAtMs, nowMs)
 }
 
 object ShiftAccess {

@@ -201,7 +201,6 @@
     <string name="staff_trusted">Δουλεύει χωρίς άδεια</string>
     <string name="staff_approved">Μπορεί να δουλέψει έως %1$s · άδεια από %2$s</string>
     <string name="staff_asked">Ζήτησε άδεια στις %1$s</string>
-    <string name="staff_denied">Χωρίς άδεια σε αυτή τη βάρδια</string>
     <string name="staff_revoked">Η άδεια ανακλήθηκε</string>
     <string name="staff_not_started">Δεν έχει ξεκινήσει</string>
     <string name="staff_revoke">Ανάκληση</string>
@@ -216,4 +215,14 @@
     <string name="permission_allow">Άδεια</string>
     <string name="permission_deny">Όχι τώρα</string>
     <string name="shift_over">Η βάρδια άλλαξε στις 18:00. Θα αποσυνδεθείτε μόλις σταλούν όλα.</string>
+    <string name="login_not_allowed_title">Η σύνδεση δεν επιτρέπεται</string>
+    <string name="login_not_allowed_body">Ο διαχειριστής απενεργοποίησε τη σύνδεση για αυτόν τον λογαριασμό. Ρωτήστε τον διαχειριστή.</string>
+    <string name="permission_denied_once">Ο/Η %1$s είπε «όχι τώρα». Μπορείτε να ζητήσετε άλλη μία φορά.</string>
+    <string name="permission_blocked">Ο/Η %1$s είπε δύο φορές «όχι τώρα». Μπορείτε να ζητήσετε ξανά μετά τις 18:00 ή όταν σας ξεμπλοκάρει ο μπάρμαν.</string>
+    <string name="permission_cleared">Ο μπάρμαν σας ξεμπλόκαρε. Μπορείτε να ζητήσετε ξανά.</string>
+    <string name="permission_popup_last_chance">Αν πείτε ξανά «Όχι τώρα», ο/η %1$s δεν θα μπορεί να ζητήσει άδεια έως τις 18:00.</string>
+    <string name="staff_denied_count">Χωρίς άδεια (%1$d από %2$d)</string>
+    <string name="staff_blocked">Μπλοκαρισμένος/η έως %1$s (δύο φορές «όχι τώρα»)</string>
+    <string name="staff_cleared">Ξεμπλοκαρίστηκε, μπορεί να ζητήσει ξανά</string>
+    <string name="staff_unblock">Ξεμπλοκάρισμα</string>
 </resources>

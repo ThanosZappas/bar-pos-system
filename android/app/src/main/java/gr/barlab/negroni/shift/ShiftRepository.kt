@@ -4,6 +4,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.snapshots
 import com.google.firebase.Timestamp
 import gr.barlab.negroni.auth.Rights
@@ -57,7 +58,11 @@ class ShiftRepository(private val db: FirebaseFirestore) {
             .keepAlive()
     }
 
-    /** The server asks to start (or asks again after a denial). */
+    /**
+     * The server asks to start (or once more after a first "Not now"). Merged, so the denial count
+     * and any block, which only the barman writes, stay as they are; the rules refuse a request
+     * while one is waiting or while blocked.
+     */
     fun request(me: StaffUser) {
         db.document("shifts/${me.uid}").set(
             mapOf(
@@ -67,22 +72,49 @@ class ShiftRepository(private val db: FirebaseFirestore) {
                 "status" to Shift.Status.Requested.wire,
                 "requestedAt" to FieldValue.serverTimestamp(),
             ),
+            SetOptions.merge(),
         )
     }
 
-    /** Barman/admin: approve until the next 18:00 (also without a request), deny, or revoke. */
-    fun decide(lead: StaffUser, serverUid: String, serverName: String, status: Shift.Status) {
+    /** Barman/admin: allowed until the next 18:00 (also without a request); clears any denials. */
+    fun approve(lead: StaffUser, serverUid: String, serverName: String) {
+        decide(lead, serverUid, serverName, Shift.Status.Approved, mapOf("approvedUntil" to Timestamp(Date(ShiftClock.end(System.currentTimeMillis()))), "denials" to 0))
+    }
+
+    /** "Not now". The second in a row this shift blocks further requests until 18:00. */
+    fun deny(lead: StaffUser, current: Shift?, serverUid: String, serverName: String) {
         val now = System.currentTimeMillis()
+        val denial = ShiftClock.afterDenial(current?.denials ?: 0, current?.lastDeniedAtMs, now)
+        val extra = mutableMapOf<String, Any>("denials" to denial.denials, "lastDeniedAt" to FieldValue.serverTimestamp())
+        denial.blockedUntilMs?.let { extra["blockedUntil"] = Timestamp(Date(it)) }
+        decide(lead, serverUid, serverName, Shift.Status.Denied, extra)
+    }
+
+    /** Take permission back. The denial count is kept (it is not a denial and not a reset). */
+    fun revoke(lead: StaffUser, current: Shift?, serverUid: String, serverName: String) {
+        val keep = mutableMapOf<String, Any>("denials" to (current?.denials ?: 0))
+        current?.lastDeniedAtMs?.let { keep["lastDeniedAt"] = Timestamp(Date(it)) }
+        current?.blockedUntilMs?.let { keep["blockedUntil"] = Timestamp(Date(it)) }
+        decide(lead, serverUid, serverName, Shift.Status.Revoked, keep)
+    }
+
+    /** Lift a block: the server may ask again. */
+    fun clearBlock(lead: StaffUser, serverUid: String, serverName: String) {
+        decide(lead, serverUid, serverName, Shift.Status.Cleared, mapOf("denials" to 0))
+    }
+
+    /** Barman/admin decisions replace the document (the rules check every field). */
+    private fun decide(lead: StaffUser, serverUid: String, serverName: String, status: Shift.Status, extra: Map<String, Any>) {
         val data = mutableMapOf<String, Any>(
             "uid" to serverUid,
             "displayName" to serverName,
-            "shiftDay" to ShiftClock.key(now),
+            "shiftDay" to ShiftClock.key(System.currentTimeMillis()),
             "status" to status.wire,
             "decidedAt" to FieldValue.serverTimestamp(),
             "decidedBy" to lead.uid,
             "decidedByName" to lead.displayName,
         )
-        if (status == Shift.Status.Approved) data["approvedUntil"] = Timestamp(Date(ShiftClock.end(now)))
+        data.putAll(extra)
         db.document("shifts/$serverUid").set(data)
     }
 
@@ -95,6 +127,9 @@ class ShiftRepository(private val db: FirebaseFirestore) {
         decidedByName = getString("decidedByName"),
         approvedUntilMs = getTimestamp("approvedUntil")?.toDate()?.time,
         pendingSync = metadata.hasPendingWrites(),
+        denials = getLong("denials")?.toInt() ?: 0,
+        lastDeniedAtMs = getTimestamp("lastDeniedAt", DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)?.toDate()?.time,
+        blockedUntilMs = getTimestamp("blockedUntil")?.toDate()?.time,
     )
 
     private companion object {

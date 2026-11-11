@@ -3,6 +3,7 @@
  * functions/src/users.ts RIGHT_DEFAULTS, the Firestore rules and android Rights.
  */
 export const RIGHT_DEFAULTS = {
+  logIn: true,
   noApproval: false,
   payments: true,
   reversePayments: true,

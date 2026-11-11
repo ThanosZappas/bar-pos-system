@@ -7,8 +7,8 @@ import { t, type Key } from '../i18n';
 import { MIN_PASSWORD_LENGTH } from '../lib/passwords';
 import type { Role, StaffUser } from '../session';
 import { hasRight, RIGHTS, type Rights } from '../domain/rights';
-import { decide, isApproved, useShifts, type Shift } from '../data/shifts';
-import { shiftKey } from '../domain/shift';
+import { approve, clearBlock, isApproved, revoke, useShifts, type Shift } from '../data/shifts';
+import { denialsThisShift, isBlocked, MAX_DENIALS, shiftKey } from '../domain/shift';
 import { useNow } from '../lib/useNow';
 import { clock } from '../lib/time';
 import { fill } from '../i18n/format';
@@ -227,26 +227,36 @@ function CreateUser({ onNotice }: { onNotice: (s: string) => void }) {
   );
 }
 
-/** This shift's permission for a server, with the action that fits: allow (also unasked) or take back. */
+/** This shift's permission for a server, with the action that fits: allow (also unasked), take back, or unblock. */
 function ShiftCell({ row, shift, now, me }: { row: UserRow; shift?: Shift; now: number; me: StaffUser }) {
+  if (!hasRight(row.rights, 'logIn')) return <span class="field-hint">{t('shift.noLogIn')}</span>;
   if (hasRight(row.rights, 'noApproval')) return <span class="field-hint">{t('shift.trusted')}</span>;
   const current = shift?.shiftDay === shiftKey(now) ? shift : undefined;
   if (isApproved(current, now)) {
     return (
       <span class="shift-cell">
         <span class="ok">{fill(t('shift.until'), { time: clock(current!.approvedUntilMs!) })}</span>
-        <button class="link danger" onClick={() => decide(row.uid, row.displayName, 'revoked', me)}>{t('shift.revoke')}</button>
+        <button class="link danger" onClick={() => revoke(shift, row.uid, row.displayName, me)}>{t('shift.revoke')}</button>
+      </span>
+    );
+  }
+  if (isBlocked(shift, now)) {
+    return (
+      <span class="shift-cell">
+        <span class="error">{fill(t('shift.blocked'), { time: clock(shift!.blockedUntilMs!) })}</span>
+        <button class="link" onClick={() => clearBlock(row.uid, row.displayName, me)}>{t('shift.unblock')}</button>
       </span>
     );
   }
   const label = current?.status === 'requested' ? fill(t('shift.asked'), { time: clock(current.requestedAtMs ?? now) })
-    : current?.status === 'denied' ? t('shift.denied')
+    : current?.status === 'denied' ? fill(t('shift.deniedCount'), { n: String(denialsThisShift(current, now)), max: String(MAX_DENIALS) })
     : current?.status === 'revoked' ? t('shift.revoked')
+    : current?.status === 'cleared' ? t('shift.cleared')
     : t('shift.notStarted');
   return (
     <span class="shift-cell">
       <span class="field-hint">{label}</span>
-      <button class="link" onClick={() => decide(row.uid, row.displayName, 'approved', me)}>{t('permission.allow')}</button>
+      <button class="link" onClick={() => approve(row.uid, row.displayName, me)}>{t('permission.allow')}</button>
     </span>
   );
 }

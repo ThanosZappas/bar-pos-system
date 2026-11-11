@@ -28,6 +28,7 @@ beforeEach(async () => {
     await setDoc(doc(fs, 'users/barman'), profile('barman'));
     await setDoc(doc(fs, 'users/server'), profile('server'));
     await setDoc(doc(fs, 'users/trusted'), profile('server', { noApproval: true }));
+    await setDoc(doc(fs, 'users/locked'), profile('server', { noApproval: true, logIn: false }));
     await setDoc(doc(fs, 'users/limited'), profile('server', { noApproval: true, payments: false, reversePayments: false, cancelOrders: false, closeTables: false }));
     await setDoc(doc(fs, 'tables/table-01'), { name: '1', order: 0, archived: false, currentSessionId: SESSION, createdAt: hours(-9), createdBy: 'seed', updatedAt: hours(-9), updatedBy: 'seed' });
     await setDoc(doc(fs, 'payments/p1'), { tableId: 'table-01', tableName: '1', sessionId: SESSION, amountCents: 2000, method: 'card', createdAt: hours(-1), createdBy: 'x', createdByName: 'x', clientCreatedAt: hours(-1) });
@@ -99,6 +100,58 @@ describe('permission to work', () => {
     await assertSucceeds(submitRound(db('trusted'), 'trusted'));
     await assertSucceeds(submitRound(db('barman'), 'barman'));
     await assertSucceeds(submitRound(db('admin'), 'admin'));
+  });
+});
+
+describe('asking again after "Not now"', () => {
+  const deny = (by: string, uid: string, denials: number, blockedUntil?: Timestamp) => ({
+    ...decide(by, uid, 'denied'), denials, lastDeniedAt: serverTimestamp(), ...(blockedUntil ? { blockedUntil } : {}),
+  });
+  const again = (uid: string) => ({ status: 'requested', requestedAt: serverTimestamp(), shiftDay: '2026-11-11', displayName: uid });
+
+  it('cannot re-send while a request is waiting', async () => {
+    await assertSucceeds(setDoc(doc(db('server'), 'shifts/server'), request('server')));
+    await assertFails(updateDoc(doc(db('server'), 'shifts/server'), again('server')));
+  });
+
+  it('may ask once more after a first denial, not after the second (blocked until 18:00)', async () => {
+    await setDoc(doc(db('server'), 'shifts/server'), request('server'));
+    await assertSucceeds(setDoc(doc(db('barman'), 'shifts/server'), deny('barman', 'server', 1)));
+    await assertSucceeds(updateDoc(doc(db('server'), 'shifts/server'), again('server')));
+    await assertSucceeds(setDoc(doc(db('barman'), 'shifts/server'), deny('barman', 'server', 2, hours(6))));
+    await assertFails(updateDoc(doc(db('server'), 'shifts/server'), again('server')));
+  });
+
+  it('a server cannot reset its denials or lift its own block', async () => {
+    await setDoc(doc(db('server'), 'shifts/server'), request('server'));
+    await setDoc(doc(db('barman'), 'shifts/server'), deny('barman', 'server', 2, hours(6)));
+    await assertFails(updateDoc(doc(db('server'), 'shifts/server'), { ...again('server'), denials: 0 }));
+    await assertFails(updateDoc(doc(db('server'), 'shifts/server'), { ...again('server'), blockedUntil: null }));
+    await assertFails(setDoc(doc(db('server'), 'shifts/server'), request('server')));
+  });
+
+  it('the barman clears the block; the server may ask again', async () => {
+    await setDoc(doc(db('server'), 'shifts/server'), request('server'));
+    await setDoc(doc(db('barman'), 'shifts/server'), deny('barman', 'server', 2, hours(6)));
+    await assertSucceeds(setDoc(doc(db('barman'), 'shifts/server'), { ...decide('barman', 'server', 'cleared'), denials: 0 }));
+    await assertSucceeds(updateDoc(doc(db('server'), 'shifts/server'), again('server')));
+  });
+
+  it('a block that ran out (a new shift) no longer stops a request', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'shifts/server'), { ...decide('barman', 'server', 'denied'), decidedAt: hours(-30), denials: 2, lastDeniedAt: hours(-30), blockedUntil: hours(-1) }));
+    await assertSucceeds(updateDoc(doc(db('server'), 'shifts/server'), again('server')));
+  });
+
+  it('the barman cannot block for more than a day', async () => {
+    await assertFails(setDoc(doc(db('barman'), 'shifts/server'), deny('barman', 'server', 2, hours(30))));
+  });
+});
+
+describe('the "can sign in" right', () => {
+  it('when it is off, a server can read nothing and do nothing, even if trusted', async () => {
+    await assertFails(getDoc(doc(db('locked'), 'tables/table-01')));
+    await assertFails(submitRound(db('locked'), 'locked'));
+    await assertSucceeds(getDoc(doc(db('locked'), 'users/locked'))); // so the app can say why
   });
 });
 

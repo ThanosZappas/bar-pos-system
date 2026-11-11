@@ -27,6 +27,7 @@ export interface Deps {
  * barman and admin always have every right. The Firestore rules enforce the same table.
  */
 export const RIGHT_DEFAULTS = {
+  logIn: true, // off: the server cannot use the apps at all (a quick switch, unlike deactivating)
   noApproval: false, // works without asking the barman for permission each shift
   payments: true,
   reversePayments: true,

@@ -32,6 +32,7 @@ data class StaffUser(
  * functions/src/users.ts RIGHT_DEFAULTS: everything allowed except working without approval.
  */
 data class Rights(
+    val logIn: Boolean = true,
     val noApproval: Boolean = false,
     val payments: Boolean = true,
     val reversePayments: Boolean = true,
@@ -44,6 +45,7 @@ data class Rights(
             fun flag(key: String, default: Boolean) = map?.get(key) as? Boolean ?: default
             val d = Rights()
             return Rights(
+                logIn = flag("logIn", d.logIn),
                 noApproval = flag("noApproval", d.noApproval),
                 payments = flag("payments", d.payments),
                 reversePayments = flag("reversePayments", d.reversePayments),
@@ -62,4 +64,6 @@ sealed interface Session {
     data object Deactivated : Session
     /** Signed in to Auth but there is no usable profile document (not seeded or unknown role). */
     data object NoProfile : Session
+    /** A server whose "can sign in" right is off. */
+    data object LoginNotAllowed : Session
 }

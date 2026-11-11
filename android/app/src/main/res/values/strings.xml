@@ -213,7 +213,6 @@
     <string name="staff_trusted">Works without asking</string>
     <string name="staff_approved">Can work until %1$s · allowed by %2$s</string>
     <string name="staff_asked">Asked at %1$s</string>
-    <string name="staff_denied">Not allowed this shift</string>
     <string name="staff_revoked">Permission taken back</string>
     <string name="staff_not_started">Not started</string>
     <string name="staff_revoke">Take back</string>
@@ -228,4 +227,14 @@
     <string name="permission_allow">Allow</string>
     <string name="permission_deny">Not now</string>
     <string name="shift_over">The shift changed at 18:00. You will be signed out once everything is sent.</string>
+    <string name="login_not_allowed_title">Signing in is not allowed</string>
+    <string name="login_not_allowed_body">The admin has turned off signing in for this account. Ask the admin.</string>
+    <string name="permission_denied_once">%1$s said not now. You can ask once more.</string>
+    <string name="permission_blocked">%1$s said not now twice. You can ask again after 18:00, or when the barman unblocks you.</string>
+    <string name="permission_cleared">The barman unblocked you. You can ask again.</string>
+    <string name="permission_popup_last_chance">Saying \"Not now\" again blocks %1$s from asking until 18:00.</string>
+    <string name="staff_denied_count">Not allowed (%1$d of %2$d)</string>
+    <string name="staff_blocked">Blocked until %1$s (said not now twice)</string>
+    <string name="staff_cleared">Unblocked, may ask again</string>
+    <string name="staff_unblock">Unblock</string>
 </resources>

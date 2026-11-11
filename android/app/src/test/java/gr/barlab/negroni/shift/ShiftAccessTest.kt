@@ -47,4 +47,15 @@ class ShiftAccessTest {
         assertTrue(DeviceLogin.isExpired("2000-01-01", now))
         assertTrue(DeviceLogin.isExpired(null, now)) // logins from before this feature
     }
+
+    @Test fun blockRunsOutAtItsTime() {
+        val blocked = shift(Shift.Status.Denied).copy(denials = 2, blockedUntilMs = now + 1)
+        assertTrue(blocked.blockedAt(now))
+        assertFalse(blocked.blockedAt(now + 1))
+    }
+
+    @Test fun signInRightDefaultsToOnAndReadsOff() {
+        assertTrue(Rights.from(null).logIn)
+        assertFalse(Rights.from(mapOf("logIn" to false)).logIn)
+    }
 }

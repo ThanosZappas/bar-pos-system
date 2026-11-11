@@ -36,6 +36,8 @@ fun PermissionScreen(user: StaffUser, shift: Shift?, nowMs: Long, onRequest: () 
     val today = ShiftClock.key(nowMs)
     val thisShift = shift?.takeIf { it.shiftDay == today }
     val waiting = thisShift?.status == Shift.Status.Requested
+    val blocked = shift?.blockedAt(nowMs) == true
+    val oneMoreTry = !blocked && thisShift?.status == Shift.Status.Denied && (shift?.denialsThisShift(nowMs) ?: 0) >= 1
     Column(
         Modifier.fillMaxSize().padding(Spacing.xxl),
         verticalArrangement = Arrangement.spacedBy(Spacing.l, Alignment.CenterVertically),
@@ -43,21 +45,26 @@ fun PermissionScreen(user: StaffUser, shift: Shift?, nowMs: Long, onRequest: () 
     ) {
         BrandHeader(Modifier.padding(bottom = Spacing.xxl))
         Text(stringResource(R.string.permission_hello, user.displayName), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
-        val message = when (thisShift?.status) {
+        val message = when {
+            blocked -> stringResource(R.string.permission_blocked, shift?.decidedByName.orEmpty())
+            oneMoreTry -> stringResource(R.string.permission_denied_once, thisShift?.decidedByName.orEmpty())
+            else -> when (thisShift?.status) {
             Shift.Status.Requested -> stringResource(R.string.permission_waiting)
             Shift.Status.Denied -> stringResource(R.string.permission_denied, thisShift.decidedByName.orEmpty())
+            Shift.Status.Cleared -> stringResource(R.string.permission_cleared)
             Shift.Status.Revoked -> stringResource(R.string.permission_revoked, thisShift.decidedByName.orEmpty())
             else -> stringResource(R.string.permission_explainer)
+            }
         }
         Text(
             message,
             style = MaterialTheme.typography.bodyLarge,
-            color = if (thisShift?.status == Shift.Status.Denied || thisShift?.status == Shift.Status.Revoked) BarLabColors.Error else MaterialTheme.colorScheme.secondary,
+            color = if (blocked || thisShift?.status == Shift.Status.Denied || thisShift?.status == Shift.Status.Revoked) BarLabColors.Error else MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
         )
         if (waiting) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-        } else {
+        } else if (!blocked) {
             Button(onClick = onRequest, modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth().height(64.dp)) {
                 Text(stringResource(R.string.permission_request).caps(), style = MaterialTheme.typography.labelLarge)
             }

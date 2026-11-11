@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import { fill } from '../i18n/format';
-import { decide, usePendingRequests } from '../data/shifts';
+import { approve, deny, usePendingRequests } from '../data/shifts';
+import { denialsThisShift, MAX_DENIALS } from '../domain/shift';
 import { chime } from '../lib/sound';
 import type { StaffUser } from '../session';
 
@@ -21,9 +22,12 @@ export function RequestPopup({ user }: { user: StaffUser }) {
       <div class="card request-card">
         <h2 id="permission-title" class="title">{t('permission.title')}</h2>
         <p class="desc">{fill(t('permission.asks'), { name: request.displayName })}</p>
+        {denialsThisShift(request, Date.now()) + 1 >= MAX_DENIALS && (
+          <p class="error">{fill(t('permission.lastChance'), { name: request.displayName })}</p>
+        )}
         <span class="buttons">
-          <button class="primary" onClick={() => decide(request.uid, request.displayName, 'approved', user)}>{t('permission.allow')}</button>
-          <button class="link danger" onClick={() => decide(request.uid, request.displayName, 'denied', user)}>{t('permission.deny')}</button>
+          <button class="primary" onClick={() => approve(request.uid, request.displayName, user)}>{t('permission.allow')}</button>
+          <button class="link danger" onClick={() => deny(request, request.uid, request.displayName, user)}>{t('permission.deny')}</button>
         </span>
         {pending.length > 1 && <p class="field-hint">{fill(t('permission.more'), { n: String(pending.length - 1) })}</p>}
       </div>

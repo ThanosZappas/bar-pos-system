@@ -52,6 +52,7 @@ class SessionRepository(
         if (!exists()) return Session.NoProfile
         if (getBoolean("active") != true) return Session.Deactivated
         val role = Role.fromWire(getString("role")) ?: return Session.NoProfile
+        if (role == Role.Server && !Rights.from(get("rights") as? Map<*, *>).logIn) return Session.LoginNotAllowed
         return Session.Active(
             StaffUser(
                 uid = uid,

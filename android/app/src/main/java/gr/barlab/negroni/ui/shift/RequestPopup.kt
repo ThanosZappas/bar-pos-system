@@ -15,7 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.StaffUser
 import gr.barlab.negroni.domain.BoardAlerts
-import gr.barlab.negroni.shift.Shift
+import gr.barlab.negroni.auth.ShiftClock
 import gr.barlab.negroni.shift.ShiftRepository
 import gr.barlab.negroni.ui.board.BoardAlerter
 import gr.barlab.negroni.ui.theme.BarLabColors
@@ -39,14 +39,21 @@ fun RequestPopup(lead: StaffUser, shifts: ShiftRepository) {
     AlertDialog(
         onDismissRequest = {}, // must be answered
         title = { Text(stringResource(R.string.permission_popup_title)) },
-        text = { Text(stringResource(R.string.permission_popup_body, request.displayName)) },
+        text = {
+            val now = System.currentTimeMillis()
+            val last = request.denialsThisShift(now) + 1 >= ShiftClock.MAX_DENIALS
+            Text(
+                stringResource(R.string.permission_popup_body, request.displayName) +
+                    if (last) "\n\n" + stringResource(R.string.permission_popup_last_chance, request.displayName) else "",
+            )
+        },
         confirmButton = {
-            TextButton(onClick = { shifts.decide(lead, request.uid, request.displayName, Shift.Status.Approved) }) {
+            TextButton(onClick = { shifts.approve(lead, request.uid, request.displayName) }) {
                 Text(stringResource(R.string.permission_allow))
             }
         },
         dismissButton = {
-            TextButton(onClick = { shifts.decide(lead, request.uid, request.displayName, Shift.Status.Denied) }) {
+            TextButton(onClick = { shifts.deny(lead, request, request.uid, request.displayName) }) {
                 Text(stringResource(R.string.permission_deny), color = BarLabColors.Error)
             }
         },

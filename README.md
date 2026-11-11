@@ -210,7 +210,9 @@ The barman (Android board) and the admin (dashboard, on any page) get a popup wi
 **Allow** / **Not now**. Permission lasts until 18:00. The barman can also allow servers before
 they ask, or take permission back: Android → **Staff**, dashboard → **Users** ("This shift").
 Barman and admin never need permission. Servers with the right "Works without asking" don't
-either.
+either. A server can't re-send a request that is still waiting, and after one "Not now" can ask
+only once more: a second "Not now" in a row blocks them until 18:00 (the popup warns before
+it). Barman or admin lift a block with **Unblock** (Android → Staff, dashboard → Users).
 
 **Servers (Android):** sign in → **Tables** → tap a table → **New order** → tap items (set
 quantity and an optional note) → **Review** (order note) → **Send to bar**. While a round is
@@ -239,8 +241,9 @@ All in the dashboard (admin account only):
 - **Users**: create (username, display name, role, temporary password), rename, change role,
   deactivate/activate, reset password. Roles: `admin` (everything, the barman/owner),
   `barman` (order board and staff permissions in the Android app, no admin work), `server`.
-  **Rights** per server: works without asking (off by default), take payments, reverse
-  payments, close tables, cancel orders, move tables (on by default, as before). The phone hides
+  **Rights** per server: can sign in (on by default; off means the server cannot use the app at
+  all, a quick switch unlike deactivating the account), works without asking (off by default),
+  take payments, reverse payments, close tables, cancel orders, move tables (on by default). The phone hides
   what a server may not do, and the security rules refuse it anyway.
 - **Menu**: sections (tabs) → categories → items. Add, edit, hide (not orderable), reorder,
   delete (archived: gone everywhere, kept for reports), change prices ("8,50" or "8.50").
@@ -299,8 +302,13 @@ on or off in Settings → Order board.
 - `ShiftClock` (Android) / `domain/shift.ts` (dashboard): the shift key is the date whose 18:00
   started the current shift. A login stores it on the device (before signing in, so the check
   never races the sign-in); a different key means the login has expired.
-- `shifts/{uid}`: the server writes only `status: requested`; barman/admin write `approved`
-  (with `approvedUntil` = next 18:00, at most 25 h ahead), `denied` or `revoked`. Nobody deletes.
+- `shifts/{uid}`: the server writes only `status: requested` (merged, so it can never touch the
+  denial count or a block), not while a request is waiting and not before `blockedUntil`.
+  Barman/admin write `approved` (with `approvedUntil` = next 18:00, at most 25 h ahead),
+  `denied` (with `denials` and the server-stamped `lastDeniedAt`; the second denial in the same
+  shift sets `blockedUntil` = next 18:00), `revoked`, or `cleared` (unblocked). Nobody deletes.
+- The "can sign in" right is part of the rules' `isStaff()`: a server with it off can read
+  nothing but their own profile, which is how the apps explain the refusal.
 - The rules' `canWork()` (orders, payments, closing, every round change) needs barman/admin, the
   `noApproval` right, or an approval that runs out less than 2 hours ago: the grace lets orders
   taken offline just before 18:00 still sync. `may(right)` checks the rights; a missing right

@@ -251,7 +251,6 @@
   "shift.trusted": "Δουλεύει χωρίς άδεια",
   "shift.until": "Δουλεύει έως {time}",
   "shift.asked": "Ζήτησε άδεια στις {time}",
-  "shift.denied": "Χωρίς άδεια",
   "shift.revoked": "Η άδεια ανακλήθηκε",
   "shift.notStarted": "Δεν έχει ξεκινήσει",
   "shift.revoke": "Ανάκληση",
@@ -259,5 +258,13 @@
   "permission.asks": "Ο/Η {name} ζητά να ξεκινήσει.",
   "permission.allow": "Άδεια",
   "permission.deny": "Όχι τώρα",
-  "permission.more": "Περιμένουν άλλοι {n}."
+  "permission.more": "Περιμένουν άλλοι {n}.",
+  "right.logIn": "Μπορεί να συνδεθεί",
+  "right.logIn.hint": "αν όχι: δεν μπορεί να χρησιμοποιήσει την εφαρμογή (γρήγορος διακόπτης, όχι απενεργοποίηση)",
+  "shift.noLogIn": "Η σύνδεση είναι κλειστή",
+  "shift.blocked": "Μπλοκαρισμένος/η έως {time} (δύο φορές «όχι τώρα»)",
+  "shift.unblock": "Ξεμπλοκάρισμα",
+  "shift.deniedCount": "Χωρίς άδεια ({n} από {max})",
+  "shift.cleared": "Ξεμπλοκαρίστηκε, μπορεί να ζητήσει ξανά",
+  "permission.lastChance": "Αν πείτε ξανά «Όχι τώρα», ο/η {name} δεν θα μπορεί να ζητήσει άδεια έως τις 18:00."
 }

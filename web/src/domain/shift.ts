@@ -18,3 +18,29 @@ export function shiftEnd(ms: number): Date {
   if (d.getTime() >= end.getTime()) end.setDate(end.getDate() + 1);
   return end;
 }
+
+/** Two denials in a row block a server from asking again until the shift ends (18:00). */
+export const MAX_DENIALS = 2;
+
+export interface DenialState {
+  denials: number;
+  lastDeniedAtMs: number | null;
+  blockedUntilMs: number | null;
+}
+
+/**
+ * What a denial at `nowMs` writes. Denials count only within the same shift (by the time of the
+ * last denial, which the server clock stamps, so a server cannot reset it); the second one blocks
+ * until the next 18:00.
+ */
+export function afterDenial(prev: DenialState | undefined, nowMs: number): { denials: number; blockedUntil: Date | null } {
+  const sameShift = prev?.lastDeniedAtMs != null && shiftKey(prev.lastDeniedAtMs) === shiftKey(nowMs);
+  const denials = (sameShift ? prev!.denials : 0) + 1;
+  return { denials, blockedUntil: denials >= MAX_DENIALS ? shiftEnd(nowMs) : null };
+}
+
+export const isBlocked = (s: Pick<DenialState, 'blockedUntilMs'> | undefined, nowMs: number) => (s?.blockedUntilMs ?? 0) > nowMs;
+
+/** Denials so far in this shift (0 after an approval, an unblock, or a new shift). */
+export const denialsThisShift = (s: DenialState | undefined, nowMs: number) =>
+  s?.lastDeniedAtMs != null && shiftKey(s.lastDeniedAtMs) === shiftKey(nowMs) ? s.denials : 0;

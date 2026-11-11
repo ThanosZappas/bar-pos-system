@@ -52,6 +52,7 @@ fun StaffScreen(lead: StaffUser, shifts: ShiftRepository, nowMs: Long, onBack: (
             items(staff, key = { it.first.uid }) { (server, shift) ->
                 val current = shift?.takeIf { it.shiftDay == today }
                 val approved = current?.approvedAt(nowMs) == true
+                val blocked = shift?.blockedAt(nowMs) == true
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -60,21 +61,30 @@ fun StaffScreen(lead: StaffUser, shifts: ShiftRepository, nowMs: Long, onBack: (
                                 when {
                                     server.rights.noApproval -> stringResource(R.string.staff_trusted)
                                     approved -> stringResource(R.string.staff_approved, clock(current?.approvedUntilMs ?: 0), current?.decidedByName.orEmpty())
+                                    blocked -> stringResource(R.string.staff_blocked, clock(shift?.blockedUntilMs ?: 0))
                                     current?.status == Shift.Status.Requested -> stringResource(R.string.staff_asked, clock(current.requestedAtMs ?: 0))
-                                    current?.status == Shift.Status.Denied -> stringResource(R.string.staff_denied)
+                                    current?.status == Shift.Status.Denied -> stringResource(R.string.staff_denied_count, current.denialsThisShift(nowMs), ShiftClock.MAX_DENIALS)
+                                    current?.status == Shift.Status.Cleared -> stringResource(R.string.staff_cleared)
                                     current?.status == Shift.Status.Revoked -> stringResource(R.string.staff_revoked)
                                     else -> stringResource(R.string.staff_not_started)
                                 },
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (approved || server.rights.noApproval) BarLabColors.Green else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = when {
+                                    approved || server.rights.noApproval -> BarLabColors.Green
+                                    blocked -> BarLabColors.Error
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                             )
                         }
                         when {
                             server.rights.noApproval -> Unit
-                            approved -> OutlinedButton(onClick = { shifts.decide(lead, server.uid, server.displayName, Shift.Status.Revoked) }) {
+                            approved -> OutlinedButton(onClick = { shifts.revoke(lead, shift, server.uid, server.displayName) }) {
                                 Text(stringResource(R.string.staff_revoke).caps(), color = BarLabColors.Error, style = MaterialTheme.typography.labelLarge)
                             }
-                            else -> Button(onClick = { shifts.decide(lead, server.uid, server.displayName, Shift.Status.Approved) }) {
+                            blocked -> OutlinedButton(onClick = { shifts.clearBlock(lead, server.uid, server.displayName) }) {
+                                Text(stringResource(R.string.staff_unblock).caps(), style = MaterialTheme.typography.labelLarge)
+                            }
+                            else -> Button(onClick = { shifts.approve(lead, server.uid, server.displayName) }) {
                                 Text(stringResource(R.string.permission_allow).caps(), style = MaterialTheme.typography.labelLarge)
                             }
                         }

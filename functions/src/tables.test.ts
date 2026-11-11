@@ -68,6 +68,7 @@ describe.skipIf(!onEmulators)('moveTable (emulators)', () => {
     await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${PROJECT}/databases/(default)/documents`, { method: 'DELETE' });
     await deps.db.doc('users/server').set({ username: 'user1', displayName: 'Server 1', role: 'server', active: true, mustChangePassword: false, rights: { noApproval: true } });
     await deps.db.doc('users/asks').set({ username: 'user3', displayName: 'Server 3', role: 'server', active: true, mustChangePassword: false });
+    await deps.db.doc('users/locked').set({ username: 'user5', displayName: 'Server 5', role: 'server', active: true, mustChangePassword: false, rights: { noApproval: true, logIn: false } });
     await deps.db.doc('users/nomove').set({ username: 'user4', displayName: 'Server 4', role: 'server', active: true, mustChangePassword: false, rights: { noApproval: true, moveTables: false } });
     await deps.db.doc('users/new').set({ username: 'user2', displayName: 'Server 2', role: 'server', active: true, mustChangePassword: true });
     await deps.db.doc('tables/t1').set({ name: '1', order: 0, archived: false, currentSessionId: 'bill-1' });
@@ -99,6 +100,7 @@ describe.skipIf(!onEmulators)('moveTable (emulators)', () => {
   it('needs permission for the shift and the move right', async () => {
     await expect(moveTable(deps, 'asks', { fromTableId: 't1', toTableId: 't5' })).rejects.toMatchObject({ code: 'permission-denied' });
     await expect(moveTable(deps, 'nomove', { fromTableId: 't1', toTableId: 't5' })).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(moveTable(deps, 'locked', { fromTableId: 't1', toTableId: 't5' })).rejects.toMatchObject({ code: 'permission-denied' });
     await deps.db.doc('shifts/asks').set({ status: 'approved', approvedUntil: Timestamp.fromMillis(Date.now() + 3_600_000) });
     await moveTable(deps, 'asks', { fromTableId: 't1', toTableId: 't5' });
     expect((await deps.db.doc('tables/t5').get()).get('currentSessionId')).toBe('bill-1');

@@ -27,6 +27,7 @@ async function requireWorking(deps: Deps, callerUid: string | undefined, right: 
   if (me.mustChangePassword !== false) throw new HttpsError('failed-precondition', 'Change your password first.');
   if (me.role === 'admin' || me.role === 'barman') return callerUid;
   const rights = (me.rights ?? {}) as Rights;
+  if (!(rights.logIn ?? RIGHT_DEFAULTS.logIn)) throw new HttpsError('permission-denied', 'You are not allowed to sign in.');
   if (!(rights.noApproval ?? RIGHT_DEFAULTS.noApproval)) {
     const shift = (await deps.db.doc(`shifts/${callerUid}`).get()).data();
     const until = shift?.approvedUntil?.toMillis?.() ?? 0;

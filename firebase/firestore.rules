@@ -16,7 +16,9 @@ service cloud.firestore {
       return signedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && me().active == true
-        && me().mustChangePassword == false;
+        && me().mustChangePassword == false
+        // A server whose "can sign in" right is off can do nothing at all.
+        && (me().role != 'server' || me().get('rights', {}).get('logIn', true) == true);
     }
     function hasRole(roles) {
       return isStaff() && me().role in roles;
@@ -315,20 +317,38 @@ service cloud.firestore {
     // or admin decides ("approved" until the next 18:00, "denied", or later "revoked") and may
     // also approve without being asked. ──
     function shiftKeys() {
-      return ['uid', 'displayName', 'shiftDay', 'status', 'requestedAt', 'decidedAt', 'decidedBy', 'decidedByName', 'approvedUntil'];
+      return ['uid', 'displayName', 'shiftDay', 'status', 'requestedAt', 'decidedAt', 'decidedBy', 'decidedByName',
+        'approvedUntil', 'denials', 'lastDeniedAt', 'blockedUntil'];
     }
+    // Two denials in a row block the server until blockedUntil (the next 18:00), set by the barman.
+    function blockedNow() {
+      return resource != null && resource.data.get('blockedUntil', null) != null && request.time < resource.data.blockedUntil;
+    }
+    // The server asks. A first request creates the document; later ones may change only the request
+    // fields (never the denial count or the block), not while a request for this shift is still
+    // waiting, and not while blocked.
     function isShiftRequest(uid) {
       let d = request.resource.data;
       return request.auth.uid == uid && d.status == 'requested' && d.requestedAt == request.time
-        && !d.keys().hasAny(['decidedAt', 'decidedBy', 'decidedByName', 'approvedUntil']);
+        && (resource == null
+          ? d.keys().hasOnly(['uid', 'displayName', 'shiftDay', 'status', 'requestedAt'])
+          : changesOnly(['displayName', 'shiftDay', 'status', 'requestedAt'])
+            && (resource.data.status != 'requested' || resource.data.shiftDay != d.shiftDay)
+            && !blockedNow());
     }
+    // Barman/admin: approve until the next 18:00, deny (counting denials, blocking at the second),
+    // take back, or clear a block ("cleared": the server may ask again).
     function isShiftDecision() {
       let d = request.resource.data;
-      return isLead() && d.status in ['approved', 'denied', 'revoked']
+      return isLead() && d.status in ['approved', 'denied', 'revoked', 'cleared']
         && d.decidedBy == request.auth.uid && d.decidedAt == request.time && text(d.decidedByName, 0, 60)
         && (d.status != 'approved'
           || (d.approvedUntil is timestamp && d.approvedUntil > request.time
-            && d.approvedUntil < request.time + duration.value(25, 'h')));
+            && d.approvedUntil < request.time + duration.value(25, 'h')))
+        && (d.get('denials', 0) is int && d.get('denials', 0) >= 0 && d.get('denials', 0) <= 100)
+        && (d.get('lastDeniedAt', null) == null || d.lastDeniedAt is timestamp)
+        && (d.get('blockedUntil', null) == null
+          || (d.blockedUntil is timestamp && d.blockedUntil < request.time + duration.value(25, 'h')));
     }
     match /shifts/{uid} {
       allow read: if isStaff() && (request.auth.uid == uid || isLead());

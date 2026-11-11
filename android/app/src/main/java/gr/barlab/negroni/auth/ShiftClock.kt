@@ -25,4 +25,24 @@ object ShiftClock {
         if (!t.isBefore(end)) end = end.plusDays(1)
         return end.toInstant().toEpochMilli()
     }
+
+    /** Two denials in a row block a server from asking again until the shift ends (18:00). */
+    const val MAX_DENIALS = 2
+
+    data class Denial(val denials: Int, val blockedUntilMs: Long?)
+
+    /**
+     * What a denial at [nowMs] writes. Denials count only within the same shift (by the time of the
+     * last denial, stamped by the server clock, so a server cannot reset it); the second blocks
+     * until the next 18:00. Same as web/src/domain/shift.ts.
+     */
+    fun afterDenial(previousDenials: Int, lastDeniedAtMs: Long?, nowMs: Long, zone: ZoneId = ZoneId.systemDefault()): Denial {
+        val sameShift = lastDeniedAtMs != null && key(lastDeniedAtMs, zone) == key(nowMs, zone)
+        val denials = (if (sameShift) previousDenials else 0) + 1
+        return Denial(denials, if (denials >= MAX_DENIALS) end(nowMs, zone) else null)
+    }
+
+    /** Denials so far in this shift (0 after an approval, an unblock, or a new shift). */
+    fun denialsThisShift(denials: Int, lastDeniedAtMs: Long?, nowMs: Long, zone: ZoneId = ZoneId.systemDefault()): Int =
+        if (lastDeniedAtMs != null && key(lastDeniedAtMs, zone) == key(nowMs, zone)) denials else 0
 }

@@ -257,7 +257,6 @@
   "shift.trusted": "Works without asking",
   "shift.until": "Working until {time}",
   "shift.asked": "Asked at {time}",
-  "shift.denied": "Not allowed",
   "shift.revoked": "Taken back",
   "shift.notStarted": "Not started",
   "shift.revoke": "Take back",
@@ -265,5 +264,13 @@
   "permission.asks": "{name} asks to start working.",
   "permission.allow": "Allow",
   "permission.deny": "Not now",
-  "permission.more": "{n} more waiting."
+  "permission.more": "{n} more waiting.",
+  "right.logIn": "Can sign in",
+  "right.logIn.hint": "off: cannot use the app at all (a quick switch, unlike deactivating)",
+  "shift.noLogIn": "Signing in turned off",
+  "shift.blocked": "Blocked until {time} (said not now twice)",
+  "shift.unblock": "Unblock",
+  "shift.deniedCount": "Not allowed ({n} of {max})",
+  "shift.cleared": "Unblocked, may ask again",
+  "permission.lastChance": "Saying \"Not now\" again blocks {name} from asking until 18:00."
 }
