@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.settings
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,11 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,11 +26,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role as SemanticsRole
 import gr.barlab.negroni.BuildConfig
 import gr.barlab.negroni.R
 import gr.barlab.negroni.auth.StaffUser
+import gr.barlab.negroni.ui.board.BoardAlerter
 import gr.barlab.negroni.ui.home.roleLabel
 import gr.barlab.negroni.ui.theme.BarLabColors
 import gr.barlab.negroni.ui.theme.Spacing
@@ -36,18 +41,20 @@ import gr.barlab.negroni.ui.theme.Spacing
 @Composable
 fun SettingsScreen(user: StaffUser, onBack: () -> Unit, onSignOut: () -> Unit) {
     var language by remember { mutableStateOf(AppLanguage.current()) }
+    val context = LocalContext.current
+    var alertsOn by remember { mutableStateOf(BoardAlerter.isEnabled(context)) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = onBack) { Text("‹ " + stringResource(R.string.back)) }
             Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
         }
         Column(Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
-            Text(stringResource(R.string.settings_account).uppercase(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.settings_account).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             Text(stringResource(R.string.settings_signed_in, user.displayName, user.username, stringResource(roleLabel(user.role))), style = MaterialTheme.typography.bodyLarge)
-            OutlinedButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out).uppercase(), style = MaterialTheme.typography.labelLarge) }
+            OutlinedButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out).caps(), style = MaterialTheme.typography.labelLarge) }
 
             HorizontalDivider(color = BarLabColors.Line)
-            Text(stringResource(R.string.settings_language).uppercase(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.settings_language).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             Column(Modifier.selectableGroup()) {
                 AppLanguage.entries.forEach { option ->
                     Row(
@@ -64,7 +71,21 @@ fun SettingsScreen(user: StaffUser, onBack: () -> Unit, onSignOut: () -> Unit) {
                     }
                 }
             }
-            Text(stringResource(R.string.settings_language_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            if (user.role.seesOrderBoard) {
+                HorizontalDivider(color = BarLabColors.Line)
+                Text(stringResource(R.string.settings_board).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Row(
+                    Modifier.fillMaxWidth().toggleable(value = alertsOn, role = SemanticsRole.Switch, onValueChange = {
+                        alertsOn = it
+                        BoardAlerter.setEnabled(context, it)
+                    }),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(R.string.board_alerts), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(end = Spacing.m))
+                    Switch(checked = alertsOn, onCheckedChange = null)
+                }
+            }
 
             HorizontalDivider(color = BarLabColors.Line)
             Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.catalog
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -74,7 +75,7 @@ fun MenuList(menu: Menu, modifier: Modifier = Modifier, onItemClick: ((Menu.Item
                     Tab(
                         selected = i == currentSection,
                         onClick = { scope.launch { listState.animateScrollToItem(sectionStarts[i]) } },
-                        text = { Text(s.name.uppercase(), style = MaterialTheme.typography.labelLarge) },
+                        text = { Text(s.name.caps(), style = MaterialTheme.typography.labelLarge) },
                     )
                 }
             }
@@ -130,7 +131,7 @@ private fun CategoryLine(name: String) {
         modifier = Modifier.fillMaxWidth().padding(start = Spacing.l, end = Spacing.l, top = Spacing.xxxl, bottom = Spacing.l),
     ) {
         HorizontalDivider(Modifier.weight(1f), thickness = Spacing.hairline, color = BarLabColors.Line)
-        Text(name.uppercase(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+        Text(name.caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
         HorizontalDivider(Modifier.weight(1f), thickness = Spacing.hairline, color = BarLabColors.Line)
     }
 }
@@ -163,7 +164,7 @@ private fun ItemLine(item: Menu.Item, onClick: ((Menu.Item) -> Unit)?) {
 @Composable
 private fun Tag(text: String) {
     Text(
-        text.uppercase(),
+        text.caps(),
         style = MaterialTheme.typography.labelSmall,
         color = BarLabColors.Slate,
         modifier = Modifier.padding(start = Spacing.s),

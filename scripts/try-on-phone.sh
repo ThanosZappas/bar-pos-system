@@ -35,10 +35,12 @@ until grep -q "All emulators ready" "$LOG_DIR/emulators.log"; do
 done
 npm --prefix tools/seed run seed:emulator >/dev/null
 npm --prefix tools/seed run demo:rounds >/dev/null
+npm --prefix tools/seed run demo:history >/dev/null
 
-# Re-apply the USB port forwarding every few seconds, so unplugging and replugging the cable
-# (a simple way to test offline) reconnects by itself.
-( while true; do for p in $PORTS; do "$ADB" reverse "tcp:$p" "tcp:$p" >/dev/null 2>&1 || true; done; sleep 3; done ) &
+# Keep the USB port forwarding in place: --no-rebind leaves a working forward untouched (re-binding
+# it would briefly refuse new connections), and only re-creates it after the cable was replugged
+# (a simple way to test offline).
+( while true; do for p in $PORTS; do "$ADB" reverse --no-rebind "tcp:$p" "tcp:$p" >/dev/null 2>&1 || true; done; sleep 3; done ) &
 REVERSE_PID=$!
 
 echo "Building and installing the debug app (emulator mode)…"
@@ -52,7 +54,8 @@ cat <<'INFO'
 
 Ready.
   Phone      the app is open. Server: user1 / user1user1. Admin/barman board: admin / adminadmin
-             (asks for a new password first). Demo orders are on tables 1, 4, 7 and 9.
+             (asks for a new password first). Demo orders are on tables 1, 4, 7 and 9, and three
+             weeks of closed bills fill the dashboard's Analytics.
   Dashboard  http://localhost:5173 (admin)        Emulator data  http://localhost:4000
   Offline    turn on airplane mode and unplug the cable; take orders and payments; plug back in
              and turn airplane mode off: everything syncs, nothing twice.

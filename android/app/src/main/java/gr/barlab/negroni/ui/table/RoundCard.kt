@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.table
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -74,7 +75,7 @@ fun RoundCard(round: Round, onServe: () -> Unit, onEdit: () -> Unit, onCancel: (
                     TextButton(onClick = onEdit) { Text(stringResource(R.string.round_edit)) }
                     TextButton(onClick = { confirmCancel = true }) { Text(stringResource(R.string.round_cancel), color = BarLabColors.Error) }
                     Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                        Button(onClick = onServe) { Text(stringResource(R.string.round_mark_served).uppercase(), style = MaterialTheme.typography.labelLarge) }
+                        Button(onClick = onServe) { Text(stringResource(R.string.round_mark_served).caps(), style = MaterialTheme.typography.labelLarge) }
                     }
                 }
             }

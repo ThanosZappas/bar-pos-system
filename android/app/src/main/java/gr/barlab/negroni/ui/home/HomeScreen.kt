@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.home
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,7 +63,7 @@ fun HomeScreen(
         }
         PrimaryTabRow(selectedTabIndex = tab.coerceIn(tabs.indices)) {
             tabs.forEachIndexed { i, t ->
-                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(t.label).uppercase(), style = MaterialTheme.typography.labelLarge) })
+                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(t.label).caps(), style = MaterialTheme.typography.labelLarge) })
             }
         }
         when (tabs[tab.coerceIn(tabs.indices)]) {

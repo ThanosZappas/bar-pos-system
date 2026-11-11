@@ -16,15 +16,13 @@ import gr.barlab.negroni.domain.BoardAlerts
  * The on/off choice is remembered on the phone.
  */
 class BoardAlerter(context: Context) {
-    private val prefs = context.getSharedPreferences("board", Context.MODE_PRIVATE)
+    private val prefs = prefs(context)
     private val vibrator: Vibrator? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) context.getSystemService(VibratorManager::class.java)?.defaultVibrator
         else @Suppress("DEPRECATION") context.getSystemService(Vibrator::class.java)
     private val tones = runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80) }.getOrNull()
 
-    var enabled: Boolean
-        get() = prefs.getBoolean(KEY, true)
-        set(value) = prefs.edit { putBoolean(KEY, value) }
+    private val enabled: Boolean get() = prefs.getBoolean(KEY, true)
 
     fun play(alert: BoardAlerts.Alert) {
         if (!enabled) return
@@ -36,7 +34,13 @@ class BoardAlerter(context: Context) {
 
     fun release() = tones?.release()
 
-    private companion object {
-        const val KEY = "alerts"
+    companion object {
+        private const val KEY = "alerts"
+        private fun prefs(context: Context) = context.getSharedPreferences("board", Context.MODE_PRIVATE)
+
+        /** The switch in Settings; read on every alert, so a change applies at once. */
+        fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY, true)
+
+        fun setEnabled(context: Context, value: Boolean) = prefs(context).edit { putBoolean(KEY, value) }
     }
 }

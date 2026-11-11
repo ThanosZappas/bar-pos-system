@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.auth
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,7 +86,7 @@ fun LoginScreen(sessions: SessionRepository) {
             )
             vm.error?.let { Text(authFailureMessage(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
             Button(onClick = vm::submit, enabled = vm.canSubmit, modifier = Modifier.fillMaxWidth().padding(top = Spacing.s)) {
-                Text(stringResource(R.string.sign_in).uppercase(), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.sign_in).caps(), style = MaterialTheme.typography.labelLarge)
             }
         }
     }

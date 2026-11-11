@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.table
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -78,7 +79,7 @@ fun SummaryDialog(header: ReceiptHeader, tableName: String, rounds: List<Round>,
 @Composable
 private fun NotFiscal(ink: Color) {
     Text(
-        stringResource(R.string.summary_not_fiscal).uppercase(),
+        stringResource(R.string.summary_not_fiscal).caps(),
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Bold,
         color = ink,

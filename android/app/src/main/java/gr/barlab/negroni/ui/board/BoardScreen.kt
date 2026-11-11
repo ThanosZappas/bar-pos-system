@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.board
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -63,7 +63,6 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository, tables: List<DiningTa
     val rounds = loaded.orEmpty()
     val context = LocalContext.current
     val alerter = remember { BoardAlerter(context.applicationContext) }
-    var alertsOn by remember { mutableStateOf(alerter.enabled) }
     var seen by remember { mutableStateOf<Map<String, String>?>(null) }
     var confirmCancel by remember { mutableStateOf<Round?>(null) }
 
@@ -90,10 +89,6 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository, tables: List<DiningTa
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.l, vertical = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.board_alerts), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-            Switch(checked = alertsOn, onCheckedChange = { alertsOn = it; alerter.enabled = it })
-        }
         if (rounds.isEmpty()) {
             Text(stringResource(R.string.board_empty), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(Spacing.xxl))
         } else {
@@ -193,8 +188,8 @@ private fun BoardCard(
                 if (round.status == RoundStatus.Preparing) {
                     TextButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.board_cancel), color = BarLabColors.Error) }
                 }
-                if (round.isNew || round.isChanged) OutlinedButton(onClick = onOpen) { Text(stringResource(R.string.board_got_it).uppercase(), style = MaterialTheme.typography.labelLarge) }
-                if (round.status == RoundStatus.Preparing) Button(onClick = onServe) { Text(stringResource(R.string.round_mark_served).uppercase(), style = MaterialTheme.typography.labelLarge) }
+                if (round.isNew || round.isChanged) OutlinedButton(onClick = onOpen) { Text(stringResource(R.string.board_got_it).caps(), style = MaterialTheme.typography.labelLarge) }
+                if (round.status == RoundStatus.Preparing) Button(onClick = onServe) { Text(stringResource(R.string.round_mark_served).caps(), style = MaterialTheme.typography.labelLarge) }
             }
         }
     }

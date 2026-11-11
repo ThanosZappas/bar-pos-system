@@ -3,6 +3,7 @@ import { signOut } from 'firebase/auth';
 import { firebase } from '../firebase';
 import { t, type Key } from '../i18n';
 import type { StaffUser } from '../session';
+import { Analytics } from './Analytics';
 import { Board } from './Board';
 import { SyncBanner } from './SyncBanner';
 import { Menu } from './Menu';
@@ -12,11 +13,12 @@ import { Tables } from './Tables';
 import { TablesOverview } from './TablesOverview';
 import { Users } from './Users';
 
-type Route = 'board' | 'tables' | 'tables-admin' | 'payments' | 'menu' | 'users' | 'settings';
+type Route = 'board' | 'tables' | 'tables-admin' | 'payments' | 'analytics' | 'menu' | 'users' | 'settings';
 const ROUTES: { route: Route; label: Key }[] = [
   { route: 'board', label: 'nav.board' },
   { route: 'tables', label: 'nav.tables' },
   { route: 'payments', label: 'nav.payments' },
+  { route: 'analytics', label: 'nav.analytics' },
   { route: 'menu', label: 'nav.menu' },
   { route: 'users', label: 'nav.users' },
   { route: 'settings', label: 'nav.settings' },
@@ -55,6 +57,7 @@ export function Shell({ user }: { user: StaffUser }) {
       {route === 'tables-admin' && <Tables />}
       {route === 'board' && <Board user={user} />}
       {route === 'payments' && <PaymentsPage />}
+      {route === 'analytics' && <Analytics />}
       {route === 'settings' && <SettingsPage />}
     </>
   );

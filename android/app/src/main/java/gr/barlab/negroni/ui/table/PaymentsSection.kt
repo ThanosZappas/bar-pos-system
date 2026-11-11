@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.table
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,7 +45,7 @@ import gr.barlab.negroni.ui.theme.Spacing
 fun PaymentsSection(state: TableState, payments: List<Payment>, onReverse: (Payment, String) -> Unit) {
     var reversing by remember { mutableStateOf<Payment?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-        Text(stringResource(R.string.pay_title).uppercase(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        Text(stringResource(R.string.pay_title).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
         Text(
             stringResource(R.string.pay_totals, Money.format(state.totalCents), Money.format(state.paidCents), Money.format(state.dueCents)),
             style = MaterialTheme.typography.titleMedium,
@@ -134,7 +135,7 @@ fun RecordPaymentSheet(dueCents: Long, onRecord: (Long, PaymentMethod) -> Unit, 
                 },
                 modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.l),
             ) {
-                Text(stringResource(R.string.pay_record_amount, Money.format(cents ?: 0)).uppercase(), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.pay_record_amount, Money.format(cents ?: 0)).caps(), style = MaterialTheme.typography.labelLarge)
             }
         }
     }

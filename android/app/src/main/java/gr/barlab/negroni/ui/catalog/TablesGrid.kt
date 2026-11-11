@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.catalog
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -54,7 +55,7 @@ fun TablesGrid(tables: List<DiningTable>, states: Map<String, TableState>, onTab
             ) {
                 Column(Modifier.fillMaxSize().padding(Spacing.xs), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(table.name, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                    Text(stringResource(status.label()).uppercase(), style = MaterialTheme.typography.labelSmall, color = if (status == TableStatus.Free) MaterialTheme.colorScheme.onSurfaceVariant else color, maxLines = 1)
+                    Text(stringResource(status.label()).caps(), style = MaterialTheme.typography.labelSmall, color = if (status == TableStatus.Free) MaterialTheme.colorScheme.onSurfaceVariant else color, maxLines = 1)
                     if (state != null && state.totalCents > 0) {
                         Text(Money.format(state.dueCents), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }

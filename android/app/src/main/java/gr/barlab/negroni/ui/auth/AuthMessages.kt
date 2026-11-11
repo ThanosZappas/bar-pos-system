@@ -11,6 +11,7 @@ import gr.barlab.negroni.auth.PasswordRules
 @Composable
 fun authFailureMessage(failure: AuthFailure): String = when (failure.reason) {
     Reason.WrongCredentials -> stringResource(R.string.error_wrong_credentials)
+    Reason.WrongCurrentPassword -> stringResource(R.string.error_wrong_current_password)
     Reason.Deactivated -> stringResource(R.string.error_deactivated)
     Reason.Network -> stringResource(R.string.error_network)
     Reason.TooManyAttempts -> stringResource(R.string.error_too_many_attempts)
@@ -19,5 +20,5 @@ fun authFailureMessage(failure: AuthFailure): String = when (failure.reason) {
     Reason.PasswordSameAsCurrent -> stringResource(R.string.error_password_same_as_current)
     Reason.PasswordSameAsInitial -> stringResource(R.string.error_password_same_as_initial)
     Reason.Server -> stringResource(R.string.error_server, failure.detail.orEmpty())
-    Reason.Unknown -> stringResource(R.string.error_unknown)
+    Reason.Unknown -> stringResource(R.string.error_unknown, failure.detail.orEmpty())
 }

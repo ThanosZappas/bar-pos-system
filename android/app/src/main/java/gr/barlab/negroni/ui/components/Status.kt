@@ -48,7 +48,7 @@ fun RoundStatus.label(): Int = when (this) {
 @Composable
 fun Badge(text: String, color: Color, modifier: Modifier = Modifier) {
     Text(
-        text.uppercase(),
+        text.caps(),
         style = MaterialTheme.typography.labelSmall,
         color = color,
         modifier = modifier

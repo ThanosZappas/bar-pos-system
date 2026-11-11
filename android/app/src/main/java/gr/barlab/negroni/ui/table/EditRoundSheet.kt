@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.table
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -95,7 +96,7 @@ fun EditRoundSheet(round: Round, onSave: (List<OrderLine>, String) -> Unit, onCa
                 onClick = { if (allCancelled) onCancelRound() else onSave(lines.map { it.copy(note = it.note.trim()) }, note) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.l),
             ) {
-                Text(stringResource(if (allCancelled) R.string.round_cancel else R.string.edit_save).uppercase(), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(if (allCancelled) R.string.round_cancel else R.string.edit_save).caps(), style = MaterialTheme.typography.labelLarge)
             }
         }
     }

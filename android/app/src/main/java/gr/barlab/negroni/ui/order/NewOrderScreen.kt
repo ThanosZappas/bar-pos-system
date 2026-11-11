@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.order
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -70,7 +71,7 @@ fun NewOrderScreen(table: DiningTable, menu: Menu, userId: String, onSubmit: (Or
             Text(stringResource(R.string.order_empty), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(Spacing.l))
         } else {
             Button(onClick = { reviewing = true }, modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
-                Text(pluralStringResource(R.plurals.order_review, draft.itemCount, draft.itemCount, Money.format(draft.totalCents)).uppercase(), style = MaterialTheme.typography.labelLarge)
+                Text(pluralStringResource(R.plurals.order_review, draft.itemCount, draft.itemCount, Money.format(draft.totalCents)).caps(), style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -118,7 +119,7 @@ private fun AddItemSheet(item: Menu.Item, onAdd: (Int, String) -> Unit, onDismis
                 modifier = Modifier.fillMaxWidth(),
             )
             Button(onClick = { onAdd(qty, note) }, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.l)) {
-                Text("${stringResource(R.string.order_add)} · ${Money.format(item.priceCents * qty)}".uppercase(), style = MaterialTheme.typography.labelLarge)
+                Text("${stringResource(R.string.order_add)} · ${Money.format(item.priceCents * qty)}".caps(), style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -157,7 +158,7 @@ private fun ReviewSheet(draft: OrderDraft, onChange: (OrderDraft) -> Unit, onSub
                 modifier = Modifier.fillMaxWidth(),
             )
             Button(onClick = onSubmit, enabled = !draft.isEmpty, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.l)) {
-                Text(stringResource(R.string.order_submit, Money.format(draft.totalCents)).uppercase(), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.order_submit, Money.format(draft.totalCents)).caps(), style = MaterialTheme.typography.labelLarge)
             }
         }
     }

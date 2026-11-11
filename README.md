@@ -163,6 +163,8 @@ Tested target: Xiaomi Mi 10T Pro (MIUI / HyperOS). Other Android 10+ phones work
    "You are now a developer".
 2. Settings → Additional settings → **Developer options**: turn on **USB debugging** and
    **Install via USB** (MIUI asks you to be signed in to a Mi account for the second one).
+   For the on-phone tests (`verify-offline-on-phone.sh`) also turn on **USB debugging
+   (Security settings)**; without it MIUI refuses to install test packages.
 3. Connect the phone by USB, choose "File transfer" if asked, and accept the "Allow USB
    debugging?" prompt (tick "Always allow from this computer").
 
@@ -233,14 +235,24 @@ All in the dashboard (admin account only):
   open order).
 - **Payments**: today's payments with cash and card totals, and today's closed bills (open one
   to see its lines and payments).
+- **Analytics**: per day, week, month or year (a business day runs 06:00–06:00): income with
+  cash/card split, tables closed, average bill, items sold, median time to serve, income over
+  time, most popular items, sales by category, busiest hours, staff, cancellations and changes.
+  A running period is compared with the same point of the previous one. Figures are read on
+  demand (not live); a year reads every order of that year, which is fine at this size.
+  Try it with `npm --prefix tools/seed run demo:history` on the emulators.
 - **Settings**: dashboard language, and the header of the non-fiscal summary (bar name,
   address, phone, footer).
 
-**Language:** English is the default. Android: Settings → Language (English / Ελληνικά), kept
-across restarts (on Android 13+ also under the system's app language setting). Dashboard:
-Settings → Language, stored in that browser. The Greek translation is scaffolded but not
-written: `android/app/src/main/res/values-el/strings.xml` and `web/src/i18n/el.json` are
-empty, so everything falls back to English until they are filled in.
+**Language:** English is the default; Greek is complete. Android: Settings → Language
+(English / Ελληνικά), kept across restarts (on Android 13+ also under the system's app language
+setting). Dashboard: Settings → Language, stored in that browser. Menu items, categories and
+sections are data and stay as written in the menu. Translations live in
+`android/app/src/main/res/values-el/strings.xml` and `web/src/i18n/el.json`; a test fails if a
+dashboard key is missing in Greek.
+
+**Board alerts (Android):** barman and admin turn sound and vibration for new or changed orders
+on or off in Settings → Order board.
 
 ---
 
@@ -423,7 +435,7 @@ the system font.
 
 ## Known limits
 
-- Greek is listed but not translated (falls back to English).
+- The bundled fonts have no Greek letters, so Greek text uses the system font.
 - No reports yet, no real POS or fiscal integration (design seam only).
 - Two phones paying the same table while both offline can overpay; it is shown as "Overpaid"
   and corrected with a reversal.

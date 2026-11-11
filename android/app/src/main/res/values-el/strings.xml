@@ -1,4 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Greek translation: scaffolded, not written yet. Missing strings fall back to values/strings.xml. -->
+<!-- Greek. Menu items, sections and categories are data and stay as the bar writes them. -->
 <resources>
+    <string name="loading">Φόρτωση…</string>
+
+    <!-- Sign in -->
+    <string name="username">Όνομα χρήστη</string>
+    <string name="password">Κωδικός</string>
+    <string name="password_show">Εμφάνιση</string>
+    <string name="password_hide">Απόκρυψη</string>
+    <string name="sign_in">Σύνδεση</string>
+    <string name="sign_out">Αποσύνδεση</string>
+
+    <!-- Forced password change -->
+    <string name="change_password_title">Ορίστε νέο κωδικό</string>
+    <string name="change_password_explainer">Συνδέεστε για πρώτη φορά ή ο κωδικός σας επαναφέρθηκε. Ορίστε νέο κωδικό για να συνεχίσετε.</string>
+    <string name="current_password">Τρέχων κωδικός</string>
+    <string name="new_password">Νέος κωδικός</string>
+    <string name="confirm_password">Επανάληψη νέου κωδικού</string>
+    <plurals name="new_password_hint">
+        <item quantity="one">Τουλάχιστον %1$d χαρακτήρας</item>
+        <item quantity="other">Τουλάχιστον %1$d χαρακτήρες</item>
+    </plurals>
+    <string name="save_password">Αποθήκευση κωδικού</string>
+
+    <!-- Errors -->
+    <string name="error_wrong_credentials">Λάθος όνομα χρήστη ή κωδικός.</string>
+    <string name="error_wrong_current_password">Ο τρέχων κωδικός δεν είναι σωστός.</string>
+    <string name="error_deactivated">Ο λογαριασμός είναι απενεργοποιημένος. Ρωτήστε τον διαχειριστή.</string>
+    <string name="error_network">Δεν υπάρχει σύνδεση. Ελέγξτε το Wi-Fi και δοκιμάστε ξανά.</string>
+    <string name="error_too_many_attempts">Πολλές προσπάθειες. Περιμένετε ένα λεπτό και δοκιμάστε ξανά.</string>
+    <plurals name="error_password_too_short">
+        <item quantity="one">Ο νέος κωδικός πρέπει να έχει τουλάχιστον %1$d χαρακτήρα.</item>
+        <item quantity="other">Ο νέος κωδικός πρέπει να έχει τουλάχιστον %1$d χαρακτήρες.</item>
+    </plurals>
+    <string name="error_password_mismatch">Οι δύο νέοι κωδικοί δεν ταιριάζουν.</string>
+    <string name="error_password_same_as_current">Ο νέος κωδικός πρέπει να διαφέρει από τον τρέχοντα.</string>
+    <string name="error_password_same_as_initial">Επιλέξτε κωδικό διαφορετικό από τον αρχικό.</string>
+    <string name="error_server">Ο διακομιστής αρνήθηκε: %1$s</string>
+    <string name="error_unknown">Κάτι πήγε στραβά (%1$s). Δοκιμάστε ξανά.</string>
+
+    <!-- Account states -->
+    <string name="deactivated_title">Απενεργοποιημένος λογαριασμός</string>
+    <string name="no_profile_title">Ο λογαριασμός δεν έχει ρυθμιστεί</string>
+    <string name="no_profile_body">Αυτός ο λογαριασμός δεν έχει προφίλ προσωπικού. Ρωτήστε τον διαχειριστή.</string>
+
+    <!-- Home -->
+    <string name="tab_board">Μπαρ</string>
+    <string name="tab_tables">Τραπέζια</string>
+    <string name="tab_menu">Κατάλογος</string>
+    <string name="table_status_free">Ελεύθερο</string>
+    <string name="table_status_preparing">Ετοιμάζεται</string>
+    <string name="table_status_served">Σερβιρίστηκε</string>
+    <string name="table_status_partially_paid">Μερικώς πληρωμένο</string>
+    <string name="table_status_paid">Πληρωμένο</string>
+    <string name="table_title">Τραπέζι %1$s</string>
+    <string name="table_no_rounds">Καμία παραγγελία ακόμη.</string>
+    <string name="table_not_found">Αυτό το τραπέζι δεν υπάρχει πια.</string>
+    <string name="tables_empty">Δεν υπάρχουν τραπέζια. Ο διαχειριστής τα προσθέτει από τον πίνακα ελέγχου.</string>
+
+    <!-- Rounds -->
+    <string name="round_status_preparing">Ετοιμάζεται</string>
+    <string name="round_status_served">Σερβιρίστηκε</string>
+    <string name="round_status_cancelled">Ακυρώθηκε</string>
+    <string name="round_served_by">Σερβιρίστηκε %1$s από %2$s</string>
+    <string name="round_edited_by">Αλλαγή από %1$s</string>
+    <string name="round_pending_sync">Αναμονή συγχρονισμού</string>
+    <string name="round_mark_served">Σερβιρίστηκε</string>
+    <string name="round_edit">Αλλαγή</string>
+    <string name="round_cancel">Ακύρωση παραγγελίας</string>
+    <string name="round_cancel_confirm_title">Ακύρωση αυτής της παραγγελίας;</string>
+    <string name="round_cancel_confirm_body">Ο μπάρμαν βλέπει την ακύρωση. Δεν αναιρείται.</string>
+    <string name="round_keep">Όχι</string>
+    <string name="round_note">Σημείωση: %1$s</string>
+    <string name="round_order_note">Σημείωση παραγγελίας: %1$s</string>
+
+    <!-- Order board (barman, admin) -->
+    <string name="board_empty">Τίποτα για ετοιμασία.</string>
+    <string name="board_new">Νέα</string>
+    <string name="board_edited">Αλλαγή</string>
+    <string name="board_cancelled_by">Ακυρώθηκε από %1$s</string>
+    <string name="board_waiting">αναμονή %1$s</string>
+    <string name="board_got_it">Το είδα</string>
+    <string name="board_by">από %1$s</string>
+    <string name="board_cancel">Ακύρωση</string>
+    <string name="board_alerts">Ήχος και δόνηση για νέες ή αλλαγμένες παραγγελίες</string>
+    <string name="served_undo_message">Σερβιρίστηκε: τραπέζι %1$s</string>
+    <string name="served_undo">Αναίρεση</string>
+
+    <!-- New order -->
+    <string name="order_new">Νέα παραγγελία</string>
+    <string name="order_title">Νέα παραγγελία · Τραπέζι %1$s</string>
+    <string name="order_add">Προσθήκη</string>
+    <string name="order_item_note">Σημείωση για αυτό (προαιρετικό)</string>
+    <string name="order_order_note">Σημείωση για όλη την παραγγελία (προαιρετικό)</string>
+    <plurals name="order_review">
+        <item quantity="one">Έλεγχος · %1$d είδος · %2$s</item>
+        <item quantity="other">Έλεγχος · %1$d είδη · %2$s</item>
+    </plurals>
+    <string name="order_submit">Αποστολή στο μπαρ · %1$s</string>
+    <string name="order_empty">Πατήστε είδη στον κατάλογο για να τα προσθέσετε.</string>
+    <string name="order_discard_title">Απόρριψη της παραγγελίας;</string>
+    <string name="order_discard_body">Τα είδη που προσθέσατε δεν θα σταλούν.</string>
+    <string name="order_discard">Απόρριψη</string>
+    <string name="order_continue">Συνέχεια</string>
+    <string name="qty_decrease">Μείωση ποσότητας</string>
+    <string name="qty_increase">Αύξηση ποσότητας</string>
+    <string name="back">Πίσω</string>
+    <string name="close">Κλείσιμο</string>
+
+    <!-- Edit round -->
+    <string name="edit_title">Αλλαγή παραγγελίας</string>
+    <string name="edit_explainer">Αλλάξτε ποσότητες ή σημειώσεις, ή ακυρώστε μεμονωμένα είδη. Ο μπάρμαν βλέπει κάθε αλλαγή.</string>
+    <string name="edit_cancel_item">Ακύρωση είδους</string>
+    <string name="edit_restore_item">Επαναφορά</string>
+    <string name="edit_save">Αποθήκευση αλλαγών</string>
+    <string name="edit_all_cancelled">Όλα τα είδη ακυρώθηκαν: ακυρώνεται όλη η παραγγελία.</string>
+
+    <!-- Settings -->
+    <string name="settings">Ρυθμίσεις</string>
+    <string name="settings_account">Λογαριασμός</string>
+    <string name="settings_board">Μπαρ</string>
+    <string name="settings_language">Γλώσσα</string>
+    <string name="settings_version">Έκδοση %1$s</string>
+
+    <!-- Sync banner -->
+    <string name="sync_offline">Εκτός σύνδεσης · οι αλλαγές αποθηκεύονται στο κινητό</string>
+    <plurals name="sync_offline_pending">
+        <item quantity="one">Εκτός σύνδεσης · %1$d αλλαγή περιμένει συγχρονισμό</item>
+        <item quantity="other">Εκτός σύνδεσης · %1$d αλλαγές περιμένουν συγχρονισμό</item>
+    </plurals>
+    <plurals name="sync_syncing">
+        <item quantity="one">Συγχρονισμός %1$d αλλαγής…</item>
+        <item quantity="other">Συγχρονισμός %1$d αλλαγών…</item>
+    </plurals>
+
+    <!-- Payments -->
+    <string name="pay_title">Πληρωμές</string>
+    <string name="pay_totals">Σύνολο %1$s · Πληρώθηκαν %2$s · Υπόλοιπο %3$s</string>
+    <string name="pay_none">Καμία πληρωμή ακόμη.</string>
+    <string name="pay_record">Καταχώριση πληρωμής</string>
+    <string name="pay_amount">Ποσό (€)</string>
+    <string name="pay_cash">Μετρητά</string>
+    <string name="pay_card">Κάρτα</string>
+    <string name="pay_record_amount">Καταχώριση %1$s</string>
+    <string name="pay_invalid">Γράψτε ποσό, π.χ. 10 ή 8,50.</string>
+    <string name="pay_not_positive">Γράψτε ποσό μεγαλύτερο από μηδέν.</string>
+    <string name="pay_more_than_due">Είναι περισσότερα από το υπόλοιπο των %1$s.</string>
+    <string name="pay_reverse">Αντιλογισμός</string>
+    <string name="pay_reversed">Αντιλογίστηκε</string>
+    <string name="pay_reversal">Αντιλογισμός: %1$s</string>
+    <string name="pay_reverse_title">Αντιλογισμός αυτής της πληρωμής;</string>
+    <string name="pay_reverse_reason">Αιτία (υποχρεωτικό)</string>
+    <string name="pay_overpaid">Πληρώθηκαν %1$s παραπάνω: αντιλογίστε την επιπλέον πληρωμή.</string>
+
+    <!-- Close and summary -->
+    <string name="close_table">Κλείσιμο τραπεζιού</string>
+    <string name="close_confirm_title">Κλείσιμο τραπεζιού %1$s;</string>
+    <string name="close_confirm_body">Όλα έχουν πληρωθεί. Το τραπέζι γίνεται ξανά ελεύθερο.</string>
+    <string name="close_only_paid">Το τραπέζι κλείνει όταν όλα έχουν σερβιριστεί και πληρωθεί.</string>
+    <string name="summary_button">Λογαριασμός</string>
+    <string name="summary_not_fiscal">Δεν αποτελεί φορολογικό στοιχείο</string>
+    <string name="summary_table">Τραπέζι %1$s · %2$s</string>
+    <string name="summary_total">Σύνολο</string>
+    <string name="summary_due">Υπόλοιπο</string>
+
+    <!-- Late orders -->
+    <string name="late_flag">Καθυστερημένη: το τραπέζι έκλεισε</string>
+    <string name="late_explainer">Η παραγγελία έφτασε αφού έκλεισε ο λογαριασμός του τραπεζιού %1$s. Προσθέστε τη στον τρέχοντα λογαριασμό, χρεώστε την ξεχωριστά ή ακυρώστε την.</string>
+    <string name="late_rebill">Προσθήκη στον λογαριασμό του τραπεζιού %1$s</string>
+
+    <!-- Move table -->
+    <string name="move_table">Μεταφορά σε άλλο τραπέζι</string>
+    <string name="move_title">Μεταφορά από το τραπέζι %1$s στο</string>
+    <string name="move_none">Δεν υπάρχει ελεύθερο τραπέζι.</string>
+    <string name="move_done">Μεταφέρθηκε στο τραπέζι %1$s.</string>
+    <string name="move_failed">Η μεταφορά απέτυχε: %1$s</string>
+
+    <!-- Refused writes after sync -->
+    <string name="failure_submit">Ο διακομιστής αρνήθηκε μια παραγγελία για το τραπέζι %1$s.</string>
+    <string name="failure_edit">Η αλλαγή στο τραπέζι %1$s απορρίφθηκε: η παραγγελία είχε ήδη σερβιριστεί ή ακυρωθεί.</string>
+    <string name="failure_serve">Το «Σερβιρίστηκε» στο τραπέζι %1$s απορρίφθηκε: η παραγγελία άλλαξε στο μεταξύ.</string>
+    <string name="failure_cancel">Η ακύρωση στο τραπέζι %1$s απορρίφθηκε: η παραγγελία είχε ήδη σερβιριστεί.</string>
+    <string name="failure_unserve">Η αναίρεση στο τραπέζι %1$s απορρίφθηκε: πέρασαν πάνω από δύο λεπτά.</string>
+    <string name="failure_rebill">Η προσθήκη της καθυστερημένης παραγγελίας στο τραπέζι %1$s απορρίφθηκε.</string>
+    <string name="failure_pay">Ο διακομιστής αρνήθηκε μια πληρωμή για το τραπέζι %1$s.</string>
+    <string name="failure_reverse">Ο αντιλογισμός στο τραπέζι %1$s απορρίφθηκε: η πληρωμή είχε ήδη αντιλογιστεί.</string>
+    <string name="failure_close">Το κλείσιμο του τραπεζιού %1$s απορρίφθηκε: το έκλεισε ήδη κάποιος άλλος ή δεν έχει πληρωθεί όλο.</string>
+
+    <!-- Menu -->
+    <string name="menu_search">Αναζήτηση στον κατάλογο</string>
+    <string name="menu_search_clear">Καθαρισμός</string>
+    <string name="menu_no_results">Δεν βρέθηκε τίποτα για «%1$s».</string>
+    <string name="menu_empty">Ο κατάλογος είναι άδειος.</string>
+    <string name="role_admin">Διαχειριστής</string>
+    <string name="role_barman">Μπάρμαν</string>
+    <string name="role_server">Σερβιτόρος</string>
 </resources>

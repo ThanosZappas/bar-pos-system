@@ -1,5 +1,6 @@
 package gr.barlab.negroni.auth
 
+import android.util.Log
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
@@ -9,6 +10,7 @@ import com.google.firebase.functions.FirebaseFunctionsException
 class AuthFailure(val reason: Reason, val detail: String? = null) : Exception(detail ?: reason.name) {
     enum class Reason {
         WrongCredentials,
+        WrongCurrentPassword,
         Deactivated,
         Network,
         TooManyAttempts,
@@ -21,7 +23,10 @@ class AuthFailure(val reason: Reason, val detail: String? = null) : Exception(de
     }
 
     companion object {
-        fun from(e: Throwable): AuthFailure = when (e) {
+        /** Maps a Firebase error to what the screen says; the original is logged (tag NegroniAuth). */
+        fun from(e: Throwable): AuthFailure = map(e).also { if (e !is AuthFailure) Log.w("NegroniAuth", "Auth step failed (${it.reason})", e) }
+
+        private fun map(e: Throwable): AuthFailure = when (e) {
             is AuthFailure -> e
             is FirebaseAuthInvalidUserException ->
                 if (e.errorCode == "ERROR_USER_DISABLED") AuthFailure(Reason.Deactivated) else AuthFailure(Reason.WrongCredentials)
@@ -33,7 +38,7 @@ class AuthFailure(val reason: Reason, val detail: String? = null) : Exception(de
                 FirebaseFunctionsException.Code.PERMISSION_DENIED -> AuthFailure(Reason.Deactivated)
                 else -> AuthFailure(Reason.Server, e.message)
             }
-            else -> AuthFailure(Reason.Unknown, e.message)
+            else -> AuthFailure(Reason.Unknown, e.message ?: e.javaClass.simpleName)
         }
     }
 }

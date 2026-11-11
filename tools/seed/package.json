@@ -11,6 +11,7 @@
     "seed": "node seed.ts",
     "menu:import": "node menu/import-menu.ts",
     "demo:rounds": "node dev/demo-rounds.ts --emulator",
+    "demo:history": "node dev/demo-history.ts --emulator",
     "test": "vitest run"
   },
   "dependencies": {

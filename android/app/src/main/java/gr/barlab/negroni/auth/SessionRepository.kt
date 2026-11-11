@@ -76,7 +76,13 @@ class SessionRepository(
         PasswordRules.check(username, current, new, confirm)?.let { throw AuthFailure(it) }
         val user = auth.currentUser ?: throw AuthFailure(AuthFailure.Reason.WrongCredentials)
         val email = Usernames.toEmail(username) ?: throw AuthFailure(AuthFailure.Reason.WrongCredentials)
-        user.reauthenticate(EmailAuthProvider.getCredential(email, current)).await()
+        try {
+            user.reauthenticate(EmailAuthProvider.getCredential(email, current)).await()
+        } catch (e: Exception) {
+            // On this screen a refused credential means the current password was mistyped.
+            val failure = AuthFailure.from(e)
+            throw if (failure.reason == AuthFailure.Reason.WrongCredentials) AuthFailure(AuthFailure.Reason.WrongCurrentPassword) else failure
+        }
         functions.getHttpsCallable("changeOwnPassword").call(mapOf("password" to new)).await()
         auth.signInWithEmailAndPassword(email, new).await()
         Unit

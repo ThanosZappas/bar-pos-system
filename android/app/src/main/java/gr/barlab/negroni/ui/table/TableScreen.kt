@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.table
 
+import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -95,13 +96,13 @@ fun TableScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                         PaymentsSection(state, payments, onReverse = { p, reason -> orders.reverse(p, reason, user) })
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                            if (state.dueCents > 0) OutlinedButton(onClick = { paying = true }) { Text(stringResource(R.string.pay_record).uppercase(), style = MaterialTheme.typography.labelLarge) }
+                            if (state.dueCents > 0) OutlinedButton(onClick = { paying = true }) { Text(stringResource(R.string.pay_record).caps(), style = MaterialTheme.typography.labelLarge) }
                             TextButton(onClick = { showSummary = true }) { Text(stringResource(R.string.summary_button)) }
                             TextButton(onClick = { moving = true }) { Text(stringResource(R.string.move_table)) }
                         }
                         if (state.status == TableStatus.Paid) {
                             Button(onClick = { confirmClose = true }, modifier = Modifier.fillMaxWidth()) {
-                                Text(stringResource(R.string.close_table).uppercase(), style = MaterialTheme.typography.labelLarge)
+                                Text(stringResource(R.string.close_table).caps(), style = MaterialTheme.typography.labelLarge)
                             }
                         } else if (state.totalCents > 0) {
                             Text(stringResource(R.string.close_only_paid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -111,7 +112,7 @@ fun TableScreen(
             }
         }
         Button(onClick = onNewOrder, modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
-            Text(stringResource(R.string.order_new).uppercase(), style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.order_new).caps(), style = MaterialTheme.typography.labelLarge)
         }
     }
 

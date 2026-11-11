@@ -15,7 +15,7 @@ fun BrandHeader(modifier: Modifier = Modifier) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.brand_wordmark), style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.primary)
         Text(
-            stringResource(R.string.brand_subtitle).uppercase(),
+            stringResource(R.string.brand_subtitle).caps(),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
