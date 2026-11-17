@@ -69,6 +69,6 @@ fun PermissionScreen(user: StaffUser, shift: Shift?, nowMs: Long, onRequest: () 
                 Text(stringResource(R.string.permission_request).caps(), style = MaterialTheme.typography.labelLarge)
             }
         }
-        TextButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out)) }
+        TextButton(onClick = onSignOut) { Text(stringResource(R.string.switch_user)) }
     }
 }

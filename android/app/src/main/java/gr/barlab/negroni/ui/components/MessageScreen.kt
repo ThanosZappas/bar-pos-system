@@ -26,6 +26,6 @@ fun MessageScreen(title: String, body: String? = null, onSignOut: (() -> Unit)? 
         BrandHeader(Modifier.padding(bottom = Spacing.xxxl))
         Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
         body?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center) }
-        onSignOut?.let { TextButton(onClick = it) { Text(stringResource(R.string.sign_out)) } }
+        onSignOut?.let { TextButton(onClick = it) { Text(stringResource(R.string.switch_user)) } }
     }
 }

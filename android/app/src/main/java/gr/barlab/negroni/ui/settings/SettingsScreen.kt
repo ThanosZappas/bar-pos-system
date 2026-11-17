@@ -12,6 +12,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -37,12 +38,22 @@ import gr.barlab.negroni.ui.home.roleLabel
 import gr.barlab.negroni.ui.theme.BarLabColors
 import gr.barlab.negroni.ui.theme.Spacing
 
-/** Account, language (persisted) and version. Admin management stays in the web dashboard. */
+/** Account (switch user, remove from this phone), language (persisted), board alerts and version. */
 @Composable
-fun SettingsScreen(user: StaffUser, onBack: () -> Unit, onSignOut: () -> Unit) {
+fun SettingsScreen(user: StaffUser, onBack: () -> Unit, onSwitchUser: () -> Unit, onRemoveFromPhone: () -> Unit) {
     var language by remember { mutableStateOf(AppLanguage.current()) }
     val context = LocalContext.current
     var alertsOn by remember { mutableStateOf(BoardAlerter.isEnabled(context)) }
+    var confirmRemove by remember { mutableStateOf(false) }
+    if (confirmRemove) {
+        AlertDialog(
+            onDismissRequest = { confirmRemove = false },
+            title = { Text(stringResource(R.string.remove_from_phone_title, user.displayName)) },
+            text = { Text(stringResource(R.string.remove_from_phone_body)) },
+            confirmButton = { TextButton(onClick = { confirmRemove = false; onRemoveFromPhone() }) { Text(stringResource(R.string.remove)) } },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.dialog_cancel)) } },
+        )
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = onBack) { Text("‹ " + stringResource(R.string.back)) }
@@ -51,7 +62,9 @@ fun SettingsScreen(user: StaffUser, onBack: () -> Unit, onSignOut: () -> Unit) {
         Column(Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
             Text(stringResource(R.string.settings_account).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             Text(stringResource(R.string.settings_signed_in, user.displayName, user.username, stringResource(roleLabel(user.role))), style = MaterialTheme.typography.bodyLarge)
-            OutlinedButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out).caps(), style = MaterialTheme.typography.labelLarge) }
+            OutlinedButton(onClick = onSwitchUser) { Text(stringResource(R.string.switch_user).caps(), style = MaterialTheme.typography.labelLarge) }
+            Text(stringResource(R.string.switch_user_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = { confirmRemove = true }) { Text(stringResource(R.string.remove_me_from_phone)) }
 
             HorizontalDivider(color = BarLabColors.Line)
             Text(stringResource(R.string.settings_language).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)

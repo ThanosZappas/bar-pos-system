@@ -12,7 +12,15 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.semantics.Role as SemanticsRole
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import gr.barlab.negroni.ui.profile.ProfileAvatar
+import gr.barlab.negroni.ui.profile.iconOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,6 +58,8 @@ fun HomeScreen(
     onStaff: () -> Unit,
     onUsers: () -> Unit,
     nowMs: Long,
+    photo: ImageBitmap?,
+    onSwitchUser: () -> Unit,
 ) {
     val tabs = when (user.role) {
         Role.Admin -> HomeTab.entries
@@ -72,6 +82,14 @@ fun HomeScreen(
             if (user.role == Role.Admin) TextButton(onClick = onUsers) { Text(stringResource(R.string.users)) }
             else if (user.isLead) TextButton(onClick = onStaff) { Text(stringResource(R.string.staff)) }
             TextButton(onClick = onSettings) { Text(stringResource(R.string.settings)) }
+            // Your own picture or icon: tap it to hand the phone to someone else.
+            val switchLabel = stringResource(R.string.switch_user)
+            ProfileAvatar(
+                iconOf(user.icon, user.role),
+                photo,
+                36.dp,
+                Modifier.clickable(role = SemanticsRole.Button, onClickLabel = switchLabel, onClick = onSwitchUser).semantics { contentDescription = switchLabel },
+            )
         }
         // Four spaced-out labels (admin) do not fit a phone's width, so the row scrolls; never wrap a label.
         val tabItems: @Composable () -> Unit = {

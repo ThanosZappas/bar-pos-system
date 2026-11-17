@@ -56,6 +56,7 @@ import gr.barlab.negroni.ui.theme.BarLabColors
 import gr.barlab.negroni.ui.theme.Spacing
 import kotlinx.coroutines.flow.map
 import gr.barlab.negroni.ui.settings.SettingsScreen
+import gr.barlab.negroni.auth.PhoneRepository
 import gr.barlab.negroni.ui.table.TableScreen
 
 /** Everything after sign-in: one live subscription each for tables, menu and table states. */
@@ -66,10 +67,12 @@ fun SignedInApp(
     orders: OrdersRepository,
     shifts: ShiftRepository,
     users: UsersRepository?,
+    phone: PhoneRepository,
     sync: SyncMonitor?,
     nowMs: Long,
     shiftOver: Boolean,
-    onSignOut: () -> Unit,
+    onSwitchUser: () -> Unit,
+    onRemoveFromPhone: () -> Unit,
 ) {
     val nav = rememberNavigator()
     val snackbar = remember { SnackbarHostState() }
@@ -80,6 +83,7 @@ fun SignedInApp(
     val header by catalog.receiptHeader.collectAsStateWithLifecycle(initialValue = ReceiptHeader.DEFAULT)
     val sessionKey = tables.joinToString { it.currentSessionId }
     val states by remember(sessionKey) { orders.tableStates(tables) }.collectAsStateWithLifecycle(initialValue = emptyMap())
+    val photos by phone.photos.collectAsStateWithLifecycle()
 
     // Writes queued offline can still be refused once they reach the server; say so.
     LaunchedEffect(Unit) {
@@ -135,12 +139,12 @@ fun SignedInApp(
             if (user.isLead) RequestPopup(user, shifts)
             if (!canWork) {
                 // Until the first snapshot arrives, show nothing rather than flash the request screen.
-                if (myShift != null) PermissionScreen(user, myShift?.shift, nowMs, onRequest = { shifts.request(user) }, onSignOut = onSignOut)
+                if (myShift != null) PermissionScreen(user, myShift?.shift, nowMs, onRequest = { shifts.request(user) }, onSignOut = onSwitchUser)
                 return@Box
             }
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs)
-                Screen.Settings -> SettingsScreen(user, onBack = nav::back, onSignOut = onSignOut)
+                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs, photo = photos[user.uid], onSwitchUser = onSwitchUser)
+                Screen.Settings -> SettingsScreen(user, onBack = nav::back, onSwitchUser = onSwitchUser, onRemoveFromPhone = onRemoveFromPhone)
                 Screen.Staff -> StaffScreen(user, shifts, nowMs, onBack = nav::back)
                 Screen.Users ->
                     if (users != null && user.role == Role.Admin) UsersScreen(user, users, shifts, nowMs, onBack = nav::back)

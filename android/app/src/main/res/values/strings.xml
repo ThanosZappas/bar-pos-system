@@ -282,4 +282,48 @@
         <item quantity="one">%1$s · table %2$s · %3$d order · %4$s</item>
         <item quantity="other">%1$s · table %2$s · %3$d orders · %4$s</item>
     </plurals>
+
+    <!-- Profile sign-in: grid, PIN pad, choosing a PIN, switching user -->
+    <string name="who_is_working">Who\'s working?</string>
+    <string name="add_account">Add / other account</string>
+    <string name="back_to_profiles">Profiles</string>
+    <string name="password_note_add">Sign in with your username and password. After that, this phone keeps your profile and asks only for your PIN.</string>
+    <string name="pin_enter_hint">Enter your PIN</string>
+    <string name="pin_use_password">Use password instead</string>
+    <string name="pin_delete">Delete</string>
+    <string name="pin_next">Next</string>
+    <plurals name="pin_wrong">
+        <item quantity="one">Wrong PIN. %d try left before a lock.</item>
+        <item quantity="other">Wrong PIN. %d tries left before a lock.</item>
+    </plurals>
+    <string name="pin_locked">Too many wrong PINs. Try again in %1$s.</string>
+    <string name="pin_locked_short">Locked · %1$s</string>
+    <string name="pin_password_needed">Password needed</string>
+    <string name="pin_no_pin">No PIN yet. Sign in with your password to choose one.</string>
+    <string name="pin_need_password">Sign in with your password to choose a new PIN.</string>
+    <string name="pin_current_needed">Enter your current PIN.</string>
+    <string name="pin_bad_format">The PIN must be %1$d to %2$d digits.</string>
+    <string name="pin_phone_removed">This phone was removed from the bar\'s phones. Sign in with your password to add it again.</string>
+    <string name="pin_not_on_phone">This profile isn\'t on this phone any more. Sign in with your password.</string>
+    <string name="pin_gone">This profile was deleted.</string>
+    <string name="pin_biometric_off">Fingerprint unlock is off on this phone. Use your PIN.</string>
+    <string name="pin_shared_phone">Fingerprint unlock works only on a phone with one profile.</string>
+    <string name="pin_choose_title">Choose your PIN</string>
+    <string name="pin_choose_hint">%1$d to %2$d digits. You\'ll use it to sign in on this phone each shift.</string>
+    <string name="pin_confirm_title">Enter it again</string>
+    <string name="pin_current_title">Enter your current PIN</string>
+    <string name="pin_mismatch">The PINs don\'t match. Start again.</string>
+    <string name="remove_from_phone_title">Remove %1$s from this phone?</string>
+    <string name="remove_from_phone_body">The profile can be added again by signing in here with its password.</string>
+    <string name="remove">Remove</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_ok">OK</string>
+    <string name="switch_user">Switch user</string>
+    <string name="switch_user_hint">Back to the profiles on this phone. You stay on this phone\'s list.</string>
+    <string name="remove_me_from_phone">Remove me from this phone</string>
+    <string name="switch_wait_title">Orders still sending</string>
+    <plurals name="switch_wait_body">
+        <item quantity="one">%d change hasn\'t reached the bar yet. Switch user once it has: keep the app open with a connection.</item>
+        <item quantity="other">%d changes haven\'t reached the bar yet. Switch user once they have: keep the app open with a connection.</item>
+    </plurals>
 </resources>

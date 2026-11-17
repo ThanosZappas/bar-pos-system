@@ -270,4 +270,48 @@
         <item quantity="one">%1$s · τραπέζι %2$s · %3$d παραγγελία · %4$s</item>
         <item quantity="other">%1$s · τραπέζι %2$s · %3$d παραγγελίες · %4$s</item>
     </plurals>
+
+    <!-- Σύνδεση με προφίλ: πλέγμα, πληκτρολόγιο PIN, επιλογή PIN, αλλαγή χρήστη -->
+    <string name="who_is_working">Ποιος δουλεύει;</string>
+    <string name="add_account">Προσθήκη / άλλος λογαριασμός</string>
+    <string name="back_to_profiles">Προφίλ</string>
+    <string name="password_note_add">Συνδεθείτε με το όνομα χρήστη και τον κωδικό σας. Μετά το τηλέφωνο κρατά το προφίλ σας και ζητά μόνο το PIN.</string>
+    <string name="pin_enter_hint">Πληκτρολογήστε το PIN σας</string>
+    <string name="pin_use_password">Σύνδεση με κωδικό</string>
+    <string name="pin_delete">Διαγραφή</string>
+    <string name="pin_next">Επόμενο</string>
+    <plurals name="pin_wrong">
+        <item quantity="one">Λάθος PIN. Μένει %d προσπάθεια πριν το κλείδωμα.</item>
+        <item quantity="other">Λάθος PIN. Μένουν %d προσπάθειες πριν το κλείδωμα.</item>
+    </plurals>
+    <string name="pin_locked">Πολλά λάθος PIN. Δοκιμάστε ξανά σε %1$s.</string>
+    <string name="pin_locked_short">Κλειδωμένο · %1$s</string>
+    <string name="pin_password_needed">Χρειάζεται κωδικός</string>
+    <string name="pin_no_pin">Δεν υπάρχει ακόμη PIN. Συνδεθείτε με τον κωδικό σας για να επιλέξετε ένα.</string>
+    <string name="pin_need_password">Συνδεθείτε με τον κωδικό σας για να επιλέξετε νέο PIN.</string>
+    <string name="pin_current_needed">Πληκτρολογήστε το τωρινό σας PIN.</string>
+    <string name="pin_bad_format">Το PIN πρέπει να έχει %1$d έως %2$d ψηφία.</string>
+    <string name="pin_phone_removed">Αυτό το τηλέφωνο αφαιρέθηκε από τα τηλέφωνα του μπαρ. Συνδεθείτε με τον κωδικό σας για να το προσθέσετε ξανά.</string>
+    <string name="pin_not_on_phone">Αυτό το προφίλ δεν είναι πια σε αυτό το τηλέφωνο. Συνδεθείτε με τον κωδικό σας.</string>
+    <string name="pin_gone">Αυτό το προφίλ διαγράφηκε.</string>
+    <string name="pin_biometric_off">Το ξεκλείδωμα με δακτυλικό αποτύπωμα είναι ανενεργό σε αυτό το τηλέφωνο. Χρησιμοποιήστε το PIN σας.</string>
+    <string name="pin_shared_phone">Το ξεκλείδωμα με δακτυλικό αποτύπωμα λειτουργεί μόνο σε τηλέφωνο με ένα προφίλ.</string>
+    <string name="pin_choose_title">Επιλέξτε PIN</string>
+    <string name="pin_choose_hint">%1$d έως %2$d ψηφία. Με αυτό θα συνδέεστε σε αυτό το τηλέφωνο σε κάθε βάρδια.</string>
+    <string name="pin_confirm_title">Πληκτρολογήστε το ξανά</string>
+    <string name="pin_current_title">Το τωρινό σας PIN</string>
+    <string name="pin_mismatch">Τα PIN δεν ταιριάζουν. Ξεκινήστε από την αρχή.</string>
+    <string name="remove_from_phone_title">Αφαίρεση του προφίλ %1$s από αυτό το τηλέφωνο;</string>
+    <string name="remove_from_phone_body">Το προφίλ μπορεί να προστεθεί ξανά με σύνδεση εδώ με τον κωδικό του.</string>
+    <string name="remove">Αφαίρεση</string>
+    <string name="dialog_cancel">Άκυρο</string>
+    <string name="dialog_ok">Εντάξει</string>
+    <string name="switch_user">Αλλαγή χρήστη</string>
+    <string name="switch_user_hint">Επιστροφή στα προφίλ αυτού του τηλεφώνου. Το προφίλ σας μένει στη λίστα.</string>
+    <string name="remove_me_from_phone">Αφαίρεση του προφίλ μου από αυτό το τηλέφωνο</string>
+    <string name="switch_wait_title">Οι παραγγελίες στέλνονται ακόμη</string>
+    <plurals name="switch_wait_body">
+        <item quantity="one">%d αλλαγή δεν έχει φτάσει ακόμη στο μπαρ. Αλλάξτε χρήστη μόλις φτάσει: κρατήστε την εφαρμογή ανοιχτή με σύνδεση.</item>
+        <item quantity="other">%d αλλαγές δεν έχουν φτάσει ακόμη στο μπαρ. Αλλάξτε χρήστη μόλις φτάσουν: κρατήστε την εφαρμογή ανοιχτή με σύνδεση.</item>
+    </plurals>
 </resources>
