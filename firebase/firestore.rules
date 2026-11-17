@@ -370,6 +370,25 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
     }
 
+    // ── Profile sign-in (functions/src/devices.ts, pins.ts, avatars.ts); all written only by Cloud
+    // Functions. The admin lists phones to remove a lost one; staff see each other's pictures. ──
+    match /devices/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /avatars/{uid} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+    // PIN hashes and phone keys: closed to every app, even the admin and the owner. (The catch-all
+    // below already denies them; listed so the intent is explicit and tested.)
+    match /pinSecrets/{uid} {
+      allow read, write: if false;
+    }
+    match /deviceSecrets/{id} {
+      allow read, write: if false;
+    }
+
     // Everything else stays closed until its milestone adds rules and tests.
     match /{document=**} {
       allow read, write: if false;

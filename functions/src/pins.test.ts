@@ -17,6 +17,7 @@ import {
   verifyPin,
   type PinDeps,
 } from './pins';
+import { updateUser } from './users';
 
 const PEPPER = 'test-pepper-not-a-secret';
 /** Cheap parameters where the test is about something other than the cost. */
@@ -191,6 +192,16 @@ describe.skipIf(!onEmulators)('PIN functions (emulators)', () => {
     await unlockPin(deps, adminUid, { uid: serverUid });
     expect(await secret(serverUid)).toMatchObject({ failed: 0, lockedUntil: null });
     expect(await attemptPin(deps, serverUid, '4821')).toEqual({ kind: 'ok' });
+  });
+
+  it('promoting a server to barman clears a PIN shorter than 6 digits; a long one stays', async () => {
+    await setPin(deps, asPassword(serverUid), { pin: '4821' });
+    await updateUser(deps, adminUid, { uid: serverUid, role: 'barman' });
+    expect(await secret(serverUid)).toBeUndefined();
+    expect(await profile(serverUid)).toMatchObject({ role: 'barman', pinSet: false });
+    await setPin(deps, asPassword(serverUid), { pin: '482193' });
+    await updateUser(deps, adminUid, { uid: serverUid, role: 'admin' });
+    expect(await profile(serverUid)).toMatchObject({ role: 'admin', pinSet: true });
   });
 
   it('admin resets a PIN: it is gone, the profile must choose a new one with its password', async () => {

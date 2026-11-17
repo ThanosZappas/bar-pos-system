@@ -4,6 +4,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { defineSecret } from 'firebase-functions/params';
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import * as avatars from './avatars.js';
+import * as devices from './devices.js';
 import * as pins from './pins.js';
 import * as tables from './tables.js';
 import * as users from './users.js';
@@ -34,3 +36,15 @@ export const moveTable = onCall((req) => tables.moveTable(deps, req.auth?.uid, r
 export const setPin = onCall({ secrets: [pinPepper] }, (req) => pins.setPin(pinDeps(), caller(req), req.data));
 export const resetPin = onCall((req) => pins.resetPin(deps, req.auth?.uid, req.data));
 export const unlockPin = onCall((req) => pins.unlockPin(deps, req.auth?.uid, req.data));
+
+// Phones and profile sign-in (see devices.ts). deviceProfiles, profileSignIn and forgetProfile are
+// called before anyone is signed in; the phone's own key authorises them.
+export const registerDevice = onCall((req) => devices.registerDevice(deps, caller(req), req.data));
+export const deviceProfiles = onCall((req) => devices.deviceProfiles(deps, req.data));
+export const profileSignIn = onCall({ secrets: [pinPepper] }, (req) => devices.profileSignIn(pinDeps(), req.data));
+export const forgetProfile = onCall((req) => devices.forgetProfile(deps, req.data));
+export const removeDevice = onCall((req) => devices.removeDevice(deps, req.auth?.uid, req.data));
+export const setBiometric = onCall((req) => devices.setBiometric(deps, caller(req), req.data));
+
+// Profile icon or picture: your own, or anyone's for the admin.
+export const setIcon = onCall((req) => avatars.setIcon(deps, req.auth?.uid, req.data));

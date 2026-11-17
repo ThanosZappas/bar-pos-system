@@ -1,7 +1,10 @@
 import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
-import { asData, audit, loadUser, requireAdmin, requireString, type Deps, type Role } from './users.js';
+import { checkPin } from './pinPolicy.js';
+import { asData, audit, loadUser, requireAdmin, requireString, type Deps } from './users.js';
+
+export * from './pinPolicy.js';
 
 /**
  * PINs: a quick unlock for a phone that is already registered (see devices.ts), never stored in
@@ -13,7 +16,7 @@ import { asData, audit, loadUser, requireAdmin, requireString, type Deps, type R
  *  3. the lockout below, counted here on the server for every phone together;
  *  4. a PIN works only from a phone where that person has signed in with their password.
  *
- * There are no rules on which digits a PIN uses (the owner's choice), only on its length.
+ * Length rules are in pinPolicy.ts; there are no rules on which digits a PIN uses.
  */
 
 export interface PinDeps extends Deps {
@@ -24,23 +27,6 @@ export interface PinDeps extends Deps {
 export interface Caller {
   uid?: string;
   provider?: string;
-}
-
-export const PIN_MAX_LENGTH = 8;
-export const SERVER_PIN_MIN_LENGTH = 4;
-/** Admin and barman run the bar, so their PIN is longer. */
-export const LEAD_PIN_MIN_LENGTH = 6;
-
-export function minPinLength(role: Role): number {
-  return role === 'server' ? SERVER_PIN_MIN_LENGTH : LEAD_PIN_MIN_LENGTH;
-}
-
-export function checkPin(raw: unknown, role: Role): string {
-  const min = minPinLength(role);
-  if (typeof raw !== 'string' || !/^\d+$/.test(raw) || raw.length < min || raw.length > PIN_MAX_LENGTH) {
-    throw new HttpsError('invalid-argument', `The PIN must be ${min} to ${PIN_MAX_LENGTH} digits.`, { reason: 'pinFormat', min, max: PIN_MAX_LENGTH });
-  }
-  return raw;
 }
 
 // ── Hashing: scrypt (memory-hard, built into Node) over HMAC-SHA256(pepper, PIN), with a random salt.
