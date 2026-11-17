@@ -20,6 +20,11 @@ data class StaffUser(
     val role: Role,
     val mustChangePassword: Boolean,
     val rights: Rights = Rights(),
+    /** Chosen icon id (null: the role's default) and picture version (null: no picture). */
+    val icon: String? = null,
+    val photoVersion: Long? = null,
+    /** Has chosen a PIN; until then the app asks for one right after sign-in. */
+    val pinSet: Boolean = true,
 ) {
     /** Barman and admin run the bar: they never ask for permission and have every right. */
     val isLead: Boolean get() = role != Role.Server

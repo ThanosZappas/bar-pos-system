@@ -4,14 +4,15 @@ import android.content.Context
 import androidx.core.content.edit
 
 /**
- * What this phone remembers about logins: the last username (prefilled on the login screen) and
- * the shift a login belongs to. A login lasts until the next 18:00 (see [ShiftClock]); after that
- * the app asks for the password again.
+ * The shift a login on this phone belongs to. A login lasts until the next 18:00 (see
+ * [ShiftClock]); after that the phone goes back to the profile grid and asks for the PIN again.
+ * (No username is kept: the grid shows only names and icons, see [PhoneRepository].)
  */
 class DeviceLogin(context: Context) {
-    private val prefs = context.getSharedPreferences("login", Context.MODE_PRIVATE)
-
-    val lastUsername: String get() = prefs.getString(KEY_USERNAME, "").orEmpty()
+    private val prefs = context.getSharedPreferences("login", Context.MODE_PRIVATE).also {
+        // Older versions remembered the last username here.
+        if (it.contains(KEY_USERNAME)) it.edit { remove(KEY_USERNAME) }
+    }
 
     /**
      * Called just before signing in: the shift must already be stored when the sign-in lands, or the
@@ -19,9 +20,6 @@ class DeviceLogin(context: Context) {
      */
     fun startShift(nowMs: Long = System.currentTimeMillis()) = prefs.edit { putString(KEY_SHIFT, ShiftClock.key(nowMs)) }
 
-    fun rememberUsername(username: String) = prefs.edit { putString(KEY_USERNAME, username) }
-
-    /** Keeps the username for next time; only the shift is forgotten. */
     fun forget() = prefs.edit { remove(KEY_SHIFT) }
 
     /** True when the stored login is from an earlier shift, or unknown (e.g. an older app version). */

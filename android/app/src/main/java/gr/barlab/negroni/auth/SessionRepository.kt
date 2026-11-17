@@ -17,6 +17,7 @@ import kotlinx.coroutines.tasks.await
 
 class SessionRepository(
     private val device: DeviceLogin,
+    private val phone: PhoneRepository,
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
     private val functions: FirebaseFunctions,
@@ -61,20 +62,29 @@ class SessionRepository(
                 role = role,
                 mustChangePassword = getBoolean("mustChangePassword") != false,
                 rights = Rights.from(get("rights") as? Map<*, *>),
+                icon = getString("icon"),
+                photoVersion = getLong("photoVersion"),
+                pinSet = getBoolean("pinSet") == true,
             ),
         )
     }
 
+    /**
+     * Password sign-in, which also registers this phone and puts the person on its grid (from
+     * then on they sign in here with their PIN). If the phone cannot be registered the sign-in is
+     * undone, so a profile is never half set up.
+     */
     suspend fun signIn(username: String, password: String): Result<Unit> = runCatching {
         val email = Usernames.toEmail(username) ?: throw AuthFailure(AuthFailure.Reason.WrongCredentials)
         device.startShift()
         auth.signInWithEmailAndPassword(email, password).await()
-        device.rememberUsername(Usernames.normalize(username))
+        phone.register().onFailure { e ->
+            auth.signOut()
+            val failure = (e as? PinException)?.failure
+            throw AuthFailure(if (failure == PinFailure.Network) AuthFailure.Reason.Network else AuthFailure.Reason.Server, failure?.toString())
+        }
         Unit
     }.recoverCatching { throw AuthFailure.from(it) }
-
-    /** Username to prefill on the login screen (the last one that signed in on this phone). */
-    val lastUsername: String get() = device.lastUsername
 
     /**
      * Verifies the current password, lets the server set the new one (which also clears

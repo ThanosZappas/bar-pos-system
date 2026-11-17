@@ -3,6 +3,8 @@ package gr.barlab.negroni
 import android.content.Context
 import gr.barlab.negroni.admin.UsersRepository
 import gr.barlab.negroni.auth.DeviceLogin
+import gr.barlab.negroni.auth.PhoneKey
+import gr.barlab.negroni.auth.PhoneRepository
 import gr.barlab.negroni.auth.SessionRepository
 import gr.barlab.negroni.shift.ShiftRepository
 import gr.barlab.negroni.catalog.CatalogRepository
@@ -19,7 +21,12 @@ class AppContainer(context: Context) {
     /** False when neither google-services.json nor an emulator host is configured. */
     val isConfigured: Boolean = firebase != null
 
-    val sessions: SessionRepository? = firebase?.let { SessionRepository(DeviceLogin(context), it.auth, it.firestore, it.functions) }
+    private val deviceLogin = DeviceLogin(context)
+
+    /** This phone's profile grid and PIN sign-in. */
+    val phone: PhoneRepository? = firebase?.let { PhoneRepository(context, PhoneKey(context), deviceLogin, it.auth, it.functions) }
+
+    val sessions: SessionRepository? = firebase?.let { SessionRepository(deviceLogin, phone!!, it.auth, it.firestore, it.functions) }
 
     val shifts: ShiftRepository? = firebase?.let { ShiftRepository(it.firestore) }
 
