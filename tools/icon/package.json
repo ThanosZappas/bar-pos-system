@@ -2,9 +2,10 @@
   "name": "negroni-bar-lab-icon",
   "private": true,
   "type": "module",
-  "description": "Generates the text launcher icon and favicon from the bundled OFL fonts.",
+  "description": "Generates the text launcher icon and favicon from the bundled OFL fonts, and the profile icons from design/icons.",
   "scripts": {
-    "generate": "node generate-icon.ts"
+    "generate": "node generate-icon.ts",
+    "profile-icons": "node generate-profile-icons.ts"
   },
   "devDependencies": {
     "opentype.js": "2.0.0"

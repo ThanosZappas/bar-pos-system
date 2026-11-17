@@ -1,4 +1,5 @@
 import { deleteApp, type App } from 'firebase-admin/app';
+import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { MAX_PHOTO_BYTES, parsePhoto, setIcon } from './avatars';
 import { deviceProfiles, registerDevice } from './devices';
@@ -18,6 +19,11 @@ describe('icons and pictures', () => {
     expect(iconOf({ role: 'server', icon: 'martini' })).toBe('martini');
     expect(iconOf({ role: 'barman', icon: 'not-an-icon' })).toBe('barman');
     expect(ICONS).toHaveLength(16);
+  });
+
+  it('names the same icons as the drawings in design/icons', () => {
+    const drawn = JSON.parse(readFileSync(new URL('../../design/icons/profile-icons.json', import.meta.url), 'utf8')).icons;
+    expect(Object.keys(drawn)).toEqual([...ICONS]);
   });
 
   it('accepts small JPEG, PNG and WebP pictures only', () => {
