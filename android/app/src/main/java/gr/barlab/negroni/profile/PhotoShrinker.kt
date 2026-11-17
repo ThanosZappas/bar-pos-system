@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
+import androidx.core.graphics.scale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -27,7 +28,7 @@ object PhotoShrinker {
             decoder.setTargetSize(info.size.width / sample, info.size.height / sample)
         }
         val (x, y, side) = centerSquare(decoded.width, decoded.height)
-        val square = Bitmap.createScaledBitmap(Bitmap.createBitmap(decoded, x, y, side, side), SIZE, SIZE, true)
+        val square = Bitmap.createBitmap(decoded, x, y, side, side).scale(SIZE, SIZE)
         var quality = 88
         var bytes = jpeg(square, quality)
         while (bytes.size > MAX_BYTES && quality > 40) {

@@ -1,6 +1,12 @@
 package gr.barlab.negroni.ui.auth
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.res.painterResource
+import androidx.fragment.app.FragmentActivity
+import gr.barlab.negroni.auth.Fingerprint
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,7 +72,7 @@ sealed interface SignInStep {
 /** Why the password form is shown, said above it. */
 enum class PasswordNote { AddProfile, ChoosePin, PhoneRemoved, NotOnPhone }
 
-class SignInViewModel(private val phone: PhoneRepository) : ViewModel() {
+class SignInViewModel(private val phone: PhoneRepository, private val fingerprint: Fingerprint?) : ViewModel() {
     var step by mutableStateOf<SignInStep>(SignInStep.Grid)
         private set
     var pin by mutableStateOf("")
@@ -77,6 +83,9 @@ class SignInViewModel(private val phone: PhoneRepository) : ViewModel() {
         private set
     var shakes by mutableIntStateOf(0)
         private set
+    /** Fingerprints on the phone changed since fingerprint unlock was turned on. */
+    var fingerprintChanged by mutableStateOf(false)
+        private set
     /** A problem refreshing the grid (offline is not one: the saved grid still works). */
     var gridProblem by mutableStateOf<PinFailure?>(null)
         private set
@@ -84,7 +93,10 @@ class SignInViewModel(private val phone: PhoneRepository) : ViewModel() {
     fun refresh() {
         viewModelScope.launch {
             phone.refresh()
-                .onSuccess { gridProblem = null }
+                .onSuccess {
+                    gridProblem = null
+                    fingerprint?.syncWith(phone.profiles.value)
+                }
                 .onFailure { e ->
                     when (val f = (e as? PinException)?.failure) {
                         PinFailure.PhoneRemoved -> step = SignInStep.Password(PasswordNote.PhoneRemoved)
@@ -134,6 +146,24 @@ class SignInViewModel(private val phone: PhoneRepository) : ViewModel() {
         }
     }
 
+    fun useFingerprint(activity: FragmentActivity, title: String, subtitle: String, cancel: String) {
+        val uid = (step as? SignInStep.Pin)?.uid ?: return
+        val fp = fingerprint ?: return
+        if (busy) return
+        busy = true
+        failure = null
+        fingerprintChanged = false
+        viewModelScope.launch {
+            when (val r = fp.signIn(activity, uid, title, subtitle, cancel)) {
+                Fingerprint.Result.Done -> { reset(); step = SignInStep.Grid }
+                Fingerprint.Result.Cancelled -> Unit
+                Fingerprint.Result.Changed -> fingerprintChanged = true
+                is Fingerprint.Result.Refused -> failure = r.failure
+            }
+            busy = false
+        }
+    }
+
     fun usePassword() {
         reset()
         step = SignInStep.Password(null)
@@ -157,6 +187,7 @@ class SignInViewModel(private val phone: PhoneRepository) : ViewModel() {
     private fun reset() {
         pin = ""
         failure = null
+        fingerprintChanged = false
     }
 }
 
@@ -166,8 +197,8 @@ class SignInViewModel(private val phone: PhoneRepository) : ViewModel() {
  * with no profiles yet.
  */
 @Composable
-fun SignInScreen(phone: PhoneRepository, sessions: SessionRepository) {
-    val vm = viewModel { SignInViewModel(phone) }
+fun SignInScreen(phone: PhoneRepository, sessions: SessionRepository, fingerprint: Fingerprint?) {
+    val vm = viewModel { SignInViewModel(phone, fingerprint) }
     val profiles by phone.profiles.collectAsStateWithLifecycle()
     val photos by phone.photos.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.refresh() }
@@ -179,7 +210,8 @@ fun SignInScreen(phone: PhoneRepository, sessions: SessionRepository) {
             LoginScreen(sessions, note = (step as? SignInStep.Password)?.note, onBack = if (profiles.isEmpty()) null else vm::back)
         step is SignInStep.Pin -> {
             val profile = profiles.firstOrNull { it.uid == step.uid }
-            if (profile == null) LaunchedEffect(Unit) { vm.back() } else PinScreen(vm, profile, photos[profile.uid])
+            val withFingerprint = profile != null && profile.biometric && fingerprint != null && fingerprint.isAvailable && fingerprint.isOn(profile.uid)
+            if (profile == null) LaunchedEffect(Unit) { vm.back() } else PinScreen(vm, profile, photos[profile.uid], withFingerprint)
         }
         else -> ProfileGrid(profiles, photos, vm.gridProblem, onOpen = vm::open, onAdd = vm::addAccount, onForget = vm::forget)
     }
@@ -279,13 +311,21 @@ private fun AddTile(onClick: () -> Unit) {
 }
 
 @Composable
-private fun PinScreen(vm: SignInViewModel, profile: PhoneProfile, photo: ImageBitmap?) {
+private fun PinScreen(vm: SignInViewModel, profile: PhoneProfile, photo: ImageBitmap?, withFingerprint: Boolean) {
     val now = rememberNowUntil(profile.lockedUntilMs)
     val lockedUntil = profile.lockedUntilMs?.takeIf { it > now }
     val message = when {
         lockedUntil != null -> stringResource(R.string.pin_locked, countdown(lockedUntil - now))
+        vm.fingerprintChanged -> stringResource(R.string.biometric_changed)
         else -> vm.failure?.let { pinFailureMessage(it, now) }
     }
+    val activity = LocalActivity.current as? FragmentActivity
+    val promptTitle = stringResource(R.string.biometric_prompt_unlock, profile.displayName)
+    val promptSubtitle = stringResource(R.string.brand_wordmark)
+    val promptCancel = stringResource(R.string.biometric_use_pin)
+    val touch = { activity?.let { vm.useFingerprint(it, promptTitle, promptSubtitle, promptCancel) } }
+    // With fingerprint unlock on, ask for the finger straight away; the PIN pad stays underneath.
+    LaunchedEffect(profile.uid, withFingerprint) { if (withFingerprint) touch() }
     Column(Modifier.fillMaxSize().padding(horizontal = Spacing.xl, vertical = Spacing.m), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth()) {
             TextButton(onClick = vm::back) { Text("‹ " + stringResource(R.string.back_to_profiles)) }
@@ -297,6 +337,12 @@ private fun PinScreen(vm: SignInViewModel, profile: PhoneProfile, photo: ImageBi
         PinDots(vm.pin.length, minDots = PinRules.SERVER_MIN, shakeKey = vm.shakes, error = message != null, modifier = Modifier.padding(top = Spacing.xxl))
         Box(Modifier.heightIn(min = 56.dp).padding(top = Spacing.m), contentAlignment = Alignment.TopCenter) {
             message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center) }
+        }
+        if (withFingerprint) {
+            OutlinedButton(onClick = { touch() }, enabled = !vm.busy) {
+                Icon(painterResource(R.drawable.ic_fingerprint), contentDescription = null, tint = BarLabColors.Gold, modifier = Modifier.size(22.dp))
+                Text(stringResource(R.string.biometric_use), modifier = Modifier.padding(start = Spacing.s))
+            }
         }
         Spacer(Modifier.weight(1f))
         Box(Modifier.heightIn(min = 4.dp).fillMaxWidth()) { if (vm.busy) LinearProgressIndicator(Modifier.fillMaxWidth()) }

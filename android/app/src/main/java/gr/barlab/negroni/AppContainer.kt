@@ -2,6 +2,7 @@ package gr.barlab.negroni
 
 import android.content.Context
 import gr.barlab.negroni.admin.UsersRepository
+import gr.barlab.negroni.auth.BiometricUnlock
 import gr.barlab.negroni.auth.DeviceLogin
 import gr.barlab.negroni.auth.PhoneKey
 import gr.barlab.negroni.auth.PhoneRepository
@@ -14,6 +15,7 @@ import gr.barlab.negroni.pos.PosGateway
 import gr.barlab.negroni.profile.ProfileRepository
 import gr.barlab.negroni.sync.SyncMonitor
 import gr.barlab.negroni.data.FirebaseSetup
+import gr.barlab.negroni.auth.Fingerprint
 
 /** Manual dependency injection: one instance per process, created by [NegroniApp]. */
 class AppContainer(context: Context) {
@@ -26,6 +28,9 @@ class AppContainer(context: Context) {
 
     /** This phone's profile grid and PIN sign-in. */
     val phone: PhoneRepository? = firebase?.let { PhoneRepository(context, PhoneKey(context), deviceLogin, it.auth, it.functions) }
+
+    /** Fingerprint unlock: an optional shortcut after the PIN, on a phone with one profile. */
+    val fingerprint: Fingerprint? = phone?.let { Fingerprint(it, BiometricUnlock(context)) }
 
     val sessions: SessionRepository? = firebase?.let { SessionRepository(deviceLogin, phone!!, it.auth, it.firestore, it.functions) }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Greek. Menu items, sections and categories are data and stay as the bar writes them. -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="loading">Φόρτωση…</string>
 
     <!-- Sign in -->
@@ -290,14 +290,14 @@
     <string name="pin_no_pin">Δεν υπάρχει ακόμη PIN. Συνδεθείτε με τον κωδικό σας για να επιλέξετε ένα.</string>
     <string name="pin_need_password">Συνδεθείτε με τον κωδικό σας για να επιλέξετε νέο PIN.</string>
     <string name="pin_current_needed">Πληκτρολογήστε το τωρινό σας PIN.</string>
-    <string name="pin_bad_format">Το PIN πρέπει να έχει %1$d έως %2$d ψηφία.</string>
+    <string name="pin_bad_format" tools:ignore="PluralsCandidate">Το PIN πρέπει να έχει %1$d έως %2$d ψηφία.</string>
     <string name="pin_phone_removed">Αυτό το τηλέφωνο αφαιρέθηκε από τα τηλέφωνα του μπαρ. Συνδεθείτε με τον κωδικό σας για να το προσθέσετε ξανά.</string>
     <string name="pin_not_on_phone">Αυτό το προφίλ δεν είναι πια σε αυτό το τηλέφωνο. Συνδεθείτε με τον κωδικό σας.</string>
     <string name="pin_gone">Αυτό το προφίλ διαγράφηκε.</string>
     <string name="pin_biometric_off">Το ξεκλείδωμα με δακτυλικό αποτύπωμα είναι ανενεργό σε αυτό το τηλέφωνο. Χρησιμοποιήστε το PIN σας.</string>
     <string name="pin_shared_phone">Το ξεκλείδωμα με δακτυλικό αποτύπωμα λειτουργεί μόνο σε τηλέφωνο με ένα προφίλ.</string>
     <string name="pin_choose_title">Επιλέξτε PIN</string>
-    <string name="pin_choose_hint">%1$d έως %2$d ψηφία. Με αυτό θα συνδέεστε σε αυτό το τηλέφωνο σε κάθε βάρδια.</string>
+    <string name="pin_choose_hint" tools:ignore="PluralsCandidate">%1$d έως %2$d ψηφία. Με αυτό θα συνδέεστε σε αυτό το τηλέφωνο σε κάθε βάρδια.</string>
     <string name="pin_confirm_title">Πληκτρολογήστε το ξανά</string>
     <string name="pin_current_title">Το τωρινό σας PIN</string>
     <string name="pin_mismatch">Τα PIN δεν ταιριάζουν. Ξεκινήστε από την αρχή.</string>
@@ -341,4 +341,17 @@
     <string name="settings_change_look">Αλλαγή εικονιδίου ή φωτογραφίας</string>
     <string name="settings_change_pin">Αλλαγή PIN</string>
     <string name="pin_changed">Το PIN άλλαξε.</string>
+
+    <!-- Ξεκλείδωμα με δακτυλικό αποτύπωμα -->
+    <string name="biometric_title">Ξεκλείδωμα με δακτυλικό αποτύπωμα</string>
+    <string name="biometric_settings_hint">Αντί για το PIN, μόνο σε αυτό το τηλέφωνο. Το PIN εξακολουθεί να λειτουργεί.</string>
+    <string name="biometric_offer_title">Χρήση δακτυλικού αποτυπώματος την επόμενη φορά;</string>
+    <string name="biometric_offer_body">Σε αυτό το τηλέφωνο μπορείτε να συνδέεστε με το δακτυλικό σας αποτύπωμα αντί για το PIN. Το PIN εξακολουθεί να λειτουργεί.</string>
+    <string name="biometric_turn_on">Ενεργοποίηση</string>
+    <string name="biometric_not_now">Όχι τώρα</string>
+    <string name="biometric_prompt_enable">Επιβεβαίωση με δακτυλικό αποτύπωμα</string>
+    <string name="biometric_prompt_unlock">Σύνδεση ως %1$s</string>
+    <string name="biometric_use_pin">Χρήση PIN</string>
+    <string name="biometric_use">Δακτυλικό αποτύπωμα</string>
+    <string name="biometric_changed">Τα δακτυλικά αποτυπώματα του τηλεφώνου άλλαξαν. Χρησιμοποιήστε το PIN και ενεργοποιήστε ξανά το ξεκλείδωμα στις Ρυθμίσεις.</string>
 </resources>

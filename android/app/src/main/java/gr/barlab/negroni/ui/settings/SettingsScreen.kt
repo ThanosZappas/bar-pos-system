@@ -19,6 +19,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.dp
 import gr.barlab.negroni.profile.ProfileRepository
+import gr.barlab.negroni.auth.Fingerprint
+import gr.barlab.negroni.ui.auth.FingerprintSetting
 import gr.barlab.negroni.ui.profile.ProfileAvatar
 import gr.barlab.negroni.ui.profile.ProfileLookEditor
 import gr.barlab.negroni.ui.profile.iconOf
@@ -54,6 +56,7 @@ fun SettingsScreen(
     user: StaffUser,
     profiles: ProfileRepository?,
     photo: ImageBitmap?,
+    fingerprint: Fingerprint?,
     onBack: () -> Unit,
     onChangePin: () -> Unit,
     onSwitchUser: () -> Unit,
@@ -96,6 +99,7 @@ fun SettingsScreen(
                 if (profiles != null) OutlinedButton(onClick = { editingLook = true }) { Text(stringResource(R.string.settings_change_look).caps(), style = MaterialTheme.typography.labelLarge) }
             }
             OutlinedButton(onClick = onChangePin) { Text(stringResource(R.string.settings_change_pin).caps(), style = MaterialTheme.typography.labelLarge) }
+            fingerprint?.let { FingerprintSetting(user, it) }
             HorizontalDivider(color = BarLabColors.LineFaint)
             OutlinedButton(onClick = onSwitchUser) { Text(stringResource(R.string.switch_user).caps(), style = MaterialTheme.typography.labelLarge) }
             Text(stringResource(R.string.switch_user_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

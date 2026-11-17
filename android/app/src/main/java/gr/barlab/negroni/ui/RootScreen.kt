@@ -76,7 +76,7 @@ fun RootScreen(container: AppContainer) {
 
     when (val s = session) {
         Session.Loading -> MessageScreen(stringResource(R.string.loading))
-        Session.SignedOut -> SignInScreen(phone, sessions)
+        Session.SignedOut -> SignInScreen(phone, sessions, container.fingerprint)
         Session.Deactivated -> MessageScreen(stringResource(R.string.deactivated_title), stringResource(R.string.error_deactivated), sessions::signOut)
         Session.NoProfile -> MessageScreen(stringResource(R.string.no_profile_title), stringResource(R.string.no_profile_body), sessions::signOut)
         Session.LoginNotAllowed -> MessageScreen(stringResource(R.string.login_not_allowed_title), stringResource(R.string.login_not_allowed_body), sessions::signOut)
@@ -84,7 +84,7 @@ fun RootScreen(container: AppContainer) {
             s.user.mustChangePassword -> ChangePasswordScreen(sessions, s.user)
             !s.user.pinSet -> SetPinScreen(phone, s.user, changing = false, onCancel = sessions::signOut)
             else -> SignedInApp(
-                s.user, catalog, orders, shifts, container.users, container.profiles, phone, container.sync, now, shiftOver,
+                s.user, catalog, orders, shifts, container.users, container.profiles, phone, container.fingerprint, container.sync, now, shiftOver,
                 onSwitchUser = switchUser,
                 onRemoveFromPhone = {
                     if (pending > 0) waiting = true

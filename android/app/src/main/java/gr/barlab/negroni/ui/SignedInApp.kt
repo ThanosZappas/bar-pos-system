@@ -57,6 +57,8 @@ import gr.barlab.negroni.ui.theme.Spacing
 import kotlinx.coroutines.flow.map
 import gr.barlab.negroni.ui.settings.SettingsScreen
 import gr.barlab.negroni.auth.PhoneRepository
+import gr.barlab.negroni.auth.Fingerprint
+import gr.barlab.negroni.ui.auth.FingerprintOffer
 import gr.barlab.negroni.profile.ProfileRepository
 import gr.barlab.negroni.ui.auth.SetPinScreen
 import gr.barlab.negroni.ui.table.TableScreen
@@ -71,6 +73,7 @@ fun SignedInApp(
     users: UsersRepository?,
     profiles: ProfileRepository?,
     phone: PhoneRepository,
+    fingerprint: Fingerprint?,
     sync: SyncMonitor?,
     nowMs: Long,
     shiftOver: Boolean,
@@ -143,6 +146,7 @@ fun SignedInApp(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             if (user.isLead) RequestPopup(user, shifts)
+            if (fingerprint != null) FingerprintOffer(user, fingerprint)
             if (!canWork) {
                 // Until the first snapshot arrives, show nothing rather than flash the request screen.
                 if (myShift != null) PermissionScreen(user, myShift?.shift, nowMs, onRequest = { shifts.request(user) }, onSignOut = onSwitchUser)
@@ -151,7 +155,7 @@ fun SignedInApp(
             when (val screen = nav.current) {
                 Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs, photo = myPhoto, onSwitchUser = onSwitchUser)
                 Screen.Settings -> SettingsScreen(
-                    user, profiles, myPhoto,
+                    user, profiles, myPhoto, fingerprint,
                     onBack = nav::back,
                     onChangePin = { nav.go(Screen.ChangePin) },
                     onSwitchUser = onSwitchUser,
