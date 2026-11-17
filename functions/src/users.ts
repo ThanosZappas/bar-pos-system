@@ -46,6 +46,12 @@ export interface UserDoc {
   mustChangePassword: boolean;
   rights?: Rights;
   deleted?: boolean;
+  /** Profile icon id (see avatars.ts); missing means the role's default. */
+  icon?: string;
+  /** When the uploaded picture last changed (ms); missing means no picture. */
+  photoVersion?: number;
+  /** The person has chosen a PIN (see pins.ts). */
+  pinSet?: boolean;
 }
 
 export function parseRights(raw: unknown): Rights {
@@ -59,14 +65,14 @@ export function parseRights(raw: unknown): Rights {
   return rights;
 }
 
-type Data = Record<string, unknown>;
+export type Data = Record<string, unknown>;
 
-function asData(data: unknown): Data {
+export function asData(data: unknown): Data {
   if (typeof data !== 'object' || data === null) throw new HttpsError('invalid-argument', 'Missing request data.');
   return data as Data;
 }
 
-function requireString(data: Data, key: string): string {
+export function requireString(data: Data, key: string): string {
   const v = data[key];
   if (typeof v !== 'string' || v.trim() === '') throw new HttpsError('invalid-argument', `"${key}" is required.`);
   return v;
@@ -97,7 +103,7 @@ export function checkPassword(password: unknown): string {
   return password;
 }
 
-async function loadUser(deps: Deps, uid: string): Promise<UserDoc | undefined> {
+export async function loadUser(deps: Deps, uid: string): Promise<UserDoc | undefined> {
   return (await deps.db.doc(`users/${uid}`).get()).data() as UserDoc | undefined;
 }
 
@@ -109,7 +115,7 @@ export async function requireAdmin(deps: Deps, callerUid: string | undefined): P
   return callerUid;
 }
 
-function audit(deps: Deps, action: string, actorUid: string, targetUid: string, details: Data = {}) {
+export function audit(deps: Deps, action: string, actorUid: string, targetUid: string, details: Data = {}) {
   return deps.db.collection('auditLog').add({ action, actorUid, targetUid, details, at: FieldValue.serverTimestamp() });
 }
 

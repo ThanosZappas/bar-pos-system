@@ -9,6 +9,8 @@ service-account*.json
 .env.*
 !.env.example
 web/src/firebase-config.local.ts
+# Emulator-only secrets (PIN pepper for local testing)
+functions/.secret.local
 
 # Node
 node_modules/
