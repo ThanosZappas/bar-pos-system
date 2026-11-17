@@ -15,6 +15,9 @@ LOG_DIR="$(mktemp -d)"
 PORTS="9099 8080 5001"
 
 [ -f tools/seed/seed-credentials.json ] || npm --prefix tools/seed run init-credentials
+# PIN hashes need a secret pepper (PIN_PEPPER). For the emulators: a throwaway one, made once
+# here, in a git-ignored file. The real project keeps its own in Secret Manager (README).
+[ -f functions/.secret.local ] || node -e "console.log('PIN_PEPPER=' + require('crypto').randomBytes(32).toString('base64'))" > functions/.secret.local
 npm run build:functions >/dev/null
 
 cleanup() {
@@ -53,9 +56,11 @@ WEB_PID=$!
 cat <<'INFO'
 
 Ready.
-  Phone      the app is open. Server: user1 / user1user1. Admin/barman board: admin / adminadmin
-             (asks for a new password first). Demo orders are on tables 1, 4, 7 and 9, and three
-             weeks of closed bills fill the dashboard's Analytics.
+  Phone      the app is open. Sign in with a password the first time: server user1 / user1user1,
+             or admin / adminadmin (asks for a new password first). Then choose a PIN (servers
+             4-8 digits, admin 6-8); from then on tap your profile and type the PIN. Add more
+             people with "Add / other account". Demo orders are on tables 1, 4, 7 and 9, and
+             three weeks of closed bills fill the dashboard's Analytics.
   Dashboard  http://localhost:5173 (admin)        Emulator data  http://localhost:4000
   Offline    turn on airplane mode and unplug the cable; take orders and payments; plug back in
              and turn airplane mode off: everything syncs, nothing twice.

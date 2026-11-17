@@ -116,6 +116,25 @@ committed).
 scripts/preflight.sh deploy
 ```
 
+PIN sign-in needs two things before the first deploy. A secret **pepper** mixed into every PIN
+hash (random, made here and stored only in Google Secret Manager; never change it later, or
+every PIN stops working and the admin has to reset them all):
+
+```bash
+node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))" | npx firebase functions:secrets:set PIN_PEPPER --data-file=-
+```
+
+And permission for the functions to sign people in with a token (they sign it as their own
+service account). Replace `<projectId>` both times:
+
+```bash
+gcloud services enable iamcredentials.googleapis.com --project <projectId>
+```
+
+```bash
+SA="$(gcloud projects describe <projectId> --format='value(projectNumber)')-compute@developer.gserviceaccount.com"; gcloud iam service-accounts add-iam-policy-binding "$SA" --member="serviceAccount:$SA" --role=roles/iam.serviceAccountTokenCreator --project <projectId>
+```
+
 ```bash
 npm run deploy:backend
 ```
@@ -145,6 +164,7 @@ Builds the dashboard with `web/.env.local` and publishes it at `https://<project
 ### 5. First sign-in
 
 1. Open the dashboard, sign in as `admin` / `adminadmin`, choose a new password (required).
+   On a phone, the admin also chooses a PIN of 6–8 digits after the password.
 2. **Users**: the seeded servers can sign in with their initial passwords, which are easy to
    guess. Use **Reset password** for each to give them a temporary one; they choose their own
    at first sign-in.
@@ -201,9 +221,22 @@ manager): `android/app/build/outputs/apk/debug/app-debug.apk`, built by
 
 ## Daily use
 
+**Signing in on a phone.** The first time on a phone, each person signs in with username and
+password (**Add / other account**) and chooses a **PIN** (servers 4–8 digits, admin and barman
+6–8). From then on the phone shows a grid of its profiles (name and icon or picture): tap yours,
+type the PIN. Wrong PINs: 5 tries, then the profile locks for 1 minute, doubling with each
+further wrong PIN up to 1 hour (on every phone; the admin can unlock it). **Use password
+instead** always works. On a phone with only one profile, the app offers fingerprint unlock
+after the PIN (Settings → Fingerprint unlock). Long-press a profile to remove it from the phone.
+
+**Switch user.** Tap your picture or icon at the top right (or Settings → **Switch user**) to
+hand a shared phone to someone else; it goes back to the grid once everything you entered has
+reached the server. Settings → **Remove me from this phone** takes your profile off the grid.
+
 **Shifts change at 18:00.** A login on a phone or the dashboard lasts until the next 18:00; then
-it asks for the password again (the username is remembered). If orders or payments are still
-waiting to sync at 18:00, the phone first sends them, then signs out.
+the phone goes back to the grid and asks for the PIN again (the dashboard asks for the
+password). If orders or payments are still waiting to sync at 18:00, the phone first sends
+them, then signs out.
 
 **Permission to work.** After the day's login a server sees one button, **Request permission**.
 The barman (Android board) and the admin (dashboard, on any page) get a popup with a sound:
@@ -240,7 +273,10 @@ In the dashboard, and for the admin also in the Android app (**Users** in the to
 **Payments** tab). User changes go through Cloud Functions, so they need a connection.
 
 - **Users**: create (username, display name, role, temporary password), rename, change role,
-  deactivate/activate, reset password, **delete** (removes the login so the username can be
+  **icon or picture** (16 gold line icons, defaults by role: person, barman with bow tie,
+  admin with key; or upload a picture, cropped to a square and shrunk to 256×256; everyone can
+  also change their own in Settings), **Reset PIN** (they sign in with the password and choose a
+  new one), **Unlock** a profile locked by wrong PINs, deactivate/activate, reset password, **delete** (removes the login so the username can be
   reused; the name stays on past orders and payments; you cannot delete yourself or the last
   admin). Roles: `admin` (everything, the barman/owner),
   `barman` (order board and staff permissions in the Android app, no admin work), `server`.
@@ -248,6 +284,9 @@ In the dashboard, and for the admin also in the Android app (**Users** in the to
   all, a quick switch unlike deactivating the account), works without asking (off by default),
   take payments, reverse payments, close tables, cancel orders, move tables (on by default). The phone hides
   what a server may not do, and the security rules refuse it anyway.
+- **Phones** (under Users): every phone where staff sign in with a PIN, who is on it and when
+  it was last used. **Remove** a lost phone: no one can sign in on it with a PIN until someone
+  signs in there with a password again.
 - **Menu**: sections (tabs) → categories → items. Add, edit, hide (not orderable), reorder,
   delete (archived: gone everywhere, kept for reports), change prices ("8,50" or "8.50").
   Changes appear live on every phone.
@@ -289,6 +328,45 @@ on or off in Settings → Order board.
   change goes to `auditLog`.
 - Anyone with `mustChangePassword` (the seeded admin, anyone after a reset) can do nothing
   but change their password, and not back to the initial username-twice password.
+
+### Profile sign-in (PIN)
+
+The PIN is a quick unlock for a phone that is already registered, not a password replacement:
+
+- **A phone is registered** by the first password sign-in on it (`registerDevice`). The server
+  gives it an id and a random 256-bit key; the phone keeps the key encrypted with an AES-GCM key
+  in the Android Keystore. `devices/{id}` (admin can read: name, profiles, last used) and
+  `deviceSecrets/{id}` (functions only: SHA-256 of the key). Everyone who signs in there with a
+  password is added to that phone's grid.
+- **PIN sign-in** (`profileSignIn`) sends phone id + key + profile + PIN to the server, which
+  checks the phone, the profile is on it, the account is active and allowed to sign in, the
+  lock, then the PIN, and returns a Firebase custom token. A PIN alone is useless on any other
+  phone.
+- **PINs are never stored in plain text.** `pinSecrets/{uid}` (no app can read it, not even the
+  admin) holds scrypt (N=2¹⁵, r=8, p=1, 16-byte salt) over HMAC-SHA256(pepper, PIN). A 4-digit
+  PIN has only 10,000 values, so the defence is the combination: the hashes are unreadable to
+  apps, the pepper lives in Secret Manager, the lockout is counted on the server in a
+  transaction (parallel guesses cannot slip past it), and a registered phone is needed.
+- **Lockout:** 5 free tries, then 1 minute, doubling per further wrong PIN up to 1 hour; tries
+  during a lock are refused unchecked. A correct PIN, a password sign-in on a phone, or the
+  admin (`unlockPin`) clears it. `users/{uid}.pinLockedUntil` mirrors the lock for the screens.
+- **Length only:** servers 4–8 digits, admin and barman 6–8 (a promotion clears a shorter PIN).
+  Any digits are allowed. The first PIN (and the first after `resetPin`) needs a password
+  sign-in; changing it needs the current PIN.
+- **Fingerprint unlock** (optional, only on a phone with one profile, because a fingerprint opens
+  the whole phone): `setBiometric` gives the phone a second random secret, sealed with a Keystore
+  key that works only right after a strong biometric check and is destroyed when fingerprints
+  change. Adding a second profile to the phone turns it off.
+- **What the phone stores:** for the grid only uid, name, icon and picture version (no username,
+  token or PIN); the phone key and fingerprint secret Keystore-encrypted. Firebase Auth keeps its
+  own session in the app's private storage until 18:00; nothing is backed up or transferred.
+- **Switching user** waits for the sync: Firestore keeps each person's unsent writes in their own
+  queue, so switching with writes pending would leave them stuck until that person returned.
+- **Icons and pictures:** `users/{uid}.icon` (missing = role default) and, for an uploaded picture,
+  `avatars/{uid}` (≤ 100 KB JPEG/PNG/WebP bytes, checked by type and size) with
+  `users/{uid}.photoVersion`, so phones download a picture only when it changes. Written by
+  `setIcon`; the drawings are in `design/icons/profile-icons.json`
+  (`npm --prefix tools/icon run profile-icons` regenerates Android and dashboard copies).
 
 ### Menu and tables
 
@@ -449,6 +527,7 @@ Kept deliberately few; every addition gets a line here.
 | Compose UI Tooling (debug only) | Previews and layout inspection in Android Studio |
 | Firebase BoM: Auth, Firestore, Functions | Login, data with offline cache, user-management callables |
 | kotlinx-coroutines-play-services | `await()` on Firebase tasks instead of callbacks |
+| AndroidX Biometric | The system fingerprint prompt and a Keystore key bound to it (optional fingerprint unlock) |
 | Google Services Gradle plugin | Reads `google-services.json`; applied only when that file exists |
 | JUnit 4 (tests only) | Unit tests |
 | AndroidX Test runner + ext-junit (instrumented tests only) | Runs `OfflineSyncTest` on the phone |
@@ -461,11 +540,13 @@ JSON for the POS export is written by hand (two small documents) instead of addi
 `firebase` (official SDK). Dev only: `vite`, `typescript`, `@preact/preset-vite`, `vitest`.
 
 **Functions**: `firebase-functions`, `firebase-admin` (the only way to manage Auth users and
-claims). Dev only: `typescript`, `vitest`.
+claims, and to mint the custom tokens for PIN sign-in). PIN hashing uses Node's built-in scrypt,
+so no hashing library. Dev only: `typescript`, `vitest`.
 
 **Rules tests**: `@firebase/rules-unit-testing`, `firebase`, `vitest`.
 **Seed**: `firebase-admin`; dev only `vitest`. Runs with Node 22's built-in TypeScript support.
-**Icon**: `opentype.js` (dev only, reads the font outlines).
+**Icon**: `opentype.js` (dev only, reads the font outlines). The profile icons are generated by a
+plain script from `design/icons/profile-icons.json`.
 **Root**: `firebase-tools` (CLI, emulators, deploy), pinned per project.
 
 **Fonts**: Lato, Playfair Display and Dancing Script (the site's), plus Greek-only subsets of
@@ -478,7 +559,12 @@ Commissioner and Noto Serif Display for Greek letters; all SIL Open Font License
 - Two phones paying the same table while both offline can overpay; it is shown as "Overpaid"
   and corrected with a reversal.
 - A user deactivated while their phone is offline loses that phone's queued writes (by design).
-- Firebase App Check is not set up; worth adding before the dashboard URL is shared widely.
+- Firebase App Check is not set up; worth adding before the dashboard URL is shared widely
+  (it would also tie `profileSignIn` and `deviceProfiles` to the genuine app).
+- PIN sign-in needs a connection, like the password sign-in before it (the server checks the
+  PIN). Once signed in, the app works offline as before.
+- Switching user while orders are still waiting to sync is refused until they reach the server.
+- Fingerprint unlock only on a phone with one profile; the dashboard keeps password sign-in.
 - `npm audit` reports advisories in `@grpc/grpc-js` pulled in by the Firebase Node SDKs
   (server/tooling side, not in the dashboard bundle).
 

@@ -77,3 +77,10 @@ text subsetting; both are SIL OFL 1.1 without Reserved Font Names. Android combi
 `Typeface.CustomFallbackBuilder` (`ui/theme/Type.kt`), the dashboard with `unicode-range`
 (`web/src/styles/tokens.css`). Dancing Script (wordmark) is Latin-only. The site's own fonts are
 bundled unmodified, as their Reserved Font Name clause requires; licences are in `design/fonts/`.
+
+## Profile icons
+
+Sixteen line drawings in `design/icons/profile-icons.json` (24×24, stroke 1.4, round caps and
+joins, no fill), drawn in `gold` inside a square hairline frame (`line-strong`; `gold` when
+selected), like the site's square, hairline style. Role defaults: `person` (server), `barman`
+(bow tie), `admin` (key). Uploaded pictures fill the same square frame, cropped to the centre.
