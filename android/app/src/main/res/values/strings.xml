@@ -326,4 +326,31 @@
         <item quantity="one">%d change hasn\'t reached the bar yet. Switch user once it has: keep the app open with a connection.</item>
         <item quantity="other">%d changes haven\'t reached the bar yet. Switch user once they have: keep the app open with a connection.</item>
     </plurals>
+
+    <!-- Icons and pictures, PINs and phones in user management and Settings -->
+    <string name="users_look">Icon or picture</string>
+    <string name="upload_picture">Upload picture</string>
+    <string name="remove_picture">Remove picture</string>
+    <string name="photo_failed">Couldn\'t read that picture. Try another one.</string>
+    <string name="users_pin">PIN</string>
+    <string name="users_pin_set">Has a PIN.</string>
+    <string name="users_pin_none">No PIN yet: they choose one at their next password sign-in.</string>
+    <string name="users_pin_locked">Locked after wrong PINs, until %1$s.</string>
+    <string name="users_pin_unlock">Unlock</string>
+    <string name="users_pin_unlocked">Unlocked.</string>
+    <string name="users_pin_reset">Reset PIN</string>
+    <string name="users_pin_reset_title">Reset %1$s\'s PIN?</string>
+    <string name="users_pin_reset_body">Their PIN and fingerprint unlock are deleted and they are signed out everywhere. They sign in with their password and choose a new PIN.</string>
+    <string name="users_pin_was_reset">PIN reset.</string>
+    <string name="phones">Phones</string>
+    <string name="phones_hint">Phones where staff sign in with a PIN. Remove a lost phone: no one can sign in on it with a PIN until someone signs in there with a password.</string>
+    <string name="phones_this">this phone</string>
+    <string name="phones_last_used">Last used %1$s</string>
+    <string name="phones_none">No phones yet.</string>
+    <string name="phones_remove_title">Remove %1$s?</string>
+    <string name="phones_remove_body">No one can sign in on it with a PIN any more.</string>
+    <string name="phones_removed">Phone removed.</string>
+    <string name="settings_change_look">Change icon or picture</string>
+    <string name="settings_change_pin">Change PIN</string>
+    <string name="pin_changed">PIN changed.</string>
 </resources>

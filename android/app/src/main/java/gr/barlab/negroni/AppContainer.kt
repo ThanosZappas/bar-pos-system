@@ -11,6 +11,7 @@ import gr.barlab.negroni.catalog.CatalogRepository
 import gr.barlab.negroni.orders.OrdersRepository
 import gr.barlab.negroni.pos.NoOpPosGateway
 import gr.barlab.negroni.pos.PosGateway
+import gr.barlab.negroni.profile.ProfileRepository
 import gr.barlab.negroni.sync.SyncMonitor
 import gr.barlab.negroni.data.FirebaseSetup
 
@@ -31,6 +32,9 @@ class AppContainer(context: Context) {
     val shifts: ShiftRepository? = firebase?.let { ShiftRepository(it.firestore) }
 
     val users: UsersRepository? = firebase?.let { UsersRepository(it.firestore, it.functions) }
+
+    /** Profile icons and pictures. */
+    val profiles: ProfileRepository? = firebase?.let { ProfileRepository(it.firestore, it.functions) }
 
     val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore, it.functions) }
 

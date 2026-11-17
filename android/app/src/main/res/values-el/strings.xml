@@ -314,4 +314,31 @@
         <item quantity="one">%d αλλαγή δεν έχει φτάσει ακόμη στο μπαρ. Αλλάξτε χρήστη μόλις φτάσει: κρατήστε την εφαρμογή ανοιχτή με σύνδεση.</item>
         <item quantity="other">%d αλλαγές δεν έχουν φτάσει ακόμη στο μπαρ. Αλλάξτε χρήστη μόλις φτάσουν: κρατήστε την εφαρμογή ανοιχτή με σύνδεση.</item>
     </plurals>
+
+    <!-- Εικονίδια και φωτογραφίες, PIN και τηλέφωνα στη διαχείριση χρηστών και στις Ρυθμίσεις -->
+    <string name="users_look">Εικονίδιο ή φωτογραφία</string>
+    <string name="upload_picture">Ανέβασμα φωτογραφίας</string>
+    <string name="remove_picture">Αφαίρεση φωτογραφίας</string>
+    <string name="photo_failed">Δεν ήταν δυνατή η ανάγνωση της φωτογραφίας. Δοκιμάστε άλλη.</string>
+    <string name="users_pin">PIN</string>
+    <string name="users_pin_set">Έχει PIN.</string>
+    <string name="users_pin_none">Δεν έχει ακόμη PIN: θα επιλέξει ένα στην επόμενη σύνδεση με κωδικό.</string>
+    <string name="users_pin_locked">Κλειδωμένο λόγω λάθος PIN, έως τις %1$s.</string>
+    <string name="users_pin_unlock">Ξεκλείδωμα</string>
+    <string name="users_pin_unlocked">Ξεκλειδώθηκε.</string>
+    <string name="users_pin_reset">Επαναφορά PIN</string>
+    <string name="users_pin_reset_title">Επαναφορά του PIN για %1$s;</string>
+    <string name="users_pin_reset_body">Το PIN και το ξεκλείδωμα με δακτυλικό αποτύπωμα διαγράφονται και γίνεται αποσύνδεση παντού. Η επόμενη σύνδεση γίνεται με κωδικό και ζητά νέο PIN.</string>
+    <string name="users_pin_was_reset">Έγινε επαναφορά του PIN.</string>
+    <string name="phones">Τηλέφωνα</string>
+    <string name="phones_hint">Τηλέφωνα όπου το προσωπικό συνδέεται με PIN. Αφαιρέστε ένα χαμένο τηλέφωνο: κανείς δεν μπορεί να συνδεθεί εκεί με PIN μέχρι να συνδεθεί κάποιος εκεί με κωδικό.</string>
+    <string name="phones_this">αυτό το τηλέφωνο</string>
+    <string name="phones_last_used">Τελευταία χρήση %1$s</string>
+    <string name="phones_none">Κανένα τηλέφωνο ακόμη.</string>
+    <string name="phones_remove_title">Αφαίρεση του %1$s;</string>
+    <string name="phones_remove_body">Κανείς δεν θα μπορεί πλέον να συνδεθεί σε αυτό με PIN.</string>
+    <string name="phones_removed">Το τηλέφωνο αφαιρέθηκε.</string>
+    <string name="settings_change_look">Αλλαγή εικονιδίου ή φωτογραφίας</string>
+    <string name="settings_change_pin">Αλλαγή PIN</string>
+    <string name="pin_changed">Το PIN άλλαξε.</string>
 </resources>

@@ -57,6 +57,8 @@ import gr.barlab.negroni.ui.theme.Spacing
 import kotlinx.coroutines.flow.map
 import gr.barlab.negroni.ui.settings.SettingsScreen
 import gr.barlab.negroni.auth.PhoneRepository
+import gr.barlab.negroni.profile.ProfileRepository
+import gr.barlab.negroni.ui.auth.SetPinScreen
 import gr.barlab.negroni.ui.table.TableScreen
 
 /** Everything after sign-in: one live subscription each for tables, menu and table states. */
@@ -67,6 +69,7 @@ fun SignedInApp(
     orders: OrdersRepository,
     shifts: ShiftRepository,
     users: UsersRepository?,
+    profiles: ProfileRepository?,
     phone: PhoneRepository,
     sync: SyncMonitor?,
     nowMs: Long,
@@ -83,7 +86,10 @@ fun SignedInApp(
     val header by catalog.receiptHeader.collectAsStateWithLifecycle(initialValue = ReceiptHeader.DEFAULT)
     val sessionKey = tables.joinToString { it.currentSessionId }
     val states by remember(sessionKey) { orders.tableStates(tables) }.collectAsStateWithLifecycle(initialValue = emptyMap())
-    val photos by phone.photos.collectAsStateWithLifecycle()
+    // Pictures: live from the server once signed in; the grid's copy until that arrives.
+    val gridPhotos by phone.photos.collectAsStateWithLifecycle()
+    val livePhotos by remember { profiles?.photos ?: flowOf(emptyMap()) }.collectAsStateWithLifecycle(initialValue = emptyMap())
+    val myPhoto = if (user.photoVersion == null) null else livePhotos[user.uid] ?: gridPhotos[user.uid]
 
     // Writes queued offline can still be refused once they reach the server; say so.
     LaunchedEffect(Unit) {
@@ -143,11 +149,26 @@ fun SignedInApp(
                 return@Box
             }
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs, photo = photos[user.uid], onSwitchUser = onSwitchUser)
-                Screen.Settings -> SettingsScreen(user, onBack = nav::back, onSwitchUser = onSwitchUser, onRemoveFromPhone = onRemoveFromPhone)
+                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs, photo = myPhoto, onSwitchUser = onSwitchUser)
+                Screen.Settings -> SettingsScreen(
+                    user, profiles, myPhoto,
+                    onBack = nav::back,
+                    onChangePin = { nav.go(Screen.ChangePin) },
+                    onSwitchUser = onSwitchUser,
+                    onRemoveFromPhone = onRemoveFromPhone,
+                )
+                Screen.ChangePin -> SetPinScreen(
+                    phone, user, changing = true,
+                    onCancel = nav::back,
+                    onDone = {
+                        nav.back()
+                        scope.launch { snackbar.showSnackbar(resources.getString(R.string.pin_changed)) }
+                    },
+                    cancelLabel = stringResource(R.string.back),
+                )
                 Screen.Staff -> StaffScreen(user, shifts, nowMs, onBack = nav::back)
                 Screen.Users ->
-                    if (users != null && user.role == Role.Admin) UsersScreen(user, users, shifts, nowMs, onBack = nav::back)
+                    if (users != null && user.role == Role.Admin) UsersScreen(user, users, shifts, profiles, phone.deviceId, nowMs, onBack = nav::back)
                     else LaunchedEffect(Unit) { nav.back() }
                 is Screen.Table -> {
                     val table = tables.firstOrNull { it.id == screen.tableId }

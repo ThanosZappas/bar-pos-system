@@ -84,7 +84,7 @@ fun RootScreen(container: AppContainer) {
             s.user.mustChangePassword -> ChangePasswordScreen(sessions, s.user)
             !s.user.pinSet -> SetPinScreen(phone, s.user, changing = false, onCancel = sessions::signOut)
             else -> SignedInApp(
-                s.user, catalog, orders, shifts, container.users, phone, container.sync, now, shiftOver,
+                s.user, catalog, orders, shifts, container.users, container.profiles, phone, container.sync, now, shiftOver,
                 onSwitchUser = switchUser,
                 onRemoveFromPhone = {
                     if (pending > 0) waiting = true

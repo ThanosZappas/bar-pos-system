@@ -13,6 +13,15 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.unit.dp
+import gr.barlab.negroni.profile.ProfileRepository
+import gr.barlab.negroni.ui.profile.ProfileAvatar
+import gr.barlab.negroni.ui.profile.ProfileLookEditor
+import gr.barlab.negroni.ui.profile.iconOf
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,12 +48,30 @@ import gr.barlab.negroni.ui.theme.BarLabColors
 import gr.barlab.negroni.ui.theme.Spacing
 
 /** Account (switch user, remove from this phone), language (persisted), board alerts and version. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(user: StaffUser, onBack: () -> Unit, onSwitchUser: () -> Unit, onRemoveFromPhone: () -> Unit) {
+fun SettingsScreen(
+    user: StaffUser,
+    profiles: ProfileRepository?,
+    photo: ImageBitmap?,
+    onBack: () -> Unit,
+    onChangePin: () -> Unit,
+    onSwitchUser: () -> Unit,
+    onRemoveFromPhone: () -> Unit,
+) {
     var language by remember { mutableStateOf(AppLanguage.current()) }
     val context = LocalContext.current
     var alertsOn by remember { mutableStateOf(BoardAlerter.isEnabled(context)) }
     var confirmRemove by remember { mutableStateOf(false) }
+    var editingLook by remember { mutableStateOf(false) }
+    if (editingLook && profiles != null) {
+        ModalBottomSheet(onDismissRequest = { editingLook = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            Column(Modifier.padding(horizontal = Spacing.l).padding(bottom = Spacing.xxl), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
+                Text(stringResource(R.string.settings_change_look), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                ProfileLookEditor(uid = null, role = user.role, icon = user.icon, photo = photo, profiles = profiles)
+            }
+        }
+    }
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
@@ -61,7 +88,15 @@ fun SettingsScreen(user: StaffUser, onBack: () -> Unit, onSwitchUser: () -> Unit
         }
         Column(Modifier.padding(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
             Text(stringResource(R.string.settings_account).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            Text(stringResource(R.string.settings_signed_in, user.displayName, user.username, stringResource(roleLabel(user.role))), style = MaterialTheme.typography.bodyLarge)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+                ProfileAvatar(iconOf(user.icon, user.role), photo, 56.dp)
+                Text(stringResource(R.string.settings_signed_in, user.displayName, user.username, stringResource(roleLabel(user.role))), style = MaterialTheme.typography.bodyLarge)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                if (profiles != null) OutlinedButton(onClick = { editingLook = true }) { Text(stringResource(R.string.settings_change_look).caps(), style = MaterialTheme.typography.labelLarge) }
+            }
+            OutlinedButton(onClick = onChangePin) { Text(stringResource(R.string.settings_change_pin).caps(), style = MaterialTheme.typography.labelLarge) }
+            HorizontalDivider(color = BarLabColors.LineFaint)
             OutlinedButton(onClick = onSwitchUser) { Text(stringResource(R.string.switch_user).caps(), style = MaterialTheme.typography.labelLarge) }
             Text(stringResource(R.string.switch_user_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick = { confirmRemove = true }) { Text(stringResource(R.string.remove_me_from_phone)) }
