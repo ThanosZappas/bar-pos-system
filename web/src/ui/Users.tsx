@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { listen } from '../data/live';
-import { collection, orderBy, query } from 'firebase/firestore';
+import { collection, orderBy, query, type Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { firebase } from '../firebase';
 import { t, type Key } from '../i18n';
@@ -14,6 +14,11 @@ import { clock } from '../lib/time';
 import { fill } from '../i18n/format';
 import { errorKey } from './errors';
 import { ErrorText, Field } from './Fields';
+import { Avatar, iconOf, ProfileIcon } from './Avatar';
+import { PROFILE_ICONS } from './profileIconSet';
+import { removePhone, removePhoto, resetPin, setIcon, unlockPin, uploadPhoto, usePhones, usePhotos, type Phone } from '../data/profiles';
+import { shrinkPhoto } from '../lib/photo';
+import { dateTime } from '../lib/time';
 
 interface UserRow {
   uid: string;
@@ -24,6 +29,10 @@ interface UserRow {
   mustChangePassword: boolean;
   rights?: Rights;
   deleted?: boolean;
+  icon?: string;
+  photoVersion?: number;
+  pinSet?: boolean;
+  pinLockedUntil?: Timestamp;
 }
 
 const ROLES: Role[] = ['admin', 'barman', 'server'];
@@ -44,6 +53,8 @@ export function Users({ me }: { me: StaffUser }) {
   const shifts = useShifts();
   const now = useNow(30_000);
   const [notice, setNotice] = useState<string | null>(null);
+  const photos = usePhotos();
+  const phones = usePhones();
 
   useEffect(
     () =>
@@ -60,6 +71,7 @@ export function Users({ me }: { me: StaffUser }) {
       <table class="list">
         <thead>
           <tr>
+            <th />
             <th>{t('users.username')}</th>
             <th>{t('users.displayName')}</th>
             <th>{t('users.role')}</th>
@@ -70,18 +82,19 @@ export function Users({ me }: { me: StaffUser }) {
         </thead>
         <tbody>
           {rows.filter((u) => !u.deleted).map((u) => (
-            <UserRowView key={u.uid} row={u} me={me} shift={shifts.get(u.uid)} now={now} onNotice={setNotice} />
+            <UserRowView key={u.uid} row={u} me={me} shift={shifts.get(u.uid)} now={now} photoUrl={u.photoVersion ? photos.get(u.uid) : undefined} onNotice={setNotice} />
           ))}
         </tbody>
       </table>
       <CreateUser onNotice={setNotice} />
+      <Phones phones={phones} rows={rows} onNotice={setNotice} />
     </section>
   );
 }
 
-function UserRowView({ row, me, shift, now, onNotice }: { row: UserRow; me: StaffUser; shift?: Shift; now: number; onNotice: (s: string) => void }) {
+function UserRowView({ row, me, shift, now, photoUrl, onNotice }: { row: UserRow; me: StaffUser; shift?: Shift; now: number; photoUrl?: string; onNotice: (s: string) => void }) {
   const isMe = row.uid === me.uid;
-  const [mode, setMode] = useState<'view' | 'edit' | 'reset' | 'rights'>('view');
+  const [mode, setMode] = useState<'view' | 'edit' | 'reset' | 'rights' | 'look'>('view');
   const [rights, setRights] = useState<Rights>(row.rights ?? {});
   const [displayName, setDisplayName] = useState(row.displayName);
   const [role, setRole] = useState<Role>(row.role);
@@ -104,13 +117,17 @@ function UserRowView({ row, me, shift, now, onNotice }: { row: UserRow; me: Staf
     }
   }
 
-  const status = [row.active ? t('users.active') : t('users.deactivated'), row.mustChangePassword ? t('users.mustChange') : null]
+  const lockedUntil = row.pinLockedUntil?.toMillis();
+  const locked = lockedUntil !== undefined && lockedUntil > now;
+  const pinStatus = locked ? fill(t('users.pinLocked'), { time: clock(lockedUntil!) }) : row.pinSet ? t('users.pinSet') : t('users.pinNone');
+  const status = [row.active ? t('users.active') : t('users.deactivated'), row.mustChangePassword ? t('users.mustChange') : null, pinStatus]
     .filter(Boolean)
     .join(' · ');
 
   return (
     <>
       <tr class={row.active ? '' : 'inactive'}>
+        <td><Avatar icon={iconOf(row.icon, row.role)} photoUrl={photoUrl} size={36} /></td>
         <td>{row.username}{isMe && <span class="badge">{t('users.you')}</span>}</td>
         <td>{row.displayName}</td>
         <td>{t(roleKey(row.role))}</td>
@@ -118,8 +135,23 @@ function UserRowView({ row, me, shift, now, onNotice }: { row: UserRow; me: Staf
         <td>{row.role === 'server' && row.active && <ShiftCell row={row} shift={shift} now={now} me={me} />}</td>
         <td class="actions">
           <button class="link" onClick={() => setMode(mode === 'edit' ? 'view' : 'edit')}>{t('users.edit')}</button>
+          <button class="link" onClick={() => setMode(mode === 'look' ? 'view' : 'look')}>{t('users.look')}</button>
           {row.role === 'server' && <button class="link" onClick={() => { setRights(row.rights ?? {}); setMode(mode === 'rights' ? 'view' : 'rights'); }}>{t('users.rights')}</button>}
           <button class="link" onClick={() => setMode(mode === 'reset' ? 'view' : 'reset')}>{t('users.resetPassword')}</button>
+          {locked && (
+            <button class="link" disabled={busy} onClick={() => run(() => unlockPin(row.uid), 'users.pinUnlocked')}>
+              {t('users.unlockPin')}
+            </button>
+          )}
+          {row.pinSet && (
+            <button
+              class="link"
+              disabled={busy}
+              onClick={() => confirm(fill(t('users.confirmResetPin'), { name: row.displayName })) && run(() => resetPin(row.uid), 'users.pinReset')}
+            >
+              {t('users.resetPin')}
+            </button>
+          )}
           {!isMe && (
             <button
               class="link"
@@ -143,9 +175,16 @@ function UserRowView({ row, me, shift, now, onNotice }: { row: UserRow; me: Staf
           )}
         </td>
       </tr>
-      {mode !== 'view' && (
+      {mode === 'look' && (
         <tr class="editor">
-          <td colSpan={6}>
+          <td colSpan={7}>
+            <LookEditor row={row} photoUrl={photoUrl} onDone={(key) => { setMode('view'); onNotice(t(key)); }} onClose={() => setMode('view')} />
+          </td>
+        </tr>
+      )}
+      {mode !== 'view' && mode !== 'look' && (
+        <tr class="editor">
+          <td colSpan={7}>
             <form
               class="inline-form"
               onSubmit={(e) => {
@@ -268,5 +307,117 @@ function ShiftCell({ row, shift, now, me }: { row: UserRow; shift?: Shift; now: 
       <span class="field-hint">{label}</span>
       <button class="link" onClick={() => approve(row.uid, row.displayName, me)}>{t('permission.allow')}</button>
     </span>
+  );
+}
+
+/** Pick one of the gold line icons or upload a picture (cropped to its centre and shrunk here first). */
+function LookEditor({ row, photoUrl, onDone, onClose }: { row: UserRow; photoUrl?: string; onDone: (key: Key) => void; onClose: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const current = iconOf(row.icon, row.role);
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+      onDone('users.saved');
+    } catch (err) {
+      setError(messageOf(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function upload(file: File | undefined) {
+    if (!file) return;
+    let base64: string;
+    try {
+      base64 = await shrinkPhoto(file);
+    } catch {
+      setError(t('users.photoFailed'));
+      return;
+    }
+    await run(() => uploadPhoto(row.uid, base64));
+  }
+
+  return (
+    <div class="look-editor">
+      <div class="icon-grid" role="group" aria-label={t('users.look')}>
+        {Object.keys(PROFILE_ICONS).map((id) => (
+          <button
+            type="button"
+            class={!photoUrl && id === current ? 'icon-choice selected' : 'icon-choice'}
+            title={id}
+            aria-label={id}
+            aria-pressed={!photoUrl && id === current}
+            disabled={busy}
+            onClick={() => run(() => setIcon(row.uid, id))}
+          >
+            <ProfileIcon icon={id} size={28} />
+          </button>
+        ))}
+      </div>
+      <span class="buttons">
+        <label class={busy ? 'file-button disabled' : 'file-button'}>
+          {t('users.uploadPicture')}
+          <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => upload((e.target as HTMLInputElement).files?.[0])} />
+        </label>
+        {photoUrl && <button type="button" class="link" disabled={busy} onClick={() => run(() => removePhoto(row.uid))}>{t('users.removePicture')}</button>}
+        <button type="button" class="link" onClick={onClose}>{t('users.cancel')}</button>
+      </span>
+      <ErrorText text={error} />
+    </div>
+  );
+}
+
+/** Phones where staff sign in with a PIN; a lost one is removed here. */
+function Phones({ phones, rows, onNotice }: { phones: Phone[]; rows: UserRow[]; onNotice: (s: string) => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const nameOf = (uid: string) => rows.find((r) => r.uid === uid && !r.deleted)?.displayName;
+
+  async function remove(phone: Phone) {
+    if (!confirm(fill(t('phones.confirmRemove'), { name: phone.name }))) return;
+    setError(null);
+    try {
+      await removePhone(phone.id);
+      onNotice(t('phones.removed'));
+    } catch (err) {
+      setError(messageOf(err));
+    }
+  }
+
+  return (
+    <section class="phones">
+      <h2 class="section-label spaced">{t('phones.title')}</h2>
+      <p class="field-hint">{t('phones.hint')}</p>
+      <ErrorText text={error} />
+      {phones.length === 0 ? (
+        <p class="desc">{t('phones.none')}</p>
+      ) : (
+        <table class="list">
+          <thead>
+            <tr>
+              <th>{t('phones.name')}</th>
+              <th>{t('phones.profiles')}</th>
+              <th>{t('phones.lastUsed')}</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {phones.map((p) => (
+              <tr key={p.id}>
+                <td>{p.name}</td>
+                <td>{p.profiles.map(nameOf).filter(Boolean).join(', ')}</td>
+                <td>{p.lastUsedMs ? dateTime(p.lastUsedMs) : '—'}</td>
+                <td class="actions">
+                  <button class="link danger" onClick={() => remove(p)}>{t('phones.remove')}</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
