@@ -7,6 +7,7 @@ import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.net.Uri
+import androidx.core.graphics.createBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -35,7 +36,7 @@ object PhotoShrinker {
 
     /** What the square frame shows, as a [SIZE]×[SIZE] picture. */
     fun render(source: Bitmap, frame: PhotoFrame, viewSide: Float): Bitmap {
-        val out = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
+        val out = createBitmap(SIZE, SIZE)
         val matrix = frame.matrix(source.width, source.height, viewSide).apply { postScale(SIZE / viewSide, SIZE / viewSide) }
         Canvas(out).apply {
             drawColor(0xFF111008.toInt()) // the app's background where the picture does not reach
