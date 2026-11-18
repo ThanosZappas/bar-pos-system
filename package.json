@@ -11,12 +11,14 @@
     "build:web": "npm --prefix web run build",
     "build:worker": "npm --prefix worker run build",
     "emulators": "firebase emulators:start --project demo-negroni",
-    "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes",
+    "deploy:backend": "npm run build:worker && node scripts/deploy-rules.mjs",
     "deploy:worker": "node scripts/deploy-worker.mjs",
-    "deploy:dashboard": "node scripts/deploy-dashboard.mjs"
+    "deploy:dashboard": "node scripts/deploy-dashboard.mjs",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "devDependencies": {
     "firebase-tools": "15.35.0",
-    "wrangler": "4.164.0"
+    "wrangler": "^4.164.0"
   }
 }

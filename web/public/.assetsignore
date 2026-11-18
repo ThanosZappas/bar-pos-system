@@ -1,0 +1,2 @@
+# Not published with the dashboard (see web/wrangler.jsonc).
+*.map
