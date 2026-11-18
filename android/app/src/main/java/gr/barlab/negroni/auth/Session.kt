@@ -34,7 +34,7 @@ data class StaffUser(
 
 /**
  * What a server may do, set by the admin in the dashboard. Defaults match the Firestore rules and
- * functions/src/users.ts RIGHT_DEFAULTS: everything allowed except working without approval.
+ * worker/src/users.ts RIGHT_DEFAULTS: everything allowed except working without approval.
  */
 data class Rights(
     val logIn: Boolean = true,

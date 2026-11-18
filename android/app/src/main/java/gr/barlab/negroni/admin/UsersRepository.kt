@@ -15,11 +15,11 @@ import kotlinx.coroutines.tasks.await
 /** A user as the admin manages them. [pinLockedUntilMs]: locked after wrong PINs until then. */
 data class ManagedUser(val user: StaffUser, val active: Boolean, val pinLockedUntilMs: Long? = null)
 
-/** A phone where staff sign in with a PIN (devices/{id}, see functions/src/devices.ts). */
+/** A phone where staff sign in with a PIN (devices/{id}, see worker/src/devices.ts). */
 data class Phone(val id: String, val name: String, val profiles: List<String>, val lastUsedMs: Long?)
 
 /**
- * Admin user management on the phone, through the same Cloud Functions as the dashboard (the rules
+ * Admin user management on the phone, through the same server functions (the Cloudflare Worker) as the dashboard (the rules
  * let no client write user profiles). These calls need a connection.
  */
 class UsersRepository(private val db: FirebaseFirestore, private val functions: FirebaseFunctions) {

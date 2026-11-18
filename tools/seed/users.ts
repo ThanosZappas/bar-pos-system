@@ -1,6 +1,6 @@
 import type { Auth } from 'firebase-admin/auth';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
-import { isValidUsername, usernameToEmail } from '../../functions/src/usernames.ts';
+import { isValidUsername, usernameToEmail } from '../../worker/src/usernames.ts';
 
 export interface SeedUser {
   username: string;

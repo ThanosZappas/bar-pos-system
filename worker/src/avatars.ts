@@ -1,5 +1,6 @@
-import { FieldValue } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v2/https';
+import { Buffer } from 'node:buffer';
+import { FieldValue } from './google/firestore.js';
+import { HttpsError } from './http/errors.js';
 import { parseIcon } from './icons.js';
 import { asData, audit, loadUser, requireAdmin, type Deps } from './users.js';
 

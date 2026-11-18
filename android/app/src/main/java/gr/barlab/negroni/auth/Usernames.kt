@@ -2,7 +2,7 @@ package gr.barlab.negroni.auth
 
 /**
  * Staff log in with a username; Firebase Auth needs an email. Usernames map to fake
- * addresses on the reserved `.invalid` TLD. Same rules as functions/src/usernames.ts.
+ * addresses on the reserved `.invalid` TLD. Same rules as worker/src/usernames.ts.
  */
 object Usernames {
     const val INTERNAL_EMAIL_DOMAIN = "users.negronibarlab.invalid"

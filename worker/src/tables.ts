@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { FieldValue, type Transaction } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v2/https';
+import { FieldValue, type Transaction } from './google/firestore.js';
+import { HttpsError } from './http/errors.js';
 import { requireAdmin, RIGHT_DEFAULTS, type Deps, type Right, type Rights } from './users.js';
 
 /**

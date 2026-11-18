@@ -16,7 +16,7 @@ import kotlinx.coroutines.tasks.await
 import java.util.Base64
 
 /**
- * Profile icons and pictures (server side: functions/src/avatars.ts). Each person changes their
+ * Profile icons and pictures (server side: worker/src/avatars.ts). Each person changes their
  * own (uid = null); the admin anyone's. Pictures are read from avatars/{uid}, which staff can read.
  */
 class ProfileRepository(private val db: FirebaseFirestore, private val functions: FirebaseFunctions) {

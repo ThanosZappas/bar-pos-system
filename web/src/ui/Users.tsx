@@ -38,7 +38,7 @@ interface UserRow {
 const ROLES: Role[] = ['admin', 'barman', 'server'];
 const roleKey = (r: Role) => `role.${r}` as Key;
 
-/** All user changes go through Cloud Functions; Firestore rules forbid client writes to users/*. */
+/** All user changes go through the server functions; Firestore rules forbid client writes to users/*. */
 function call(name: 'createUser' | 'updateUser' | 'resetPassword' | 'deleteUser', data: Record<string, unknown>) {
   return httpsCallable(firebase!.functions, name)(data);
 }

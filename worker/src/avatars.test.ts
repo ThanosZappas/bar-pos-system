@@ -1,6 +1,5 @@
-import { deleteApp, type App } from 'firebase-admin/app';
 import { readFileSync } from 'node:fs';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { MAX_PHOTO_BYTES, parsePhoto, setIcon } from './avatars';
 import { deviceProfiles, registerDevice } from './devices';
 import { defaultIcon, iconOf, ICONS } from './icons';
@@ -38,14 +37,14 @@ describe('icons and pictures', () => {
 });
 
 describe.skipIf(!onEmulators)('setIcon (emulators)', () => {
-  let app: App;
   let deps: PinDeps;
   let adminUid: string;
   let maria: string;
   let nikos: string;
 
-  beforeAll(() => ({ app, deps } = testDeps('avatars-test')));
-  afterAll(async () => deleteApp(app));
+  beforeAll(() => {
+    deps = testDeps();
+  });
   beforeEach(async () => {
     await clearEmulators();
     adminUid = await seedUser(deps, 'admin', 'admin');

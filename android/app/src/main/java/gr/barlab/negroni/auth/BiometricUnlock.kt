@@ -22,7 +22,7 @@ import kotlin.coroutines.resume
 /**
  * Fingerprint unlock, an optional shortcut after the PIN (only on a phone with one profile: a
  * fingerprint opens the whole phone). The server gives the phone a random secret
- * (functions/src/devices.ts setBiometric); it is stored encrypted with a Keystore key that can only
+ * (worker/src/devices.ts setBiometric); it is stored encrypted with a Keystore key that can only
  * be used right after a strong biometric check, and that Android destroys when fingerprints are
  * added or removed. A touch decrypts the secret, which then signs in like a PIN.
  */

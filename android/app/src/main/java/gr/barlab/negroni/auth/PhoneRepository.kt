@@ -23,7 +23,7 @@ import java.io.IOException
 import java.util.Base64
 
 /**
- * This phone's sign-in grid and PIN sign-in (server side: functions/src/devices.ts and pins.ts).
+ * This phone's sign-in grid and PIN sign-in (server side: worker/src/devices.ts and pins.ts).
  *
  * A phone is registered by the first password sign-in on it ([register]); from then on every
  * profile that has signed in here with a password is on the grid. A PIN goes to the server with

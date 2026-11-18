@@ -5,8 +5,8 @@ import { firebase } from '../firebase';
 import { listen } from './live';
 
 /**
- * Profile pictures and icons, PINs and phones (functions/src/avatars.ts, pins.ts, devices.ts).
- * All changes go through Cloud Functions.
+ * Profile pictures and icons, PINs and phones (worker/src/avatars.ts, pins.ts, devices.ts).
+ * All changes go through the server functions (the Cloudflare Worker).
  */
 
 function call(name: 'setIcon' | 'resetPin' | 'unlockPin' | 'removeDevice', data: Record<string, unknown>) {

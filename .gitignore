@@ -9,8 +9,10 @@ service-account*.json
 .env.*
 !.env.example
 web/src/firebase-config.local.ts
-# Emulator-only secrets (PIN pepper for local testing)
-functions/.secret.local
+# Local-only Worker secrets (PIN pepper for testing) and wrangler's cache
+worker/.dev.vars
+worker/.wrangler/
+.wrangler/
 
 # Node
 node_modules/

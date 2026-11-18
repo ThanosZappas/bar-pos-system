@@ -1,6 +1,5 @@
-import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { Timestamp } from './google/firestore';
+import { testDeps } from './testkit';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { moveTable, removeTable } from './tables';
 import type { Deps } from './users';
@@ -9,14 +8,11 @@ const onEmulators = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST && process.e
 const PROJECT = 'demo-negroni';
 
 describe.skipIf(!onEmulators)('removeTable (emulators)', () => {
-  let app: App;
   let deps: Deps;
 
   beforeAll(() => {
-    app = initializeApp({ projectId: PROJECT }, 'tables-test');
-    deps = { auth: getAuth(app), db: getFirestore(app) };
+    deps = testDeps();
   });
-  afterAll(async () => deleteApp(app));
   beforeEach(async () => {
     await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${PROJECT}/databases/(default)/documents`, { method: 'DELETE' });
     await deps.db.doc('users/admin').set({ username: 'admin', displayName: 'Admin', role: 'admin', active: true, mustChangePassword: false });
@@ -56,14 +52,11 @@ describe.skipIf(!onEmulators)('removeTable (emulators)', () => {
 });
 
 describe.skipIf(!onEmulators)('moveTable (emulators)', () => {
-  let app: App;
   let deps: Deps;
 
   beforeAll(() => {
-    app = initializeApp({ projectId: PROJECT }, 'move-test');
-    deps = { auth: getAuth(app), db: getFirestore(app) };
+    deps = testDeps();
   });
-  afterAll(async () => deleteApp(app));
   beforeEach(async () => {
     await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${PROJECT}/databases/(default)/documents`, { method: 'DELETE' });
     await deps.db.doc('users/server').set({ username: 'user1', displayName: 'Server 1', role: 'server', active: true, mustChangePassword: false, rights: { noApproval: true } });

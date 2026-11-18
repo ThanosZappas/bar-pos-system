@@ -1,6 +1,7 @@
-import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v2/https';
+import { Buffer } from 'node:buffer';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { FieldValue, Timestamp } from './google/firestore.js';
+import { HttpsError } from './http/errors.js';
 import { checkPin } from './pinPolicy.js';
 import { asData, audit, loadUser, requireAdmin, requireString, type Deps } from './users.js';
 
@@ -11,7 +12,7 @@ export * from './pinPolicy.js';
  * plain text. A 4-digit PIN has only 10,000 values, so no hash protects it on its own once the
  * hashes leak. The defences are, together:
  *  1. the hashes live in pinSecrets/*, which no app can read (only these functions);
- *  2. a secret pepper (PIN_PEPPER, kept in Secret Manager) is mixed in before hashing, so leaked
+ *  2. a secret pepper (PIN_PEPPER, a Cloudflare secret) is mixed in before hashing, so leaked
  *     hashes cannot be tested without it;
  *  3. the lockout below, counted here on the server for every phone together;
  *  4. a PIN works only from a phone where that person has signed in with their password.
@@ -29,35 +30,36 @@ export interface Caller {
   provider?: string;
 }
 
-// ── Hashing: scrypt (memory-hard, built into Node) over HMAC-SHA256(pepper, PIN), with a random salt.
-// The parameters are stored with each hash so they can be raised later without breaking old PINs. ──
+// ── Hashing: PBKDF2-HMAC-SHA256 (WebCrypto) over HMAC-SHA256(pepper, PIN), with a random 16-byte
+// salt. The iteration count fits Cloudflare's free plan (10 ms of CPU per request; about 2 ms here):
+// with 10,000 possible 4-digit PINs the pepper, not the iterations, is what makes a leaked hash
+// useless. Parameters are stored with each hash, so they can be raised later without breaking
+// old PINs. ──
 
-export interface ScryptParams {
-  N: number;
-  r: number;
-  p: number;
+export interface HashParams {
+  alg: 'pbkdf2-sha256';
+  iterations: number;
   keyLen: number;
 }
-/** 32 MiB and roughly 100 ms per hash. */
-export const SCRYPT_PARAMS: ScryptParams = { N: 2 ** 15, r: 8, p: 1, keyLen: 32 };
+export const HASH_PARAMS: HashParams = { alg: 'pbkdf2-sha256', iterations: 10_000, keyLen: 32 };
 
-export interface PinHash extends ScryptParams {
+export interface PinHash extends HashParams {
   hash: string;
   salt: string;
   /** Kept so a PIN that became too short for a new role can be cleared (see users.updateUser). */
   length: number;
 }
 
-function derive(pin: string, salt: Buffer, pepper: string, params: ScryptParams): Promise<Buffer> {
+async function derive(pin: string, salt: Uint8Array, pepper: string, params: HashParams): Promise<Buffer> {
   if (!pepper) throw new Error('PIN_PEPPER is not set.');
+  if (params.alg !== 'pbkdf2-sha256') throw new Error(`Unknown PIN hash ${params.alg}`);
   const peppered = createHmac('sha256', pepper).update(pin).digest();
-  const { N, r, p, keyLen } = params;
-  return new Promise((resolve, reject) =>
-    scrypt(peppered, salt, keyLen, { N, r, p, maxmem: 256 * N * r }, (err, key) => (err ? reject(err) : resolve(key))),
-  );
+  const key = await crypto.subtle.importKey('raw', peppered, 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new Uint8Array(salt), iterations: params.iterations }, key, params.keyLen * 8);
+  return Buffer.from(bits);
 }
 
-export async function hashPin(pin: string, pepper: string, params: ScryptParams = SCRYPT_PARAMS): Promise<PinHash> {
+export async function hashPin(pin: string, pepper: string, params: HashParams = HASH_PARAMS): Promise<PinHash> {
   const salt = randomBytes(16);
   const key = await derive(pin, salt, pepper, params);
   return { hash: key.toString('base64'), salt: salt.toString('base64'), ...params, length: pin.length };

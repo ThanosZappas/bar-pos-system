@@ -1,7 +1,7 @@
 package gr.barlab.negroni.auth
 
 /**
- * PIN length (functions/src/pinPolicy.ts checks the same on the server). Any digits are allowed;
+ * PIN length (worker/src/pinPolicy.ts checks the same on the server). Any digits are allowed;
  * admin and barman need a longer PIN.
  */
 object PinRules {

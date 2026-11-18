@@ -1,19 +1,18 @@
-import { deleteApp, type App } from 'firebase-admin/app';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { deviceProfiles, forgetProfile, profileSignIn, registerDevice, removeDevice, setBiometric } from './devices';
 import { setPin, type PinDeps } from './pins';
 import { asPassword, asPin, clearEmulators, onEmulators, seedUser, signInWithToken, testDeps } from './testkit';
 import { deleteUser, updateUser } from './users';
 
 describe.skipIf(!onEmulators)('phones and profile sign-in (emulators)', () => {
-  let app: App;
   let deps: PinDeps;
   let adminUid: string;
   let maria: string;
   let nikos: string;
 
-  beforeAll(() => ({ app, deps } = testDeps('devices-test')));
-  afterAll(async () => deleteApp(app));
+  beforeAll(() => {
+    deps = testDeps();
+  });
   beforeEach(async () => {
     await clearEmulators();
     adminUid = await seedUser(deps, 'admin', 'admin');

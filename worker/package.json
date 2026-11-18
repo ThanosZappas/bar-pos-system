@@ -1,0 +1,17 @@
+{
+  "name": "negroni-bar-lab-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "dev": "node lib/dev-server.js",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  },
+  "description": "Cloudflare Worker: the server functions (users, PINs, phones, pictures, tables) on top of Firebase Auth and Firestore."
+}

@@ -1,0 +1,12 @@
+// The Cloudflare Worker (free plan). Deploy with `npm run deploy:worker` from the repo root, which
+// passes FIREBASE_PROJECT_ID from .firebaserc. Secrets (set once, see README "First-time setup"):
+// FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (service account key), PIN_PEPPER.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "negroni-bar-lab-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true }
+}

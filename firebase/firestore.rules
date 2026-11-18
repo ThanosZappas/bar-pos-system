@@ -2,7 +2,8 @@ rules_version = '2';
 
 // Role and active state come from users/{uid}, not from token claims, so deactivation
 // and role changes apply immediately. users/* and auditLog/* are written only by
-// Cloud Functions (Admin SDK bypasses these rules).
+// the server functions (the Cloudflare Worker in worker/, whose admin access bypasses
+// these rules).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -31,7 +32,7 @@ service cloud.firestore {
       return hasRole(['admin', 'barman']);
     }
 
-    // ── Rights per server (users/{uid}.rights, set by the admin through Cloud Functions).
+    // ── Rights per server (users/{uid}.rights, set by the admin through the server functions).
     // A missing right means its default: everything allowed except working without approval. ──
     function may(right) {
       return isLead() || me().get('rights', {}).get(right, true) == true;
@@ -370,7 +371,7 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
     }
 
-    // ── Profile sign-in (functions/src/devices.ts, pins.ts, avatars.ts); all written only by Cloud
+    // ── Profile sign-in (worker/src/devices.ts, pins.ts, avatars.ts); all written only by Cloud
     // Functions. The admin lists phones to remove a lost one; staff see each other's pictures. ──
     match /devices/{id} {
       allow read: if isAdmin();

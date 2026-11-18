@@ -1,6 +1,4 @@
-import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { testDeps } from './testkit';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { changeOwnPassword, createUser, deleteUser, resetPassword, updateUser, type Deps } from './users';
 
@@ -9,7 +7,6 @@ const onEmulators = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST && process.e
 const PROJECT = 'demo-negroni';
 
 describe.skipIf(!onEmulators)('user management (emulators)', () => {
-  let app: App;
   let deps: Deps;
   let adminUid: string;
 
@@ -25,10 +22,8 @@ describe.skipIf(!onEmulators)('user management (emulators)', () => {
   }
 
   beforeAll(() => {
-    app = initializeApp({ projectId: PROJECT }, 'users-test');
-    deps = { auth: getAuth(app), db: getFirestore(app) };
+    deps = testDeps();
   });
-  afterAll(async () => deleteApp(app));
   beforeEach(async () => {
     await clearEmulators();
     adminUid = await seedAdmin();

@@ -13,7 +13,7 @@ import javax.crypto.spec.GCMParameterSpec
 
 /**
  * This phone's identity for PIN sign-in: the id and the random key the server gave it when it
- * was registered (functions/src/devices.ts). The key is stored encrypted with an AES-256-GCM key
+ * was registered (worker/src/devices.ts). The key is stored encrypted with an AES-256-GCM key
  * that lives in the Android Keystore and never leaves it, so a copy of the app's files is not
  * enough to sign in from another phone. (EncryptedSharedPreferences is deprecated; this is the
  * same idea without the library.)

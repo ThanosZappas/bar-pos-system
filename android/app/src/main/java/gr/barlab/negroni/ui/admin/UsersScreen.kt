@@ -77,7 +77,7 @@ import kotlinx.coroutines.launch
  * Admin only: the dashboard's user management on the phone. Everyone with their status and, for
  * servers, this shift's permission; tap a person to edit name and role, icon or picture, rights,
  * PIN and password, deactivate or delete. Below: the phones where staff sign in with a PIN.
- * Changes go through Cloud Functions, so they need a connection.
+ * Changes go through the server functions, so they need a connection.
  */
 @Composable
 fun UsersScreen(

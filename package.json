@@ -1,20 +1,22 @@
 {
   "name": "negroni-bar-lab",
   "private": true,
-  "description": "Root helper scripts. Each part (web, functions, firebase, tools/seed) has its own package.json.",
+  "description": "Root helper scripts. Each part (web, worker, firebase, tools/seed) has its own package.json.",
   "scripts": {
-    "install:all": "npm install && npm --prefix web install && npm --prefix functions install && npm --prefix firebase install && npm --prefix tools/seed install && npm --prefix tools/icon install",
+    "install:all": "npm install && npm --prefix web install && npm --prefix worker install && npm --prefix firebase install && npm --prefix tools/seed install && npm --prefix tools/icon install",
     "test:web": "npm --prefix web test",
-    "test:functions": "firebase emulators:exec --only auth,firestore --project demo-negroni \"npm --prefix functions test\"",
+    "test:worker": "firebase emulators:exec --only auth,firestore --project demo-negroni \"npm --prefix worker test\"",
     "test:rules": "firebase emulators:exec --only firestore --project demo-negroni \"npm --prefix firebase test\"",
+    "test:backend": "firebase emulators:exec --only auth,firestore --project demo-negroni \"npm --prefix worker test && npm --prefix firebase test && npm --prefix tools/seed test\"",
     "build:web": "npm --prefix web run build",
-    "build:functions": "npm --prefix functions run build",
+    "build:worker": "npm --prefix worker run build",
     "emulators": "firebase emulators:start --project demo-negroni",
-    "test:backend": "firebase emulators:exec --only auth,firestore --project demo-negroni \"npm --prefix functions test && npm --prefix firebase test && npm --prefix tools/seed test\"",
-    "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,functions",
+    "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes",
+    "deploy:worker": "node scripts/deploy-worker.mjs",
     "deploy:hosting": "firebase deploy --only hosting"
   },
   "devDependencies": {
-    "firebase-tools": "15.35.0"
+    "firebase-tools": "15.35.0",
+    "wrangler": "4.164.0"
   }
 }

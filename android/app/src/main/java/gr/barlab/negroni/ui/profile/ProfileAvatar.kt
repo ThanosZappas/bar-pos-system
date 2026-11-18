@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import gr.barlab.negroni.auth.Role
 import gr.barlab.negroni.ui.theme.BarLabColors
 
-/** The role's icon when a profile has not chosen one. Same table as functions/src/icons.ts. */
+/** The role's icon when a profile has not chosen one. Same table as worker/src/icons.ts. */
 fun defaultIcon(role: Role): String = when (role) {
     Role.Admin -> "admin"
     Role.Barman -> "barman"

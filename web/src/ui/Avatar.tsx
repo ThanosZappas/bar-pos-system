@@ -1,7 +1,7 @@
 import { ICON_STROKE, ICON_VIEWBOX, PROFILE_ICONS } from './profileIconSet';
 import type { Role } from '../session';
 
-/** The role's icon when a profile has not chosen one. Same table as functions/src/icons.ts. */
+/** The role's icon when a profile has not chosen one. Same table as worker/src/icons.ts. */
 export function defaultIcon(role: Role): string {
   return role === 'admin' ? 'admin' : role === 'barman' ? 'barman' : 'person';
 }

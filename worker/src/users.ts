@@ -1,6 +1,6 @@
-import type { Auth } from 'firebase-admin/auth';
-import { FieldValue, type Firestore } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v2/https';
+import type { Auth } from './google/auth.js';
+import { FieldValue, type Firestore } from './google/firestore.js';
+import { HttpsError } from './http/errors.js';
 import { parseIcon } from './icons.js';
 import { LEAD_PIN_MIN_LENGTH } from './pinPolicy.js';
 import { isValidUsername, normalizeUsername, usernameToEmail } from './usernames.js';

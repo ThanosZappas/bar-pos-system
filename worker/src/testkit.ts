@@ -1,17 +1,20 @@
-import { initializeApp, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { makeDeps } from './index';
 import type { PinDeps } from './pins';
 
-/** Test helpers for the Auth and Firestore emulators (not deployed; see tsconfig "exclude"). */
+/** Test helpers for the Auth and Firestore emulators (not deployed). */
 
 export const PROJECT = 'demo-negroni';
 export const PEPPER = 'test-pepper-not-a-secret';
 export const onEmulators = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST && process.env.FIRESTORE_EMULATOR_HOST);
 
-export function testDeps(name: string): { app: App; deps: PinDeps } {
-  const app = initializeApp({ projectId: PROJECT }, name);
-  return { app, deps: { auth: getAuth(app), db: getFirestore(app), pepper: PEPPER } };
+/** The Worker's own Firebase client, pointed at the emulators (what runs on Cloudflare, minus the network). */
+export function testDeps(): PinDeps {
+  return makeDeps({
+    FIREBASE_PROJECT_ID: PROJECT,
+    FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST,
+    FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST,
+    PIN_PEPPER: PEPPER,
+  });
 }
 
 export async function clearEmulators(): Promise<void> {

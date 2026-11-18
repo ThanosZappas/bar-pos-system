@@ -1,4 +1,4 @@
-import { HttpsError } from 'firebase-functions/v2/https';
+import { HttpsError } from './http/errors.js';
 import type { Role } from './users.js';
 
 /** PIN length rules, shared by pins.ts and users.ts. There are no rules on which digits a PIN uses. */

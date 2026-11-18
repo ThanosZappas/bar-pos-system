@@ -1,9 +1,10 @@
+import { Buffer } from 'node:buffer';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { FieldValue } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v2/https';
+import { FieldValue } from './google/firestore.js';
+import { HttpsError } from './http/errors.js';
 import { iconOf } from './icons.js';
 import { attemptError, attemptPin, clearLock, pinSecretRef, type Caller, type PinDeps, type PinSecret } from './pins.js';
-import { asData, audit, loadUser, requireAdmin, requireString, type Data, type Deps } from './users.js';
+import { asData, audit, loadUser, requireAdmin, requireString, type Data, type Deps, type UserDoc } from './users.js';
 
 /**
  * Phones that may sign staff in with a PIN.
@@ -135,14 +136,26 @@ export async function deviceProfiles(deps: Deps, raw: unknown, nowMs = Date.now(
   const known = (typeof data.photos === 'object' && data.photos !== null ? data.photos : {}) as Record<string, unknown>;
   const profiles: DeviceProfile[] = [];
   const gone: string[] = [];
-  for (const uid of device.data.profiles) {
-    const user = await loadUser(deps, uid);
+  // Three batch reads for the whole grid: Cloudflare's free plan allows 50 requests per call.
+  const uids = device.data.profiles;
+  const [userSnaps, secretSnaps] = await Promise.all([
+    deps.db.getAll(...uids.map((uid) => deps.db.doc(`users/${uid}`))),
+    deps.db.getAll(...uids.map((uid) => pinSecretRef(deps, uid))),
+  ]);
+  const stale = uids.filter((uid, i) => {
+    const v = userSnaps[i]!.get('photoVersion');
+    return typeof v === 'number' && known[uid] !== v;
+  });
+  const photoSnaps = await deps.db.getAll(...stale.map((uid) => deps.db.doc(`avatars/${uid}`)));
+  const photos = new Map(stale.map((uid, i) => [uid, photoSnaps[i]!.get('photo') as Buffer | undefined]));
+  uids.forEach((uid, i) => {
+    const user = userSnaps[i]!.data() as UserDoc | undefined;
     if (!user || user.deleted) {
       gone.push(uid);
-      continue;
+      return;
     }
-    if (!user.active) continue;
-    const secret = (await pinSecretRef(deps, uid).get()).data() as PinSecret | undefined;
+    if (!user.active) return;
+    const secret = secretSnaps[i]!.data() as PinSecret | undefined;
     const lockedUntilMs = secret?.lockedUntil?.toMillis() ?? 0;
     const entry: DeviceProfile = {
       uid,
@@ -153,12 +166,10 @@ export async function deviceProfiles(deps: Deps, raw: unknown, nowMs = Date.now(
       biometric: Boolean(secret?.biometric?.[device.id]),
       photoVersion: user.photoVersion ?? null,
     };
-    if (user.photoVersion && known[uid] !== user.photoVersion) {
-      const photo = (await deps.db.doc(`avatars/${uid}`).get()).get('photo') as Buffer | undefined;
-      if (photo) entry.photo = Buffer.from(photo).toString('base64');
-    }
+    const photo = photos.get(uid);
+    if (photo) entry.photo = Buffer.from(photo).toString('base64');
     profiles.push(entry);
-  }
+  });
   if (gone.length) await deviceRef(deps, device.id).update({ profiles: FieldValue.arrayRemove(...gone) });
   return { profiles };
 }

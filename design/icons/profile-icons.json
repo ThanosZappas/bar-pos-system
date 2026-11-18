@@ -1,5 +1,5 @@
 {
-  "comment": "Profile icons: gold line drawings in the menu's style. One source for Android and the dashboard: run `npm --prefix tools/icon run profile-icons` after a change. Ids must match functions/src/icons.ts. Paths only (circles written as two arcs) because Android vector drawables have no <circle>.",
+  "comment": "Profile icons: gold line drawings in the menu's style. One source for Android and the dashboard: run `npm --prefix tools/icon run profile-icons` after a change. Ids must match worker/src/icons.ts. Paths only (circles written as two arcs) because Android vector drawables have no <circle>.",
   "viewBox": 24,
   "strokeWidth": 1.4,
   "icons": {

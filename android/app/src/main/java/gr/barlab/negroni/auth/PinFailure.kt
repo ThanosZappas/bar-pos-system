@@ -1,7 +1,7 @@
 package gr.barlab.negroni.auth
 
 /**
- * Why a PIN step failed, from the `details.reason` the Cloud Functions send (functions/src/pins.ts
+ * Why a PIN step failed, from the `details.reason` the server functions send (worker/src/pins.ts
  * and devices.ts). Pure Kotlin so it is unit-tested; [PhoneRepository] turns exceptions into it.
  */
 sealed interface PinFailure {

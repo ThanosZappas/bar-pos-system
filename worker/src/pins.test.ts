@@ -1,6 +1,3 @@
-import { deleteApp, initializeApp, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   attemptPin,
@@ -11,22 +8,23 @@ import {
   lockMs,
   MAX_LOCK_MS,
   resetPin,
-  SCRYPT_PARAMS,
+  HASH_PARAMS,
   setPin,
   unlockPin,
   verifyPin,
   type PinDeps,
 } from './pins';
+import { testDeps } from './testkit';
 import { updateUser } from './users';
 
 const PEPPER = 'test-pepper-not-a-secret';
 /** Cheap parameters where the test is about something other than the cost. */
-const FAST = { N: 2 ** 10, r: 8, p: 1, keyLen: 32 };
+const FAST = { alg: 'pbkdf2-sha256', iterations: 1_000, keyLen: 32 } as const;
 
 describe('PIN hashing', () => {
   it('stores a salted scrypt hash, never the PIN', async () => {
     const stored = await hashPin('583920', PEPPER);
-    expect(stored).toMatchObject({ ...SCRYPT_PARAMS, length: 6 });
+    expect(stored).toMatchObject({ ...HASH_PARAMS, length: 6 });
     expect(JSON.stringify(stored)).not.toContain('583920');
     expect(Buffer.from(stored.salt, 'base64')).toHaveLength(16);
     expect(Buffer.from(stored.hash, 'base64')).toHaveLength(32);
@@ -53,7 +51,7 @@ describe('PIN hashing', () => {
     const stored = await hashPin('0000', PEPPER, FAST);
     expect(stored).toMatchObject(FAST);
     expect(await verifyPin('0000', stored, PEPPER)).toBe(true);
-    expect(await verifyPin('0000', { ...stored, N: 2 ** 11 }, PEPPER)).toBe(false);
+    expect(await verifyPin('0000', { ...stored, iterations: 2_000 }, PEPPER)).toBe(false);
   });
 });
 
@@ -91,7 +89,6 @@ const onEmulators = Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST && process.e
 const PROJECT = 'demo-negroni';
 
 describe.skipIf(!onEmulators)('PIN functions (emulators)', () => {
-  let app: App;
   let deps: PinDeps;
   let adminUid: string;
   let serverUid: string;
@@ -113,10 +110,8 @@ describe.skipIf(!onEmulators)('PIN functions (emulators)', () => {
   const asPin = (uid: string) => ({ uid, provider: 'custom' });
 
   beforeAll(() => {
-    app = initializeApp({ projectId: PROJECT }, 'pins-test');
-    deps = { auth: getAuth(app), db: getFirestore(app), pepper: PEPPER };
+    deps = testDeps();
   });
-  afterAll(async () => deleteApp(app));
   beforeEach(async () => {
     await clearEmulators();
     adminUid = await seedUser('admin', 'admin');
