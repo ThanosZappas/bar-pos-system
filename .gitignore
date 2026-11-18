@@ -37,3 +37,6 @@ android/captures/
 # OS / editors
 .DS_Store
 .vscode/
+
+# Built APKs to share
+dist-apk/
