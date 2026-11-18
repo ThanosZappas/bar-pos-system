@@ -95,7 +95,7 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository, tables: List<DiningTa
             Box(Modifier.fillMaxSize().padding(Spacing.xxl), contentAlignment = Alignment.Center) {
                 Text(
                     stringResource(R.string.board_empty),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )

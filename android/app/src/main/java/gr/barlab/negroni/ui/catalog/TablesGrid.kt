@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.catalog
 
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Box
 import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.BorderStroke
@@ -35,7 +36,7 @@ import gr.barlab.negroni.ui.theme.Spacing
 fun TablesGrid(tables: List<DiningTable>, states: Map<String, TableState>, onTableClick: (DiningTable) -> Unit, modifier: Modifier = Modifier) {
     if (tables.isEmpty()) {
         Box(modifier.fillMaxSize().padding(Spacing.xxl), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.tables_empty), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text(stringResource(R.string.tables_empty), style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp), color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
         return
     }
@@ -57,7 +58,7 @@ fun TablesGrid(tables: List<DiningTable>, states: Map<String, TableState>, onTab
                 modifier = Modifier.aspectRatio(1f),
             ) {
                 Column(Modifier.fillMaxSize().padding(Spacing.xs), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(table.name, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                    Text(table.name, style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp), color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
                     Text(stringResource(status.label()).caps(), style = MaterialTheme.typography.labelSmall, color = if (status == TableStatus.Free) MaterialTheme.colorScheme.onSurfaceVariant else color, maxLines = 1)
                     if (state != null && state.totalCents > 0) {
                         Text(Money.format(state.dueCents), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
