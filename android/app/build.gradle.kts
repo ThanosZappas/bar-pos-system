@@ -20,6 +20,12 @@ val localProps = Properties().apply {
 val emulatorHost: String = providers.gradleProperty("firebase.emulatorHost").orNull
     ?: localProps.getProperty("firebase.emulatorHost", "")
 
+// The server functions (a Cloudflare Worker, see worker/). Per build -Pnegroni.apiUrl=… or per
+// machine in android/local.properties: negroni.apiUrl=https://negroni-bar-lab-api.<you>.workers.dev
+// With the emulators it defaults to the Worker running on the laptop (port 8787).
+val apiUrl: String = providers.gradleProperty("negroni.apiUrl").orNull
+    ?: localProps.getProperty("negroni.apiUrl", "")
+
 android {
     namespace = "gr.barlab.negroni"
     compileSdk = 37
@@ -36,10 +42,13 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$emulatorHost\"")
+            val debugApi = apiUrl.ifEmpty { if (emulatorHost.isNotEmpty()) "http://$emulatorHost:8787" else "" }
+            buildConfigField("String", "API_URL", "\"$debugApi\"")
         }
         release {
             isMinifyEnabled = false
             buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"\"")
+            buildConfigField("String", "API_URL", "\"$apiUrl\"")
         }
     }
     compileOptions {

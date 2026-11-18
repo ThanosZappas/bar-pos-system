@@ -4,7 +4,7 @@ import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.functions.FirebaseFunctions
+import gr.barlab.negroni.data.Api
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +20,7 @@ class SessionRepository(
     private val phone: PhoneRepository,
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
-    private val functions: FirebaseFunctions,
+    private val api: Api,
 ) {
     /** Current session. The profile comes from Firestore's cache when offline. */
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -101,7 +101,7 @@ class SessionRepository(
             val failure = AuthFailure.from(e)
             throw if (failure.reason == AuthFailure.Reason.WrongCredentials) AuthFailure(AuthFailure.Reason.WrongCurrentPassword) else failure
         }
-        functions.getHttpsCallable("changeOwnPassword").call(mapOf("password" to new)).await()
+        api.callable("changeOwnPassword").call(mapOf("password" to new)).await()
         auth.signInWithEmailAndPassword(email, new).await()
         Unit
     }.recoverCatching { throw AuthFailure.from(it) }

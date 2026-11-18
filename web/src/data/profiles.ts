@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { collection, type Bytes, type Timestamp } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { firebase } from '../firebase';
+import { callable, firebase } from '../firebase';
 import { listen } from './live';
 
 /**
@@ -10,7 +9,7 @@ import { listen } from './live';
  */
 
 function call(name: 'setIcon' | 'resetPin' | 'unlockPin' | 'removeDevice', data: Record<string, unknown>) {
-  return httpsCallable(firebase!.functions, name)(data);
+  return callable(name)(data);
 }
 
 /** Every uploaded picture, uid → data: URL. */

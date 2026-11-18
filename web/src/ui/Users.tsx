@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { listen } from '../data/live';
 import { collection, orderBy, query, type Timestamp } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { firebase } from '../firebase';
+import { callable, firebase } from '../firebase';
 import { t, type Key } from '../i18n';
 import { MIN_PASSWORD_LENGTH } from '../lib/passwords';
 import type { Role, StaffUser } from '../session';
@@ -40,7 +39,7 @@ const roleKey = (r: Role) => `role.${r}` as Key;
 
 /** All user changes go through the server functions; Firestore rules forbid client writes to users/*. */
 function call(name: 'createUser' | 'updateUser' | 'resetPassword' | 'deleteUser', data: Record<string, unknown>) {
-  return httpsCallable(firebase!.functions, name)(data);
+  return callable(name)(data);
 }
 
 function messageOf(err: unknown): string {

@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.edit
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.functions.FirebaseFunctions
+import gr.barlab.negroni.data.Api
 import com.google.firebase.functions.FirebaseFunctionsException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +34,7 @@ class PhoneRepository(
     private val key: PhoneKey,
     private val device: DeviceLogin,
     private val auth: FirebaseAuth,
-    private val functions: FirebaseFunctions,
+    private val api: Api,
 ) {
     private val prefs = context.getSharedPreferences("profiles", Context.MODE_PRIVATE)
     private val photoDir = File(context.filesDir, "avatars")
@@ -127,7 +127,7 @@ class PhoneRepository(
     private fun PhoneKey.Credentials.args() = mapOf("deviceId" to deviceId, "deviceSecret" to deviceSecret)
 
     private suspend fun call(name: String, args: Map<String, Any>): Map<*, *> =
-        functions.getHttpsCallable(name).call(args).await().getData() as? Map<*, *> ?: emptyMap<String, Any>()
+        api.callable(name).call(args).await().getData() as? Map<*, *> ?: emptyMap<String, Any>()
 
     /** Runs [block], turning every error into a [PinException]; a removed phone forgets its key and grid. */
     private suspend fun <T> attempt(block: suspend () -> T): Result<T> = runCatching { block() }.recoverCatching { e ->

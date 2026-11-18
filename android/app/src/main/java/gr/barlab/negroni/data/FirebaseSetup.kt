@@ -10,20 +10,20 @@ import com.google.firebase.firestore.persistentCacheSettings
 import com.google.firebase.functions.FirebaseFunctions
 import gr.barlab.negroni.BuildConfig
 
-class FirebaseServices(val auth: FirebaseAuth, val firestore: FirebaseFirestore, val functions: FirebaseFunctions)
+class FirebaseServices(val auth: FirebaseAuth, val firestore: FirebaseFirestore, val api: Api)
 
 object FirebaseSetup {
-    const val REGION = "europe-west8"
-
     // The emulators run with --project demo-negroni; "demo-" projects need no real credentials.
     private const val EMULATOR_PROJECT = "demo-negroni"
 
     /**
      * Debug builds with `firebase.emulatorHost` in local.properties talk to the laptop's emulators.
-     * Otherwise the app uses the real project from google-services.json. Returns null when neither
-     * is available, so the UI can explain what is missing instead of crashing.
+     * Otherwise the app uses the real project from google-services.json and the Worker at
+     * `negroni.apiUrl`. Returns null when something is missing, so the UI can explain what instead
+     * of crashing.
      */
     fun init(context: Context): FirebaseServices? {
+        if (BuildConfig.API_URL.isEmpty()) return null
         val host = BuildConfig.FIREBASE_EMULATOR_HOST
         if (host.isNotEmpty()) {
             val options = FirebaseOptions.Builder()
@@ -36,7 +36,6 @@ object FirebaseSetup {
             return services(app).also {
                 it.auth.useEmulator(host, 9099)
                 it.firestore.useEmulator(host, 8080)
-                it.functions.useEmulator(host, 5001)
             }
         }
         val app = FirebaseApp.getApps(context).firstOrNull() ?: FirebaseApp.initializeApp(context) ?: return null
@@ -46,7 +45,7 @@ object FirebaseSetup {
     private fun services(app: FirebaseApp) = FirebaseServices(
         auth = FirebaseAuth.getInstance(app),
         firestore = FirebaseFirestore.getInstance(app).apply { firestoreSettings = OFFLINE_SETTINGS },
-        functions = FirebaseFunctions.getInstance(app, REGION),
+        api = Api(FirebaseFunctions.getInstance(app), BuildConfig.API_URL),
     )
 
     /**

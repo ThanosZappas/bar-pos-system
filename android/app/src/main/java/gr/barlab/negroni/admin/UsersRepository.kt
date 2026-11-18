@@ -2,7 +2,7 @@ package gr.barlab.negroni.admin
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
-import com.google.firebase.functions.FirebaseFunctions
+import gr.barlab.negroni.data.Api
 import gr.barlab.negroni.auth.AuthFailure
 import gr.barlab.negroni.auth.Rights
 import gr.barlab.negroni.auth.Role
@@ -22,7 +22,7 @@ data class Phone(val id: String, val name: String, val profiles: List<String>, v
  * Admin user management on the phone, through the same server functions (the Cloudflare Worker) as the dashboard (the rules
  * let no client write user profiles). These calls need a connection.
  */
-class UsersRepository(private val db: FirebaseFirestore, private val functions: FirebaseFunctions) {
+class UsersRepository(private val db: FirebaseFirestore, private val api: Api) {
 
     /** Everyone except deleted users, by username. Readable by barman and admin. */
     val users: Flow<List<ManagedUser>> = db.collection("users").snapshots().map { snap ->
@@ -96,7 +96,7 @@ class UsersRepository(private val db: FirebaseFirestore, private val functions: 
     suspend fun removePhone(id: String): Result<Unit> = call("removeDevice", mapOf("deviceId" to id))
 
     private suspend fun call(name: String, data: Map<String, Any>): Result<Unit> = runCatching {
-        functions.getHttpsCallable(name).call(data).await()
+        api.callable(name).call(data).await()
         Unit
     }.recoverCatching { throw AuthFailure.from(it) }
 }

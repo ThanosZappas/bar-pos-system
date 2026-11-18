@@ -47,7 +47,7 @@
     <string name="no_profile_body">This account has no staff profile. Ask the admin.</string>
     <!-- Developer-facing: left in English. -->
     <string name="not_configured_title" translatable="false">Firebase is not configured</string>
-    <string name="not_configured_body" translatable="false">Add android/app/google-services.json, or set firebase.emulatorHost in android/local.properties, then rebuild.</string>
+    <string name="not_configured_body" translatable="false">Add android/app/google-services.json and negroni.apiUrl (the Worker) in android/local.properties, or set firebase.emulatorHost there, then rebuild.</string>
 
     <!-- Home -->
     <string name="tab_board">Board</string>

@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
-import com.google.firebase.functions.FirebaseFunctions
+import gr.barlab.negroni.data.Api
 import gr.barlab.negroni.auth.AuthFailure
 import gr.barlab.negroni.data.keepAlive
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +19,7 @@ import java.util.Base64
  * Profile icons and pictures (server side: worker/src/avatars.ts). Each person changes their
  * own (uid = null); the admin anyone's. Pictures are read from avatars/{uid}, which staff can read.
  */
-class ProfileRepository(private val db: FirebaseFirestore, private val functions: FirebaseFunctions) {
+class ProfileRepository(private val db: FirebaseFirestore, private val api: Api) {
 
     /** Every uploaded picture, by uid. Small (256×256, at most 100 KB each) and few. */
     val photos: Flow<Map<String, ImageBitmap>> = db.collection("avatars").snapshots().map { snap ->
@@ -37,7 +37,7 @@ class ProfileRepository(private val db: FirebaseFirestore, private val functions
     suspend fun removePhoto(uid: String?): Result<Unit> = call(mapOf("photo" to null), uid)
 
     private suspend fun call(data: Map<String, Any?>, uid: String?): Result<Unit> = runCatching {
-        functions.getHttpsCallable("setIcon").call(if (uid == null) data else data + ("uid" to uid)).await()
+        api.callable("setIcon").call(if (uid == null) data else data + ("uid" to uid)).await()
         Unit
     }.recoverCatching { throw AuthFailure.from(it) }
 }

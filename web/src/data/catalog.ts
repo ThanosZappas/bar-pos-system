@@ -1,6 +1,5 @@
 import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { firebase } from '../firebase';
+import { callable, firebase } from '../firebase';
 import { created, updated, useLive } from './live';
 import { send } from './sync';
 
@@ -78,10 +77,10 @@ export async function addTable(name: string, order: number): Promise<void> {
 
 /** Server-side check: refuses while the table has an open order. */
 export async function removeTable(tableId: string): Promise<void> {
-  await httpsCallable(firebase!.functions, 'removeTable')({ tableId });
+  await callable('removeTable')({ tableId });
 }
 
 /** Guests change table: the open bill moves to a free table (checked on the server). Online only. */
 export async function moveTable(fromTableId: string, toTableId: string): Promise<void> {
-  await httpsCallable(firebase!.functions, 'moveTable')({ fromTableId, toTableId });
+  await callable('moveTable')({ fromTableId, toTableId });
 }

@@ -27,21 +27,21 @@ class AppContainer(context: Context) {
     private val deviceLogin = DeviceLogin(context)
 
     /** This phone's profile grid and PIN sign-in. */
-    val phone: PhoneRepository? = firebase?.let { PhoneRepository(context, PhoneKey(context), deviceLogin, it.auth, it.functions) }
+    val phone: PhoneRepository? = firebase?.let { PhoneRepository(context, PhoneKey(context), deviceLogin, it.auth, it.api) }
 
     /** Fingerprint unlock: an optional shortcut after the PIN, on a phone with one profile. */
     val fingerprint: Fingerprint? = phone?.let { Fingerprint(it, BiometricUnlock(context)) }
 
-    val sessions: SessionRepository? = firebase?.let { SessionRepository(deviceLogin, phone!!, it.auth, it.firestore, it.functions) }
+    val sessions: SessionRepository? = firebase?.let { SessionRepository(deviceLogin, phone!!, it.auth, it.firestore, it.api) }
 
     val shifts: ShiftRepository? = firebase?.let { ShiftRepository(it.firestore) }
 
-    val users: UsersRepository? = firebase?.let { UsersRepository(it.firestore, it.functions) }
+    val users: UsersRepository? = firebase?.let { UsersRepository(it.firestore, it.api) }
 
     /** Profile icons and pictures. */
-    val profiles: ProfileRepository? = firebase?.let { ProfileRepository(it.firestore, it.functions) }
+    val profiles: ProfileRepository? = firebase?.let { ProfileRepository(it.firestore, it.api) }
 
-    val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore, it.functions) }
+    val catalog: CatalogRepository? = firebase?.let { CatalogRepository(it.firestore, it.api) }
 
     /** No real POS yet (design only). Swap in JsonExportPosGateway(File(context.filesDir, "pos")) to export JSON. */
     private val pos: PosGateway = NoOpPosGateway

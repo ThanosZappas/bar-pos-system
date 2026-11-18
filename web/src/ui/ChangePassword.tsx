@@ -1,7 +1,6 @@
 import { useState } from 'preact/hooks';
 import { EmailAuthProvider, reauthenticateWithCredential, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { httpsCallable } from 'firebase/functions';
-import { firebase } from '../firebase';
+import { callable, firebase } from '../firebase';
 import { t } from '../i18n';
 import { checkNewPassword } from '../lib/passwords';
 import { usernameToEmail } from '../lib/usernames';
@@ -27,7 +26,7 @@ export function ChangePassword({ user }: { user: StaffUser }) {
     setBusy(true);
     try {
       await reauthenticateWithCredential(fb.auth.currentUser, EmailAuthProvider.credential(email, current));
-      await httpsCallable(fb.functions, 'changeOwnPassword')({ password: next });
+      await callable('changeOwnPassword')({ password: next });
       // A password change can revoke the session; sign in again with the new password.
       await signInWithEmailAndPassword(fb.auth, email, next);
     } catch (err) {

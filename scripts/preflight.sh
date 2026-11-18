@@ -19,7 +19,7 @@ if [ "${node_major:-0}" -ge 22 ]; then ok "Node $(node -v)"; else bad "Node 22+ 
 java_major=$(java -version 2>&1 | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
 if [ "${java_major:-0}" -ge 21 ]; then ok "Java $java_major (emulators need 21+)"; else bad "Java 21+ not found (have: ${java_major:-none})" "install a JDK 21 into ~/.local/jdks, then: . scripts/env.sh"; fi
 missing=""
-for d in . web functions firebase tools/seed tools/icon; do [ -d "$d/node_modules" ] || missing="$missing $d"; done
+for d in . web worker firebase tools/seed tools/icon; do [ -d "$d/node_modules" ] || missing="$missing $d"; done
 if [ -z "$missing" ]; then ok "npm packages installed"; else bad "npm packages missing in:$missing" "npm run install:all"; fi
 if [ -f tools/seed/seed-credentials.json ]; then ok "seed credentials file"; else warn "tools/seed/seed-credentials.json missing" "npm --prefix tools/seed run init-credentials"; fi
 
@@ -45,10 +45,10 @@ for mode in "$@"; do
     emulators)
       echo "Emulator ports"
       busy=""
-      for port in 4000 4400 5001 5173 8080 9099; do
+      for port in 4000 4400 5173 8080 8787 9099; do
         if ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$port\$"; then busy="$busy $port"; fi
       done
-      if [ -z "$busy" ]; then ok "ports 4000 4400 5001 5173 8080 9099 free"; else bad "ports in use:$busy" "stop the other emulator or dev server (e.g. an earlier run still open)"; fi
+      if [ -z "$busy" ]; then ok "ports 4000 4400 5173 8080 8787 9099 free"; else bad "ports in use:$busy" "stop the other emulator or dev server (e.g. an earlier run still open)"; fi
       ;;
     deploy)
       echo "Real Firebase project"
