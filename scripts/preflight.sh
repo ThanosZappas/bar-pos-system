@@ -2,7 +2,7 @@
 # Checks what a task needs before you start it, and says how to fix what is missing.
 #   scripts/preflight.sh phone       phone on USB, Android SDK (for the phone scripts)
 #   scripts/preflight.sh emulators   emulator ports free (for the emulator scripts)
-#   scripts/preflight.sh deploy      Firebase config files and logins (for the real project)
+#   scripts/preflight.sh deploy      Firebase config files, Cloudflare login (for the real project)
 # Several modes can be combined. Exit code 1 when something required is missing.
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -51,11 +51,14 @@ for mode in "$@"; do
       if [ -z "$busy" ]; then ok "ports 4000 4400 5173 8080 8787 9099 free"; else bad "ports in use:$busy" "stop the other emulator or dev server (e.g. an earlier run still open)"; fi
       ;;
     deploy)
-      echo "Real Firebase project"
-      if [ -f android/app/google-services.json ]; then ok "android/app/google-services.json"; else bad "android/app/google-services.json missing" "README → First-time setup, step 2.7"; fi
-      if [ -f web/.env.local ]; then ok "web/.env.local"; else bad "web/.env.local missing" "copy web/.env.example and fill it in (README step 2.8)"; fi
+      echo "Real Firebase project and Cloudflare"
+      if [ -f android/app/google-services.json ]; then ok "android/app/google-services.json"; else bad "android/app/google-services.json missing" "README → First-time setup, step 2.5"; fi
+      if [ -f web/.env.local ]; then ok "web/.env.local"; else bad "web/.env.local missing" "copy web/.env.example and fill it in (README step 2.6)"; fi
       if [ -f .firebaserc ]; then ok ".firebaserc ($(sed -n 's/.*"default": *"\([^"]*\)".*/\1/p' .firebaserc))"; else bad ".firebaserc missing" "npx firebase login && npx firebase use --add"; fi
-      if [ -f "$HOME/.config/gcloud/application_default_credentials.json" ]; then ok "gcloud application-default credentials"; else bad "no gcloud application-default credentials (needed by the seed)" "gcloud auth application-default login"; fi
+      if npx wrangler whoami 2>/dev/null | grep -qi "logged in"; then ok "Cloudflare login (wrangler)"; else bad "not logged in to Cloudflare" "npx wrangler login (README step 3)"; fi
+      if [ -f "$HOME/negroni-service-account.json" ]; then ok "~/negroni-service-account.json"; else warn "no ~/negroni-service-account.json" "Firebase → Project settings → Service accounts → Generate new private key (README step 2.7)"; fi
+      grep -q '^negroni.apiUrl=.' android/local.properties 2>/dev/null && ok "negroni.apiUrl in android/local.properties" || warn "no negroni.apiUrl in android/local.properties yet" "add it after npm run deploy:worker (README step 4)"
+      grep -q '^VITE_API_URL=.' web/.env.local 2>/dev/null && ok "VITE_API_URL in web/.env.local" || warn "no VITE_API_URL in web/.env.local yet" "add it after npm run deploy:worker (README step 4)"
       ;;
     *) echo "Unknown mode: $mode (use phone, emulators, deploy)"; failed=1 ;;
   esac

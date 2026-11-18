@@ -5,8 +5,10 @@ Private order-taking system for Negroni Bar Lab (Κολοκοτρώνη 74–76,
 - an **Android app** for servers and the barman: tables, menu, orders, payments, order board;
 - a **web dashboard** for the barman's laptop: live order board with sound, tables,
   payments, and all admin work (users, menu, tables, settings);
-- a **Firebase backend**: Auth, Firestore (region `europe-west8`, Milan) with role-based
-  security rules, and a few Cloud Functions.
+- a **Firebase backend** on the free Spark plan: Auth and Firestore (region `europe-west8`,
+  Milan) with role-based security rules;
+- a **Cloudflare Worker** (free plan) with the server functions: user management, PIN
+  sign-in, phones, pictures, moving tables. The dashboard is hosted on Cloudflare Pages.
 
 Not distributed through the Play Store: the debug APK is installed from this laptop.
 The look (colours, fonts, spacing) comes from https://www.barlab.gr/menu.html, see
@@ -53,6 +55,10 @@ scripts/preflight.sh phone emulators deploy
 
 ## First-time setup
 
+Everything runs on free plans with **no card**: Firebase **Spark** (sign-in and the database)
+and Cloudflare (the server functions as a **Worker**, the dashboard on **Pages**). Expected
+cost: €0. How it fits together: [Hosting](#hosting-firebase--cloudflare).
+
 ### 1. Tools on the laptop
 
 Android Studio (or the Android SDK) with JDK 17+, Node 22 and JDK 21 (for the Firebase
@@ -67,41 +73,33 @@ every terminal session first runs:
 npm run install:all
 ```
 
-### 2. Firebase project (Firebase console, once)
+### 2. Firebase project (Firebase console, once, free)
 
 1. Go to https://console.firebase.google.com, create a project named **Negroni Bar Lab**.
-   Turn Google Analytics and Gemini off. Note the **Project ID** under the name.
-2. Bottom left → **Upgrade** → **Blaze** (Cloud Functions need it) → link or create a
-   billing account.
-3. Budget alert: https://console.cloud.google.com/billing → **Budgets & alerts** →
-   **Create budget**: this project, €5, alerts at 50/90/100 %. (An alert does not stop
-   spending; at this size the expected cost is about €0.)
-4. **Build → Firestore Database → Create database**: Standard edition, ID `(default)`,
+   Turn Google Analytics and Gemini off. Note the **Project ID** under the name. Stay on the
+   free **Spark** plan: never click **Upgrade**.
+2. **Build → Firestore Database → Create database**: Standard edition, ID `(default)`,
    location **europe-west8 (Milan)**, **production mode**. The location cannot change later.
-5. **Build → Authentication → Get started → Sign-in method → Email/Password**: enable the
+3. **Build → Authentication → Get started → Sign-in method → Email/Password**: enable the
    first switch only (not "Email link"), save.
-6. **Authentication → Settings → User actions**: untick **Enable create (sign-up)** and
-   **Enable deletion**, save. Only our Cloud Functions create accounts.
-7. ⚙ **Project settings → Your apps → Android**: package `gr.barlab.negroni`, no SHA-1 →
+4. **Authentication → Settings → User actions**: untick **Enable create (sign-up)** and
+   **Enable deletion**, save. Only the server functions create accounts.
+5. ⚙ **Project settings → Your apps → Android**: package `gr.barlab.negroni`, no SHA-1 →
    **Register** → download `google-services.json` into `android/app/`. Skip the remaining
    SDK steps (already done).
-8. Same page → **Add app → Web (`</>`)**, nickname "Dashboard", Hosting unticked →
+6. Same page → **Add app → Web (`</>`)**, nickname "Dashboard", Hosting unticked →
    **Register**. Copy `web/.env.example` to `web/.env.local` and fill in `apiKey`,
-   `authDomain`, `projectId`, `appId`.
+   `authDomain`, `projectId`, `appId` (`VITE_API_URL` comes in step 4).
+7. ⚙ **Project settings → Service accounts → Generate new private key → Generate key**. Save
+   the downloaded file **outside the project**, as `~/negroni-service-account.json`. It is the
+   master key to the database and the accounts: the Worker and the seed use it; never commit,
+   e-mail or share it.
 
-Both files are git-ignored and never committed.
+`google-services.json` and `web/.env.local` are git-ignored and never committed.
 
 ### 3. Command-line logins (once per laptop)
 
-Install the gcloud CLI (https://cloud.google.com/sdk/docs/install#linux), then:
-
-```bash
-gcloud auth application-default login
-```
-
-```bash
-gcloud auth application-default set-quota-project <projectId>
-```
+**Firebase** (for the security rules):
 
 ```bash
 npx firebase login && npx firebase use --add
@@ -110,44 +108,54 @@ npx firebase login && npx firebase use --add
 Pick the project and give it the alias `default` (this writes `.firebaserc`, which may be
 committed).
 
+**Cloudflare** (for the Worker and the dashboard). Having a Cloudflare account is not enough:
+the `wrangler` tool on this laptop needs your permission to act for that account.
+
+```bash
+npx wrangler login
+```
+
+It prints a link and opens it in your browser. Sign in to Cloudflare there and press **Allow**;
+the terminal then says "Successfully logged in" and keeps that permission in
+`~/.config/.wrangler` (only on this laptop, nothing in the project). If no browser opens, copy
+the printed link into one. `npx wrangler whoami` shows which account it is using.
+
 ### 4. Deploy and seed
 
 ```bash
 scripts/preflight.sh deploy
 ```
 
-PIN sign-in needs two things before the first deploy. A secret **pepper** mixed into every PIN
-hash (random, made here and stored only in Google Secret Manager; never change it later, or
-every PIN stops working and the admin has to reset them all):
-
-```bash
-node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))" | npx firebase functions:secrets:set PIN_PEPPER --data-file=-
-```
-
-And permission for the functions to sign people in with a token (they sign it as their own
-service account). Replace `<projectId>` both times:
-
-```bash
-gcloud services enable iamcredentials.googleapis.com --project <projectId>
-```
-
-```bash
-SA="$(gcloud projects describe <projectId> --format='value(projectNumber)')-compute@developer.gserviceaccount.com"; gcloud iam service-accounts add-iam-policy-binding "$SA" --member="serviceAccount:$SA" --role=roles/iam.serviceAccountTokenCreator --project <projectId>
-```
-
 ```bash
 npm run deploy:backend
 ```
 
-Deploys the security rules, indexes and Cloud Functions. The first deploy enables a few
-Google Cloud APIs and may ask how long to keep build images: accept the default.
+Deploys the Firestore security rules and indexes.
+
+```bash
+npm run deploy:worker
+```
+
+Publishes the server functions. The first time, Cloudflare asks you to choose a
+`workers.dev` subdomain (any free name, e.g. your own). The output ends with the Worker's
+address, `https://negroni-bar-lab-api.<subdomain>.workers.dev`: put it in
+`web/.env.local` as `VITE_API_URL=…` and in `android/local.properties` as
+`negroni.apiUrl=…` (same address in both).
+
+```bash
+node scripts/set-worker-secrets.mjs ~/negroni-service-account.json
+```
+
+Gives the Worker its secrets: the service account from the key file, and a random **PIN
+pepper** made here once and kept only at Cloudflare (running the script again keeps it: a new
+pepper would make every PIN stop working).
 
 ```bash
 npm --prefix tools/seed run init-credentials
 ```
 
 ```bash
-npm --prefix tools/seed run seed -- --project <projectId>
+GOOGLE_APPLICATION_CREDENTIALS=~/negroni-service-account.json npm --prefix tools/seed run seed -- --project <projectId>
 ```
 
 Creates `admin` and `user1`..`user5` (display names "Admin", "Server 1".."Server 5"; initial
@@ -156,10 +164,15 @@ password = username twice, e.g. `user1user1`), the menu imported from barlab.gr,
 The credentials file is git-ignored; keep it off shared drives.
 
 ```bash
-npm run deploy:hosting
+npm run deploy:dashboard
 ```
 
-Builds the dashboard with `web/.env.local` and publishes it at `https://<projectId>.web.app`.
+Builds the dashboard with `web/.env.local` and publishes it at
+`https://negroni-bar-lab.pages.dev` (works on the laptop and on any phone's browser). Then in
+Firebase → **Authentication → Settings → Authorized domains → Add domain**:
+`negroni-bar-lab.pages.dev`.
+
+Finally install the phone app built for this project ([Install the app on a phone](#install-the-app-on-a-phone)).
 
 ### 5. First sign-in
 
@@ -190,7 +203,8 @@ Tested target: Xiaomi Mi 10T Pro (MIUI / HyperOS). Other Android 10+ phones work
 
 **On the laptop:**
 
-4. `google-services.json` must be in `android/app/` (step 2.7 above).
+4. `google-services.json` must be in `android/app/` (setup step 2.5) and the Worker's address
+   in `android/local.properties` as `negroni.apiUrl=…` (setup step 4).
 5. Android Studio → **Open** the `android/` folder, wait for Gradle sync, pick the phone in
    the device list, press **Run ▶**. Or from a terminal:
 
@@ -270,7 +284,7 @@ when the connection returns.
 ## Admin tasks
 
 In the dashboard, and for the admin also in the Android app (**Users** in the top bar,
-**Payments** tab). User changes go through Cloud Functions, so they need a connection.
+**Payments** tab). User changes go through the server functions, so they need a connection.
 
 - **Users**: create (username, display name, role, temporary password), rename, change role,
   **icon or picture** (16 gold line icons, defaults by role: person, barman with bow tie,
@@ -336,16 +350,16 @@ The PIN is a quick unlock for a phone that is already registered, not a password
 - **A phone is registered** by the first password sign-in on it (`registerDevice`). The server
   gives it an id and a random 256-bit key; the phone keeps the key encrypted with an AES-GCM key
   in the Android Keystore. `devices/{id}` (admin can read: name, profiles, last used) and
-  `deviceSecrets/{id}` (functions only: SHA-256 of the key). Everyone who signs in there with a
+  `deviceSecrets/{id}` (server only: SHA-256 of the key). Everyone who signs in there with a
   password is added to that phone's grid.
 - **PIN sign-in** (`profileSignIn`) sends phone id + key + profile + PIN to the server, which
   checks the phone, the profile is on it, the account is active and allowed to sign in, the
   lock, then the PIN, and returns a Firebase custom token. A PIN alone is useless on any other
   phone.
 - **PINs are never stored in plain text.** `pinSecrets/{uid}` (no app can read it, not even the
-  admin) holds scrypt (N=2¹⁵, r=8, p=1, 16-byte salt) over HMAC-SHA256(pepper, PIN). A 4-digit
+  admin) holds PBKDF2-SHA256 (10,000 iterations, 16-byte salt) over HMAC-SHA256(pepper, PIN). A 4-digit
   PIN has only 10,000 values, so the defence is the combination: the hashes are unreadable to
-  apps, the pepper lives in Secret Manager, the lockout is counted on the server in a
+  apps, the pepper lives only in a Cloudflare secret, the lockout is counted on the server in a
   transaction (parallel guesses cannot slip past it), and a registered phone is needed.
 - **Lockout:** 5 free tries, then 1 minute, doubling per further wrong PIN up to 1 hour; tries
   during a lock are refused unchecked. A correct PIN, a password sign-in on a phone, or the
@@ -454,12 +468,19 @@ writes one JSON file per order/receipt (integer cents, ISO times, `"fiscal": fal
 or fiscal device is connected. Every action carries a timestamp and user id and payments are
 immutable, so reports can be built later from Firestore.
 
-### Hosting and a custom subdomain
+### Hosting (Firebase + Cloudflare)
 
-The dashboard is a static SPA on Firebase Hosting with hash routes (`#/board`, `#/tables`, …),
-so it works on any domain. To attach e.g. `bar.example.gr` later: Firebase console → Hosting →
-Add custom domain → create the DNS records it shows → add the domain under Authentication →
-Settings → Authorized domains.
+- **Phones and dashboard → Firebase** (Google, Milan) for sign-in and the database, directly
+  over Wi-Fi or 4G: live updates, offline queue, security rules. Free Spark plan (50,000
+  reads and 20,000 writes a day, 1 GB stored; a bar uses a small part of that).
+- **Phones and dashboard → the Worker** (Cloudflare) for the server functions, with the
+  signed-in person's Firebase token. The Worker checks the token, then works on Firebase as an
+  admin with the service account (a Cloudflare secret). Free plan: 100,000 calls a day, 10 ms
+  of processing per call (a PIN check takes about 2 ms).
+- **Dashboard files → Cloudflare Pages** (free), at `negroni-bar-lab.pages.dev`. Hash routes
+  (`#/board`, `#/tables`, …) work on any domain. A custom subdomain later: Pages project →
+  Custom domains, then add it under Firebase → Authentication → Settings → Authorized domains.
+- The laptop is only needed to build and install the phone app and to deploy changes.
 
 ### Launcher icon
 
@@ -477,7 +498,7 @@ the bar's Instagram picture (`Resources/`) is planned and not included.
 |---------------|------|
 | `android/`    | Kotlin + Jetpack Compose app (`gr.barlab.negroni`), minSdk 29, targetSdk 36 |
 | `web/`        | Dashboard: Vite + TypeScript + Preact, Firebase JS SDK |
-| `functions/`  | Cloud Functions (TypeScript, Node 22, `europe-west8`) |
+| `worker/`     | Server functions: a Cloudflare Worker (TypeScript) with a small Firebase REST client |
 | `firebase/`   | Firestore rules, indexes, rules and offline tests |
 | `tools/seed/` | Menu import, seed script, emulator-only demo orders |
 | `tools/icon/` | Launcher icon / favicon generator |
@@ -492,14 +513,14 @@ Checks run at the end of every milestone:
 ```
 
 ```bash
-npm run test:web && npm run build:web && npm run build:functions
+npm run test:web && npm run build:web && npm run build:worker
 ```
 
 ```bash
 npm run test:backend
 ```
 
-`test:backend` runs the functions, rules, offline and seed tests in the Auth/Firestore
+`test:backend` runs the Worker, rules, offline and seed tests in the Auth/Firestore
 emulators under the `demo-negroni` project (no login, nothing touches the real project).
 
 **Emulators:** `npm run emulators` (UI on http://localhost:4000), then
@@ -539,15 +560,17 @@ JSON for the POS export is written by hand (two small documents) instead of addi
 **Web**: `preact` (≈4 kB UI layer, saves hand-written DOM code for the admin forms),
 `firebase` (official SDK). Dev only: `vite`, `typescript`, `@preact/preset-vite`, `vitest`.
 
-**Functions**: `firebase-functions`, `firebase-admin` (the only way to manage Auth users and
-claims, and to mint the custom tokens for PIN sign-in). PIN hashing uses Node's built-in scrypt,
-so no hashing library. Dev only: `typescript`, `vitest`.
+**Worker**: no runtime dependencies. Firebase is reached through its REST APIs with WebCrypto
+(the Admin SDK does not run on Cloudflare); `worker/src/google/` keeps the Admin SDK's shapes so
+the handlers read the same. PIN hashing is WebCrypto PBKDF2. Dev only: `typescript`, `vitest`,
+`@types/node`.
 
 **Rules tests**: `@firebase/rules-unit-testing`, `firebase`, `vitest`.
 **Seed**: `firebase-admin`; dev only `vitest`. Runs with Node 22's built-in TypeScript support.
 **Icon**: `opentype.js` (dev only, reads the font outlines). The profile icons are generated by a
 plain script from `design/icons/profile-icons.json`.
-**Root**: `firebase-tools` (CLI, emulators, deploy), pinned per project.
+**Root**: `firebase-tools` (CLI, emulators, rules deploy) and `wrangler` (Cloudflare deploys),
+pinned per project.
 
 **Fonts**: Lato, Playfair Display and Dancing Script (the site's), plus Greek-only subsets of
 Commissioner and Noto Serif Display for Greek letters; all SIL Open Font License 1.1, licences in
@@ -561,6 +584,8 @@ Commissioner and Noto Serif Display for Greek letters; all SIL Open Font License
 - A user deactivated while their phone is offline loses that phone's queued writes (by design).
 - Firebase App Check is not set up; worth adding before the dashboard URL is shared widely
   (it would also tie `profileSignIn` and `deviceProfiles` to the genuine app).
+- The Worker holds the service-account key: anyone who controls the Cloudflare account controls
+  the data. Protect that account with two-step sign-in.
 - PIN sign-in needs a connection, like the password sign-in before it (the server checks the
   PIN). Once signed in, the app works offline as before.
 - Switching user while orders are still waiting to sync is refused until they reach the server.
@@ -570,8 +595,12 @@ Commissioner and Noto Serif Display for Greek letters; all SIL Open Font License
 
 ## Troubleshooting
 
-- **"Firebase is not configured"** on the phone: `android/app/google-services.json` is missing;
-  add it and reinstall. On the dashboard: `web/.env.local` is missing; add it and redeploy.
+- **"Firebase is not configured"** on the phone: `android/app/google-services.json` or
+  `negroni.apiUrl` in `android/local.properties` is missing; add it and reinstall. On the
+  dashboard: `web/.env.local` (with `VITE_API_URL`) is missing; add it and redeploy.
+- **"Internal error"** on every sign-in or user change: the Worker has no secrets yet, or the
+  key was revoked. Run `node scripts/set-worker-secrets.mjs ~/negroni-service-account.json`;
+  `npx wrangler tail --config worker/wrangler.jsonc` shows the Worker's live log.
 - **"Wrong username or password"** right after setup: the seed has not run against this project.
 - **"Account not set up"**: the Auth user exists but has no `users/{uid}` profile; create users
   from the dashboard, not the Firebase console.

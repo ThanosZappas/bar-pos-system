@@ -1,6 +1,6 @@
 // Usage:
 //   node seed.ts --emulator              (Auth + Firestore emulators, project demo-negroni)
-//   node seed.ts --project <projectId>   (real project, credentials from `gcloud auth application-default login`)
+//   node seed.ts --project <projectId>   (real project; GOOGLE_APPLICATION_CREDENTIALS=<service-account key .json>)
 import { readFileSync } from 'node:fs';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
