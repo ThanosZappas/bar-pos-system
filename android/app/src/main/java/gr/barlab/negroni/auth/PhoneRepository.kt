@@ -37,6 +37,7 @@ class PhoneRepository(
     private val api: Api,
 ) {
     private val prefs = context.getSharedPreferences("profiles", Context.MODE_PRIVATE)
+    private val tickets = ShiftTickets(context)
     private val photoDir = File(context.filesDir, "avatars")
 
     private val _profiles = MutableStateFlow(ProfileListFormat.decode(prefs.getString(KEY_LIST, null)))
@@ -82,6 +83,22 @@ class PhoneRepository(
         }
         val data = call("registerDevice", args)
         key.save(data["deviceId"] as String, data["deviceSecret"] as? String)
+        auth.currentUser?.uid?.let { saveTicket(it, data) }
+    }
+
+    /** Signed in on this phone earlier today: no PIN needed until 18:00. */
+    fun hasTicket(uid: String): Boolean = tickets.valid(uid) != null
+
+    /** Signs in with today's ticket; a refused ticket is forgotten, so the PIN pad comes next. */
+    suspend fun signInWithTicket(uid: String): Result<Unit> {
+        val ticket = tickets.valid(uid) ?: return Result.failure(PinException(PinFailure.TicketExpired))
+        return signIn(uid, mapOf("ticket" to ticket)).onFailure { tickets.forget(uid) }
+    }
+
+    private fun saveTicket(uid: String, data: Map<*, *>) {
+        val ticket = data["ticket"] as? String ?: return
+        val until = (data["ticketUntilMs"] as? Number)?.toLong() ?: return
+        tickets.save(uid, ticket, until)
     }
 
     suspend fun signInWithPin(uid: String, pin: String): Result<Unit> = signIn(uid, mapOf("pin" to pin))
@@ -91,7 +108,9 @@ class PhoneRepository(
 
     private suspend fun signIn(uid: String, proof: Map<String, String>): Result<Unit> = attempt {
         val creds = key.credentials ?: throw PinException(PinFailure.PhoneRemoved)
-        val token = call("profileSignIn", creds.args() + ("uid" to uid) + proof)["token"] as String
+        val data = call("profileSignIn", creds.args() + ("uid" to uid) + proof)
+        val token = data["token"] as String
+        saveTicket(uid, data)
         // The shift must be stored before the sign-in lands (see DeviceLogin.startShift).
         device.startShift()
         auth.signInWithCustomToken(token).await()
@@ -110,6 +129,7 @@ class PhoneRepository(
     /** "Remove from this phone": the profile leaves the grid (it can come back with a password sign-in). */
     suspend fun forget(uid: String): Result<Unit> = attempt {
         key.credentials?.let { call("forgetProfile", it.args() + ("uid" to uid)) }
+        tickets.forget(uid)
         store(_profiles.value.filterNot { it.uid == uid })
     }
 
@@ -144,6 +164,7 @@ class PhoneRepository(
 
     private suspend fun forgetPhone() {
         key.clear()
+        tickets.clear()
         store(emptyList())
     }
 

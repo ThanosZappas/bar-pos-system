@@ -91,6 +91,8 @@ export interface PinSecret {
   lockedUntil?: Timestamp | null;
   /** deviceId → SHA-256 of that phone's fingerprint-unlock secret (see devices.setBiometric). */
   biometric?: Record<string, string>;
+  /** deviceId → today's sign-in on that phone (see devices.issueTicket); gone with a PIN reset. */
+  shift?: Record<string, { hash: string; untilMs: number }>;
 }
 
 export type Attempt =

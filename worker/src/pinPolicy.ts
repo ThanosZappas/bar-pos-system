@@ -1,20 +1,17 @@
 import { HttpsError } from './http/errors.js';
 import type { Role } from './users.js';
 
-/** PIN length rules, shared by pins.ts and users.ts. There are no rules on which digits a PIN uses. */
-export const PIN_MAX_LENGTH = 8;
-export const SERVER_PIN_MIN_LENGTH = 4;
-/** Admin and barman run the bar, so their PIN is longer. */
-export const LEAD_PIN_MIN_LENGTH = 6;
+/** Every PIN is exactly 4 digits, for every role (the owner's choice), and any digits are allowed. */
+export const PIN_LENGTH = 4;
 
-export function minPinLength(role: Role): number {
-  return role === 'server' ? SERVER_PIN_MIN_LENGTH : LEAD_PIN_MIN_LENGTH;
+/** Kept for callers that ask per role: the same for everyone. */
+export function minPinLength(_role?: Role): number {
+  return PIN_LENGTH;
 }
 
-export function checkPin(raw: unknown, role: Role): string {
-  const min = minPinLength(role);
-  if (typeof raw !== 'string' || !/^\d+$/.test(raw) || raw.length < min || raw.length > PIN_MAX_LENGTH) {
-    throw new HttpsError('invalid-argument', `The PIN must be ${min} to ${PIN_MAX_LENGTH} digits.`, { reason: 'pinFormat', min, max: PIN_MAX_LENGTH });
+export function checkPin(raw: unknown, _role?: Role): string {
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw) || raw.length !== PIN_LENGTH) {
+    throw new HttpsError('invalid-argument', `The PIN must be ${PIN_LENGTH} digits.`, { reason: 'pinFormat', min: PIN_LENGTH, max: PIN_LENGTH });
   }
   return raw;
 }

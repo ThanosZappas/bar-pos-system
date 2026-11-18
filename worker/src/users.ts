@@ -2,7 +2,6 @@ import type { Auth } from './google/auth.js';
 import { FieldValue, type Firestore } from './google/firestore.js';
 import { HttpsError } from './http/errors.js';
 import { parseIcon } from './icons.js';
-import { LEAD_PIN_MIN_LENGTH } from './pinPolicy.js';
 import { isValidUsername, normalizeUsername, usernameToEmail } from './usernames.js';
 
 /**
@@ -201,17 +200,6 @@ export async function updateUser(deps: Deps, callerUid: string | undefined, raw:
   if (roleChanged) await deps.auth.setCustomUserClaims(uid, { role: changes.role });
   // Sign the user out everywhere when their access changes; rules already deny via the user doc.
   if (roleChanged || changes.active === false) await deps.auth.revokeRefreshTokens(uid);
-  // Admin and barman need a longer PIN: a shorter one from the old role is cleared, and the next
-  // sign-in (with the password) asks for a new one.
-  if (roleChanged && changes.role !== 'server') {
-    const pinRef = deps.db.doc(`pinSecrets/${uid}`);
-    const length = (await pinRef.get()).get('pin.length');
-    if (typeof length === 'number' && length < LEAD_PIN_MIN_LENGTH) {
-      await pinRef.delete();
-      changes.pinSet = false;
-    }
-  }
-
   await deps.db.doc(`users/${uid}`).update({ ...changes, updatedAt: FieldValue.serverTimestamp(), updatedBy: actor });
   await audit(deps, 'user.update', actor, uid, { ...changes });
 }

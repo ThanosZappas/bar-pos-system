@@ -41,8 +41,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Pick an icon or upload a picture for [uid] (null: yourself). "Upload picture" opens Android's
- * photo picker, which needs no permission; the picture is cropped to its centre and shrunk on
- * the phone before it is sent.
+ * photo picker, which needs no permission; then [PhotoCropDialog] places the picture in the square
+ * frame (move, zoom, rotate) and the result is shrunk on the phone before it is sent.
  */
 @Composable
 fun ProfileLookEditor(uid: String?, role: Role, icon: String?, photo: ImageBitmap?, profiles: ProfileRepository, modifier: Modifier = Modifier) {
@@ -51,6 +51,7 @@ fun ProfileLookEditor(uid: String?, role: Role, icon: String?, photo: ImageBitma
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<AuthFailure?>(null) }
     var unreadable by remember { mutableStateOf(false) }
+    var cropping by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val current = iconOf(icon, role)
 
     fun run(block: suspend () -> Result<Unit>) {
@@ -69,11 +70,22 @@ fun ProfileLookEditor(uid: String?, role: Role, icon: String?, photo: ImageBitma
         error = null
         unreadable = false
         scope.launch {
-            runCatching { PhotoShrinker.shrink(resolver, uri) }
-                .onSuccess { jpeg -> profiles.uploadPhoto(uid, jpeg).onFailure { error = it as? AuthFailure } }
+            runCatching { PhotoShrinker.load(resolver, uri) }
+                .onSuccess { cropping = it } // the editor below decides the frame
                 .onFailure { unreadable = true }
             busy = false
         }
+    }
+
+    cropping?.let { source ->
+        PhotoCropDialog(
+            source = source,
+            onCancel = { cropping = null },
+            onDone = { framed ->
+                cropping = null
+                run { profiles.uploadPhoto(uid, PhotoShrinker.encode(framed)) }
+            },
+        )
     }
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {

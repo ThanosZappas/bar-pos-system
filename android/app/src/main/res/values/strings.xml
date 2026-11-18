@@ -302,14 +302,14 @@
     <string name="pin_no_pin">No PIN yet. Sign in with your password to choose one.</string>
     <string name="pin_need_password">Sign in with your password to choose a new PIN.</string>
     <string name="pin_current_needed">Enter your current PIN.</string>
-    <string name="pin_bad_format" tools:ignore="PluralsCandidate">The PIN must be %1$d to %2$d digits.</string>
+    <string name="pin_bad_format">The PIN must be 4 digits.</string>
     <string name="pin_phone_removed">This phone was removed from the bar\'s phones. Sign in with your password to add it again.</string>
     <string name="pin_not_on_phone">This profile isn\'t on this phone any more. Sign in with your password.</string>
     <string name="pin_gone">This profile was deleted.</string>
     <string name="pin_biometric_off">Fingerprint unlock is off on this phone. Use your PIN.</string>
     <string name="pin_shared_phone">Fingerprint unlock works only on a phone with one profile.</string>
     <string name="pin_choose_title">Choose your PIN</string>
-    <string name="pin_choose_hint" tools:ignore="PluralsCandidate">%1$d to %2$d digits. You\'ll use it to sign in on this phone each shift.</string>
+    <string name="pin_choose_hint">Four digits. You\'ll use it to sign in on this phone; once per day is enough.</string>
     <string name="pin_confirm_title">Enter it again</string>
     <string name="pin_current_title">Enter your current PIN</string>
     <string name="pin_mismatch">The PINs don\'t match. Start again.</string>
@@ -366,4 +366,12 @@
     <string name="biometric_use_pin">Use PIN</string>
     <string name="biometric_use">Use fingerprint</string>
     <string name="biometric_changed">The fingerprints on this phone changed. Use your PIN, then turn fingerprint unlock on again in Settings.</string>
+
+    <!-- Picture editor before upload -->
+    <string name="crop_title">Move and zoom</string>
+    <string name="crop_hint">Drag to move. Pinch or use the slider to zoom. Twist with two fingers, or tap Rotate.</string>
+    <string name="crop_zoom">Zoom</string>
+    <string name="crop_rotate">Rotate</string>
+    <string name="crop_reset">Reset</string>
+    <string name="crop_use">Use picture</string>
 </resources>

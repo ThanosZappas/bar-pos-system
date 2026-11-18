@@ -3,6 +3,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { FieldValue } from './google/firestore.js';
 import { HttpsError } from './http/errors.js';
 import { iconOf } from './icons.js';
+import { nextShiftChangeMs } from './shiftClock.js';
 import { attemptError, attemptPin, clearLock, pinSecretRef, type Caller, type PinDeps, type PinSecret } from './pins.js';
 import { asData, audit, loadUser, requireAdmin, requireString, type Data, type Deps, type UserDoc } from './users.js';
 
@@ -59,13 +60,33 @@ async function requireDevice(deps: Deps, data: Data): Promise<Device> {
   return device;
 }
 
-/** Turns fingerprint unlock off on this phone for these profiles. */
-async function dropBiometric(deps: Deps, deviceId: string, uids: string[]): Promise<void> {
+/** Turns fingerprint unlock off on this phone for these profiles (and, with `tickets`, today's sign-ins). */
+async function dropBiometric(deps: Deps, deviceId: string, uids: string[], tickets = false): Promise<void> {
   for (const uid of uids) {
     const ref = pinSecretRef(deps, uid);
     const secret = (await ref.get()).data() as PinSecret | undefined;
-    if (secret?.biometric?.[deviceId]) await ref.update({ [`biometric.${deviceId}`]: FieldValue.delete() });
+    const changes: Record<string, unknown> = {};
+    if (secret?.biometric?.[deviceId]) changes[`biometric.${deviceId}`] = FieldValue.delete();
+    if (tickets && secret?.shift?.[deviceId]) changes[`shift.${deviceId}`] = FieldValue.delete();
+    if (Object.keys(changes).length) await ref.update(changes);
   }
+}
+
+/**
+ * Today's sign-in on this phone: a random ticket, valid until the next 18:00, that lets the
+ * person back in from the grid without the PIN (after someone else used the phone). Only a hash is
+ * stored; the phone keeps the ticket encrypted. A new sign-in replaces it.
+ */
+export interface ShiftTicket {
+  ticket: string;
+  ticketUntilMs: number;
+}
+
+async function issueTicket(deps: Deps, uid: string, deviceId: string, nowMs = Date.now()): Promise<ShiftTicket> {
+  const ticket = newKey();
+  const ticketUntilMs = nextShiftChangeMs(nowMs);
+  await pinSecretRef(deps, uid).set({ shift: { [deviceId]: { hash: sha256(ticket), untilMs: ticketUntilMs } } }, { merge: true });
+  return { ticket, ticketUntilMs };
 }
 
 function deviceName(raw: unknown): string {
@@ -78,7 +99,7 @@ function deviceName(raw: unknown): string {
  * clears their wrong-PIN count. A second profile turns fingerprint unlock off on that phone,
  * because a fingerprint opens the whole phone, not one profile.
  */
-export async function registerDevice(deps: Deps, caller: Caller, raw: unknown): Promise<{ deviceId: string; deviceSecret?: string }> {
+export async function registerDevice(deps: Deps, caller: Caller, raw: unknown): Promise<{ deviceId: string; deviceSecret?: string } & ShiftTicket> {
   if (!caller.uid) throw new HttpsError('unauthenticated', 'Sign in first.');
   if (caller.provider !== 'password') throw new HttpsError('failed-precondition', 'Sign in with your password on this phone.', { reason: 'needPassword' });
   const uid = caller.uid;
@@ -110,7 +131,7 @@ export async function registerDevice(deps: Deps, caller: Caller, raw: unknown): 
     result = { deviceId: id, deviceSecret: key };
   }
   await clearLock(deps, uid);
-  return result;
+  return { ...result, ...(await issueTicket(deps, uid, result.deviceId)) };
 }
 
 export interface DeviceProfile {
@@ -178,7 +199,7 @@ export async function deviceProfiles(deps: Deps, raw: unknown, nowMs = Date.now(
  * Signs a profile in on a registered phone with its PIN, or with the fingerprint-unlock secret the
  * phone keeps behind the fingerprint. Returns a Firebase custom token for signInWithCustomToken.
  */
-export async function profileSignIn(deps: PinDeps, raw: unknown): Promise<{ token: string }> {
+export async function profileSignIn(deps: PinDeps, raw: unknown, nowMs = Date.now()): Promise<{ token: string } & Partial<ShiftTicket>> {
   const data = asData(raw);
   const device = await requireDevice(deps, data);
   const uid = requireString(data, 'uid');
@@ -193,6 +214,15 @@ export async function profileSignIn(deps: PinDeps, raw: unknown): Promise<{ toke
     throw new HttpsError('permission-denied', 'You are not allowed to sign in.', { reason: 'loginNotAllowed' });
   }
 
+  if (typeof data.ticket === 'string') {
+    // Already signed in on this phone today: no PIN needed until 18:00.
+    const entry = ((await pinSecretRef(deps, uid).get()).data() as PinSecret | undefined)?.shift?.[device.id];
+    if (!entry || entry.untilMs <= nowMs || !sameHash(sha256(data.ticket), entry.hash)) {
+      throw new HttpsError('permission-denied', 'Enter your PIN.', { reason: 'ticket' });
+    }
+    await deviceRef(deps, device.id).update({ lastUsedAt: FieldValue.serverTimestamp() });
+    return { token: await deps.auth.createCustomToken(uid) };
+  }
   if (typeof data.biometricSecret === 'string') {
     const expected = ((await pinSecretRef(deps, uid).get()).data() as PinSecret | undefined)?.biometric?.[device.id];
     if (device.data.profiles.length !== 1 || !expected || !sameHash(sha256(data.biometricSecret), expected)) {
@@ -205,7 +235,7 @@ export async function profileSignIn(deps: PinDeps, raw: unknown): Promise<{ toke
     if (attempt.kind !== 'ok') throw attemptError(attempt);
   }
   await deviceRef(deps, device.id).update({ lastUsedAt: FieldValue.serverTimestamp() });
-  return { token: await deps.auth.createCustomToken(uid) };
+  return { token: await deps.auth.createCustomToken(uid), ...(await issueTicket(deps, uid, device.id, nowMs)) };
 }
 
 /** "Remove from this phone" on the grid. Anyone holding the phone may do it: it only hides the profile. */
@@ -215,7 +245,7 @@ export async function forgetProfile(deps: Deps, raw: unknown): Promise<void> {
   const uid = requireString(data, 'uid');
   if (!device.data.profiles.includes(uid)) return;
   await deviceRef(deps, device.id).update({ profiles: FieldValue.arrayRemove(uid) });
-  await dropBiometric(deps, device.id, [uid]);
+  await dropBiometric(deps, device.id, [uid], true);
   await audit(deps, 'device.forgetProfile', `device:${device.id}`, uid, { deviceId: device.id });
 }
 
@@ -225,7 +255,7 @@ export async function removeDevice(deps: Deps, callerUid: string | undefined, ra
   const id = requireString(asData(raw), 'deviceId');
   const device = await deviceRef(deps, id).get();
   if (!device.exists) throw new HttpsError('not-found', 'Phone not found.');
-  await dropBiometric(deps, id, (device.get('profiles') as string[] | undefined) ?? []);
+  await dropBiometric(deps, id, (device.get('profiles') as string[] | undefined) ?? [], true);
   await deviceSecretRef(deps, id).delete();
   await deviceRef(deps, id).delete();
   await audit(deps, 'device.remove', actor, id, { name: device.get('name') });

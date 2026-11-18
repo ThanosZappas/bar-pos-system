@@ -296,5 +296,13 @@
   "phones.none": "No phones yet. A phone appears here after someone signs in on it with their password.",
   "phones.remove": "Remove",
   "phones.confirmRemove": "Remove {name}? No one can sign in on it with a PIN any more.",
-  "phones.removed": "Phone removed."
+  "phones.removed": "Phone removed.",
+  "crop.title": "Move and zoom",
+  "crop.hint": "Drag to move, scroll or use the slider to zoom.",
+  "crop.zoom": "Zoom",
+  "crop.straighten": "Straighten",
+  "crop.rotateLeft": "Rotate left",
+  "crop.rotateRight": "Rotate right",
+  "crop.reset": "Reset",
+  "crop.use": "Use picture"
 }

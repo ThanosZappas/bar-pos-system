@@ -12,7 +12,9 @@ sealed interface PinFailure {
     /** The PIN was entered on a session opened with a PIN, but the change needs the password. */
     data object NeedPassword : PinFailure
     data object CurrentPinNeeded : PinFailure
-    data class BadFormat(val min: Int, val max: Int) : PinFailure
+    data object BadFormat : PinFailure
+    /** Today's sign-in on this phone ended (18:00, a PIN reset…): type the PIN. */
+    data object TicketExpired : PinFailure
     /** This phone's key is unknown (removed by the admin): sign in with the password again. */
     data object PhoneRemoved : PinFailure
     data object NotOnPhone : PinFailure
@@ -34,7 +36,8 @@ sealed interface PinFailure {
                 "noPin" -> NoPin
                 "needPassword" -> NeedPassword
                 "currentPin" -> CurrentPinNeeded
-                "pinFormat" -> BadFormat(long("min")?.toInt() ?: PinRules.SERVER_MIN, long("max")?.toInt() ?: PinRules.MAX)
+                "pinFormat" -> BadFormat
+                "ticket" -> TicketExpired
                 "device" -> PhoneRemoved
                 "notOnDevice" -> NotOnPhone
                 "deactivated" -> Deactivated

@@ -56,14 +56,13 @@ describe('PIN hashing', () => {
 });
 
 describe('PIN rules', () => {
-  it('servers need 4 to 8 digits; admin and barman 6 to 8', () => {
+  it('every PIN is exactly 4 digits, for every role', () => {
     expect(checkPin('1234', 'server')).toBe('1234');
-    expect(checkPin('12345678', 'server')).toBe('12345678');
-    expect(() => checkPin('123', 'server')).toThrow('4 to 8 digits');
-    expect(() => checkPin('123456789', 'server')).toThrow();
-    expect(() => checkPin('12345', 'admin')).toThrow('6 to 8 digits');
-    expect(() => checkPin('12345', 'barman')).toThrow('6 to 8 digits');
-    expect(checkPin('123456', 'admin')).toBe('123456');
+    expect(checkPin('1234', 'admin')).toBe('1234');
+    expect(checkPin('1234', 'barman')).toBe('1234');
+    expect(() => checkPin('123', 'server')).toThrow('4 digits');
+    expect(() => checkPin('12345', 'server')).toThrow('4 digits');
+    expect(() => checkPin('123456', 'admin')).toThrow('4 digits');
   });
 
   it('accepts any digits (no rules on which ones) but nothing else', () => {
@@ -130,9 +129,9 @@ describe.skipIf(!onEmulators)('PIN functions (emulators)', () => {
     expect(JSON.stringify(log.docs[0]!.data())).not.toContain('4821');
   });
 
-  it('refuses a PIN of the wrong length for the role, and before the password change', async () => {
-    await expect(setPin(deps, asPassword(adminUid), { pin: '4821' })).rejects.toMatchObject({ code: 'invalid-argument', details: { min: 6 } });
-    await setPin(deps, asPassword(adminUid), { pin: '482193' });
+  it('refuses a PIN that is not 4 digits, and before the password change', async () => {
+    await expect(setPin(deps, asPassword(adminUid), { pin: '482193' })).rejects.toMatchObject({ code: 'invalid-argument', details: { reason: 'pinFormat' } });
+    await setPin(deps, asPassword(adminUid), { pin: '4821' });
     await deps.db.doc(`users/${serverUid}`).update({ mustChangePassword: true });
     await expect(setPin(deps, asPassword(serverUid), { pin: '4821' })).rejects.toMatchObject({ code: 'failed-precondition' });
     await expect(setPin(deps, {}, { pin: '4821' })).rejects.toMatchObject({ code: 'unauthenticated' });
@@ -189,14 +188,11 @@ describe.skipIf(!onEmulators)('PIN functions (emulators)', () => {
     expect(await attemptPin(deps, serverUid, '4821')).toEqual({ kind: 'ok' });
   });
 
-  it('promoting a server to barman clears a PIN shorter than 6 digits; a long one stays', async () => {
+  it('a role change keeps the PIN (every role uses 4 digits)', async () => {
     await setPin(deps, asPassword(serverUid), { pin: '4821' });
     await updateUser(deps, adminUid, { uid: serverUid, role: 'barman' });
-    expect(await secret(serverUid)).toBeUndefined();
-    expect(await profile(serverUid)).toMatchObject({ role: 'barman', pinSet: false });
-    await setPin(deps, asPassword(serverUid), { pin: '482193' });
-    await updateUser(deps, adminUid, { uid: serverUid, role: 'admin' });
-    expect(await profile(serverUid)).toMatchObject({ role: 'admin', pinSet: true });
+    expect(await profile(serverUid)).toMatchObject({ role: 'barman', pinSet: true });
+    expect(await attemptPin(deps, serverUid, '4821')).toEqual({ kind: 'ok' });
   });
 
   it('admin resets a PIN: it is gone, the profile must choose a new one with its password', async () => {

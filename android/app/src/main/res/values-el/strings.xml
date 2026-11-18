@@ -290,14 +290,14 @@
     <string name="pin_no_pin">Δεν υπάρχει ακόμη PIN. Συνδεθείτε με τον κωδικό σας για να επιλέξετε ένα.</string>
     <string name="pin_need_password">Συνδεθείτε με τον κωδικό σας για να επιλέξετε νέο PIN.</string>
     <string name="pin_current_needed">Πληκτρολογήστε το τωρινό σας PIN.</string>
-    <string name="pin_bad_format" tools:ignore="PluralsCandidate">Το PIN πρέπει να έχει %1$d έως %2$d ψηφία.</string>
+    <string name="pin_bad_format">Το PIN πρέπει να έχει 4 ψηφία.</string>
     <string name="pin_phone_removed">Αυτό το τηλέφωνο αφαιρέθηκε από τα τηλέφωνα του μπαρ. Συνδεθείτε με τον κωδικό σας για να το προσθέσετε ξανά.</string>
     <string name="pin_not_on_phone">Αυτό το προφίλ δεν είναι πια σε αυτό το τηλέφωνο. Συνδεθείτε με τον κωδικό σας.</string>
     <string name="pin_gone">Αυτό το προφίλ διαγράφηκε.</string>
     <string name="pin_biometric_off">Το ξεκλείδωμα με δακτυλικό αποτύπωμα είναι ανενεργό σε αυτό το τηλέφωνο. Χρησιμοποιήστε το PIN σας.</string>
     <string name="pin_shared_phone">Το ξεκλείδωμα με δακτυλικό αποτύπωμα λειτουργεί μόνο σε τηλέφωνο με ένα προφίλ.</string>
     <string name="pin_choose_title">Επιλέξτε PIN</string>
-    <string name="pin_choose_hint" tools:ignore="PluralsCandidate">%1$d έως %2$d ψηφία. Με αυτό θα συνδέεστε σε αυτό το τηλέφωνο σε κάθε βάρδια.</string>
+    <string name="pin_choose_hint">Τέσσερα ψηφία. Με αυτό συνδέεστε σε αυτό το τηλέφωνο· αρκεί μία φορά την ημέρα.</string>
     <string name="pin_confirm_title">Πληκτρολογήστε το ξανά</string>
     <string name="pin_current_title">Το τωρινό σας PIN</string>
     <string name="pin_mismatch">Τα PIN δεν ταιριάζουν. Ξεκινήστε από την αρχή.</string>
@@ -354,4 +354,12 @@
     <string name="biometric_use_pin">Χρήση PIN</string>
     <string name="biometric_use">Δακτυλικό αποτύπωμα</string>
     <string name="biometric_changed">Τα δακτυλικά αποτυπώματα του τηλεφώνου άλλαξαν. Χρησιμοποιήστε το PIN και ενεργοποιήστε ξανά το ξεκλείδωμα στις Ρυθμίσεις.</string>
+
+    <!-- Επεξεργασία φωτογραφίας πριν το ανέβασμα -->
+    <string name="crop_title">Μετακίνηση και ζουμ</string>
+    <string name="crop_hint">Σύρετε για μετακίνηση. Τσιμπήστε ή χρησιμοποιήστε τη μπάρα για ζουμ. Στρίψτε με δύο δάχτυλα ή πατήστε Περιστροφή.</string>
+    <string name="crop_zoom">Ζουμ</string>
+    <string name="crop_rotate">Περιστροφή</string>
+    <string name="crop_reset">Επαναφορά</string>
+    <string name="crop_use">Χρήση φωτογραφίας</string>
 </resources>

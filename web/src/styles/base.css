@@ -70,6 +70,14 @@ body {
 }
 .file-button.disabled { opacity: .5; cursor: default; }
 .phones { margin-top: var(--s-10); }
+.cropper-backdrop {
+  position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.8);
+  display: flex; align-items: center; justify-content: center; padding: var(--s-4);
+}
+.cropper { background: var(--bg); display: flex; flex-direction: column; gap: var(--s-3); max-width: 380px; width: 100%; }
+.cropper-frame { border: 1.5px solid var(--gold); cursor: grab; touch-action: none; align-self: center; }
+.cropper-frame:active { cursor: grabbing; }
+.cropper input[type="range"] { accent-color: var(--gold); }
 
 /* ── Forms ── */
 .card { border: var(--hairline) solid var(--line); padding: var(--s-6); }

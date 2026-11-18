@@ -16,7 +16,8 @@ import { ErrorText, Field } from './Fields';
 import { Avatar, iconOf, ProfileIcon } from './Avatar';
 import { PROFILE_ICONS } from './profileIconSet';
 import { removePhone, removePhoto, resetPin, setIcon, unlockPin, uploadPhoto, usePhones, usePhotos, type Phone } from '../data/profiles';
-import { shrinkPhoto } from '../lib/photo';
+import { loadImage } from '../lib/photo';
+import { PhotoCropper } from './PhotoCropper';
 import { dateTime } from '../lib/time';
 
 interface UserRow {
@@ -328,16 +329,15 @@ function LookEditor({ row, photoUrl, onDone, onClose }: { row: UserRow; photoUrl
     }
   }
 
-  async function upload(file: File | undefined) {
+  const [cropping, setCropping] = useState<ImageBitmap | null>(null);
+
+  async function pick(file: File | undefined) {
     if (!file) return;
-    let base64: string;
     try {
-      base64 = await shrinkPhoto(file);
+      setCropping(await loadImage(file)); // the cropper decides the frame
     } catch {
       setError(t('users.photoFailed'));
-      return;
     }
-    await run(() => uploadPhoto(row.uid, base64));
   }
 
   return (
@@ -360,12 +360,32 @@ function LookEditor({ row, photoUrl, onDone, onClose }: { row: UserRow; photoUrl
       <span class="buttons">
         <label class={busy ? 'file-button disabled' : 'file-button'}>
           {t('users.uploadPicture')}
-          <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => upload((e.target as HTMLInputElement).files?.[0])} />
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            disabled={busy}
+            onChange={(e) => {
+              const input = e.target as HTMLInputElement;
+              pick(input.files?.[0]);
+              input.value = ''; // choosing the same file again still opens the cropper
+            }}
+          />
         </label>
         {photoUrl && <button type="button" class="link" disabled={busy} onClick={() => run(() => removePhoto(row.uid))}>{t('users.removePicture')}</button>}
         <button type="button" class="link" onClick={onClose}>{t('users.cancel')}</button>
       </span>
       <ErrorText text={error} />
+      {cropping && (
+        <PhotoCropper
+          image={cropping}
+          onCancel={() => setCropping(null)}
+          onDone={(base64) => {
+            setCropping(null);
+            run(() => uploadPhoto(row.uid, base64));
+          }}
+        />
+      )}
     </div>
   );
 }

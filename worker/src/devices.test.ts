@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { deviceProfiles, forgetProfile, profileSignIn, registerDevice, removeDevice, setBiometric } from './devices';
-import { setPin, type PinDeps } from './pins';
+import { resetPin, setPin, type PinDeps } from './pins';
 import { asPassword, asPin, clearEmulators, onEmulators, seedUser, signInWithToken, testDeps } from './testkit';
 import { deleteUser, updateUser } from './users';
 
@@ -39,7 +39,8 @@ describe.skipIf(!onEmulators)('phones and profile sign-in (emulators)', () => {
     expect(JSON.stringify(stored)).not.toContain(first.deviceSecret);
 
     const again = await registerDevice(deps, asPassword(nikos), { deviceId: first.deviceId, deviceSecret: first.deviceSecret });
-    expect(again).toEqual({ deviceId: first.deviceId });
+    expect(again).toMatchObject({ deviceId: first.deviceId });
+    expect(again.deviceSecret).toBeUndefined();
     expect((await deps.db.doc(`devices/${first.deviceId}`).get()).get('profiles')).toEqual([maria, nikos]);
   });
 
@@ -140,5 +141,38 @@ describe.skipIf(!onEmulators)('phones and profile sign-in (emulators)', () => {
     const { secret } = await setBiometric(deps, asPin(maria), { ...keys, on: true });
     await setBiometric(deps, asPin(maria), { ...keys, on: false });
     await expect(profileSignIn(deps, { ...keys, uid: maria, biometricSecret: secret })).rejects.toMatchObject({ details: { reason: 'biometric' } });
+  });
+
+  it("today's ticket signs back in without the PIN, until 18:00, on this phone only", async () => {
+    const phone = await mariasPhone();
+    const signedIn = await profileSignIn(deps, { ...phone, uid: maria, pin: '4821' });
+    expect(signedIn.ticket).toBeDefined();
+    expect(signedIn.ticketUntilMs).toBeGreaterThan(Date.now());
+    const back = await profileSignIn(deps, { ...phone, uid: maria, ticket: signedIn.ticket });
+    expect((await signInWithToken(back.token)).user_id).toBe(maria);
+    expect(back.ticket).toBeUndefined(); // the same ticket stays valid
+    await expect(profileSignIn(deps, { ...phone, uid: maria, ticket: 'guess' })).rejects.toMatchObject({ details: { reason: 'ticket' } });
+    await expect(profileSignIn(deps, { ...phone, uid: maria, ticket: signedIn.ticket }, signedIn.ticketUntilMs! + 1)).rejects.toMatchObject({ details: { reason: 'ticket' } });
+    const other = await registerDevice(deps, asPassword(maria), { name: 'Other phone' });
+    expect(other.ticket).toBeDefined(); // a password sign-in counts as today's sign-in too
+    await expect(profileSignIn(deps, { deviceId: other.deviceId, deviceSecret: other.deviceSecret, uid: maria, ticket: signedIn.ticket })).rejects.toMatchObject({ details: { reason: 'ticket' } });
+  });
+
+  it('a PIN reset, removal from the phone or deactivation ends the ticket', async () => {
+    const phone = await mariasPhone();
+    let { ticket } = await profileSignIn(deps, { ...phone, uid: maria, pin: '4821' });
+    await resetPin(deps, adminUid, { uid: maria });
+    await expect(profileSignIn(deps, { ...phone, uid: maria, ticket })).rejects.toMatchObject({ details: { reason: 'ticket' } });
+
+    ({ ticket } = await registerDevice(deps, asPassword(maria), phone));
+    await updateUser(deps, adminUid, { uid: maria, active: false });
+    await expect(profileSignIn(deps, { ...phone, uid: maria, ticket })).rejects.toMatchObject({ details: { reason: 'deactivated' } });
+    await updateUser(deps, adminUid, { uid: maria, active: true });
+    expect((await profileSignIn(deps, { ...phone, uid: maria, ticket })).token).toBeTruthy();
+
+    await forgetProfile(deps, { ...phone, uid: maria });
+    await registerDevice(deps, asPassword(nikos), phone);
+    await expect(profileSignIn(deps, { ...phone, uid: maria, ticket })).rejects.toMatchObject({ details: { reason: 'notOnDevice' } });
+    expect((await deps.db.doc(`pinSecrets/${maria}`).get()).get(`shift.${phone.deviceId}`)).toBeUndefined();
   });
 });

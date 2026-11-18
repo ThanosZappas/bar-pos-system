@@ -31,7 +31,6 @@ import gr.barlab.negroni.auth.PhoneRepository
 import gr.barlab.negroni.auth.PinException
 import gr.barlab.negroni.auth.PinFailure
 import gr.barlab.negroni.auth.PinRules
-import gr.barlab.negroni.auth.Role
 import gr.barlab.negroni.auth.StaffUser
 import gr.barlab.negroni.ui.theme.Spacing
 import kotlinx.coroutines.launch
@@ -40,7 +39,7 @@ import kotlinx.coroutines.launch
  * Choosing a PIN (first sign-in, or after the admin reset it) or changing it (current PIN first).
  * The new PIN is typed twice; the server checks the length again and stores only a hash.
  */
-class SetPinViewModel(private val phone: PhoneRepository, private val role: Role, changing: Boolean) : ViewModel() {
+class SetPinViewModel(private val phone: PhoneRepository, changing: Boolean) : ViewModel() {
     enum class Phase { Current, New, Confirm }
 
     var phase by mutableStateOf(if (changing) Phase.Current else Phase.New)
@@ -60,13 +59,12 @@ class SetPinViewModel(private val phone: PhoneRepository, private val role: Role
     private var current: String? = null
     private var first = ""
 
-    val min get() = PinRules.minLength(role)
-
     fun digit(d: Char) {
-        if (busy || entry.length >= PinRules.MAX) return
+        if (busy || entry.length >= PinRules.LENGTH) return
         failure = null
         mismatch = false
         entry += d
+        if (entry.length == PinRules.LENGTH) submit() // 4 digits: move on by itself
     }
 
     fun backspace() {
@@ -82,8 +80,8 @@ class SetPinViewModel(private val phone: PhoneRepository, private val role: Role
                 phase = Phase.New
             }
             Phase.New -> {
-                if (!PinRules.isValid(entry, role)) {
-                    failure = PinFailure.BadFormat(min, PinRules.MAX)
+                if (!PinRules.isValid(entry)) {
+                    failure = PinFailure.BadFormat
                     entry = ""
                     shakes++
                     return
@@ -141,7 +139,7 @@ fun SetPinScreen(
     onDone: () -> Unit = {},
     cancelLabel: String = stringResource(R.string.sign_out),
 ) {
-    val vm = viewModel(key = "set-pin-${user.uid}-$changing") { SetPinViewModel(phone, user.role, changing) }
+    val vm = viewModel(key = "set-pin-${user.uid}-$changing") { SetPinViewModel(phone, changing) }
     LaunchedEffect(vm.done) { if (vm.done) onDone() }
     val now = rememberNowUntil((vm.failure as? PinFailure.Locked)?.untilMs ?: (vm.failure as? PinFailure.WrongPin)?.lockedUntilMs)
     val title = when (vm.phase) {
@@ -161,14 +159,14 @@ fun SetPinScreen(
         Text(stringResource(title), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
         if (vm.phase == SetPinViewModel.Phase.New) {
             Text(
-                stringResource(R.string.pin_choose_hint, vm.min, PinRules.MAX),
+                stringResource(R.string.pin_choose_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = Spacing.s),
             )
         }
-        PinDots(vm.entry.length, minDots = vm.min, shakeKey = vm.shakes, error = message != null, modifier = Modifier.padding(top = Spacing.xxl))
+        PinDots(vm.entry.length, minDots = PinRules.LENGTH, shakeKey = vm.shakes, error = message != null, modifier = Modifier.padding(top = Spacing.xxl))
         Box(Modifier.heightIn(min = 56.dp).padding(top = Spacing.m), contentAlignment = Alignment.TopCenter) {
             message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center) }
         }

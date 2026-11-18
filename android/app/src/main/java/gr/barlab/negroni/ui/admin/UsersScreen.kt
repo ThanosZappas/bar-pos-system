@@ -284,7 +284,12 @@ private fun UserSheet(
                 label = stringResource(R.string.users_temp_password),
                 supportingText = pluralStringResource(R.plurals.users_temp_password_hint, PasswordRules.MIN_LENGTH, PasswordRules.MIN_LENGTH),
             )
-            OutlinedButton(enabled = !action.busy && password.length >= PasswordRules.MIN_LENGTH, onClick = { run({ users.resetPassword(user.uid, password) }, R.string.users_password_reset); password = "" }) {
+            OutlinedButton(enabled = !action.busy && password.length >= PasswordRules.MIN_LENGTH, onClick = {
+                // Read the field now: the call runs after this click handler has cleared it.
+                val temporary = password
+                run({ users.resetPassword(user.uid, temporary) }, R.string.users_password_reset)
+                password = ""
+            }) {
                 Text(stringResource(R.string.users_reset_password).caps(), style = MaterialTheme.typography.labelLarge)
             }
 

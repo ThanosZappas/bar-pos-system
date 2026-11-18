@@ -108,14 +108,32 @@ class SignInViewModel(private val phone: PhoneRepository, private val fingerprin
     }
 
     fun open(profile: PhoneProfile) {
+        if (busy) return
         reset()
-        step = if (profile.hasPin) SignInStep.Pin(profile.uid) else SignInStep.Password(PasswordNote.ChoosePin)
+        val next = if (profile.hasPin) SignInStep.Pin(profile.uid) else SignInStep.Password(PasswordNote.ChoosePin)
+        if (!phone.hasTicket(profile.uid)) {
+            step = next
+            return
+        }
+        // Signed in on this phone earlier today: straight in, no PIN until 18:00.
+        busy = true
+        viewModelScope.launch {
+            phone.signInWithTicket(profile.uid)
+                .onSuccess { step = SignInStep.Grid }
+                .onFailure { e ->
+                    step = next
+                    val f = (e as? PinException)?.failure
+                    if (f != null && f != PinFailure.TicketExpired) failure = f
+                }
+            busy = false
+        }
     }
 
     fun digit(d: Char) {
-        if (busy || pin.length >= PinRules.MAX) return
+        if (busy || pin.length >= PinRules.LENGTH) return
         failure = null
         pin += d
+        if (pin.length == PinRules.LENGTH) submit() // every PIN is 4 digits: no need to press enter
     }
 
     fun backspace() {
@@ -213,7 +231,7 @@ fun SignInScreen(phone: PhoneRepository, sessions: SessionRepository, fingerprin
             val withFingerprint = profile != null && profile.biometric && fingerprint != null && fingerprint.isAvailable && fingerprint.isOn(profile.uid)
             if (profile == null) LaunchedEffect(Unit) { vm.back() } else PinScreen(vm, profile, photos[profile.uid], withFingerprint)
         }
-        else -> ProfileGrid(profiles, photos, vm.gridProblem, onOpen = vm::open, onAdd = vm::addAccount, onForget = vm::forget)
+        else -> ProfileGrid(profiles, photos, vm.gridProblem, vm.busy, onOpen = vm::open, onAdd = vm::addAccount, onForget = vm::forget)
     }
 }
 
@@ -236,6 +254,7 @@ private fun ProfileGrid(
     profiles: List<PhoneProfile>,
     photos: Map<String, ImageBitmap>,
     problem: PinFailure?,
+    busy: Boolean,
     onOpen: (PhoneProfile) -> Unit,
     onAdd: () -> Unit,
     onForget: (String) -> Unit,
@@ -245,6 +264,7 @@ private fun ProfileGrid(
     Column(Modifier.fillMaxSize().padding(horizontal = Spacing.xl), horizontalAlignment = Alignment.CenterHorizontally) {
         BrandHeader(Modifier.padding(top = Spacing.hero, bottom = Spacing.xxl))
         Text(stringResource(R.string.who_is_working).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        Box(Modifier.heightIn(min = 4.dp).fillMaxWidth().padding(top = Spacing.s)) { if (busy) LinearProgressIndicator(Modifier.fillMaxWidth()) }
         problem?.let {
             Text(pinFailureMessage(it, now), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Spacing.m))
         }
@@ -334,7 +354,7 @@ private fun PinScreen(vm: SignInViewModel, profile: PhoneProfile, photo: ImageBi
         ProfileAvatar(profile.icon, photo, 88.dp)
         Text(profile.displayName, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = Spacing.m))
         Text(stringResource(R.string.pin_enter_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
-        PinDots(vm.pin.length, minDots = PinRules.SERVER_MIN, shakeKey = vm.shakes, error = message != null, modifier = Modifier.padding(top = Spacing.xxl))
+        PinDots(vm.pin.length, minDots = PinRules.LENGTH, shakeKey = vm.shakes, error = message != null, modifier = Modifier.padding(top = Spacing.xxl))
         Box(Modifier.heightIn(min = 56.dp).padding(top = Spacing.m), contentAlignment = Alignment.TopCenter) {
             message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center) }
         }
