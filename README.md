@@ -610,3 +610,8 @@ Commissioner and Noto Serif Display for Greek letters; all SIL Open Font License
 - **Install fails with "signatures do not match"**: the installed app was built on another
   computer. Sync everything first, then uninstall and install from this laptop.
 - **No sound on the dashboard**: click **Enable sound** after each page load.
+
+## Licence
+
+Proprietary, all rights reserved: see [LICENSE](LICENSE). Viewing is allowed; using, copying,
+modifying or deploying any part needs written permission. Fonts and libraries keep their own licences.

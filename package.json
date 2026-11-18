@@ -20,5 +20,6 @@
   "devDependencies": {
     "firebase-tools": "15.35.0",
     "wrangler": "^4.164.0"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }

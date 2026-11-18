@@ -13,5 +13,6 @@
     "typescript": "7.0.2",
     "vitest": "5.1.0"
   },
-  "description": "Cloudflare Worker: the server functions (users, PINs, phones, pictures, tables) on top of Firebase Auth and Firestore."
+  "description": "Cloudflare Worker: the server functions (users, PINs, phones, pictures, tables) on top of Firebase Auth and Firestore.",
+  "license": "SEE LICENSE IN LICENSE"
 }

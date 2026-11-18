@@ -1,6 +1,12 @@
 package gr.barlab.negroni.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -105,7 +111,29 @@ fun HomeScreen(
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val pager = rememberPagerState(initialPage = tabs.indexOf(tab).coerceAtLeast(0)) { tabs.size }
-    LaunchedEffect(pager.settledPage) { onTab(tabs[pager.settledPage]) }
+
+    // Back walks back through the tabs you visited (then the app goes to the background, see
+    // SignedInApp), and closes the drawer first when it is open.
+    val tabHistory = remember { mutableStateListOf<Int>() }
+    var shownPage by remember { mutableIntStateOf(pager.settledPage) }
+    var goingBack by remember { mutableStateOf(false) }
+    LaunchedEffect(pager.settledPage) {
+        val page = pager.settledPage
+        onTab(tabs[page])
+        if (page != shownPage && !goingBack) {
+            tabHistory.remove(shownPage)
+            tabHistory.add(shownPage)
+        }
+        tabHistory.remove(page)
+        goingBack = false
+        shownPage = page
+    }
+    BackHandler(enabled = tabHistory.isNotEmpty() && !drawer.isOpen) {
+        goingBack = true
+        val previous = tabHistory.removeAt(tabHistory.lastIndex)
+        scope.launch { pager.animateScrollToPage(previous) }
+    }
+    BackHandler(enabled = drawer.isOpen) { scope.launch { drawer.close() } }
 
     // Swiping on to the left on the last tab pulls the drawer out, like a page after the last one.
     val pullThreshold = with(LocalDensity.current) { 56.dp.toPx() }

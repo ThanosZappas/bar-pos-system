@@ -1,6 +1,7 @@
 package gr.barlab.negroni.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -119,6 +120,11 @@ fun SignedInApp(
             snackbar.showSnackbar(resources.getString(res, f.tableName))
         }
     }
+    // Back: the previous screen. On Home with nowhere left to go, the app goes to the background
+    // like the Home button instead of closing, so it reopens exactly where it was. (Home's own
+    // handlers, for the drawer and the tabs, come later and so run first.)
+    val activity = LocalActivity.current
+    BackHandler(enabled = !nav.canGoBack) { activity?.moveTaskToBack(true) }
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
     // "Served" everywhere goes through here: serve, then offer Undo for 30 s (the rules allow 120 s).

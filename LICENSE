@@ -1,0 +1,24 @@
+Copyright (c) 2026 Thanos Zappas. All rights reserved.
+
+This software and its source code ("the Software") are proprietary. They are made
+visible for viewing only.
+
+No licence is granted. Without prior written permission from the copyright holder,
+you may not use, copy, modify, merge, publish, distribute, sublicense, sell, run,
+deploy or create derivative works of the Software, in whole or in part, nor use it
+to build or train other software.
+
+Viewing the Software or forking it on GitHub, as GitHub's Terms of Service allow for
+public repositories, does not grant any of these rights.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE.
+
+Third-party parts keep their own licences and are not covered by the above:
+- Fonts in design/fonts/, android/app/src/main/res/font/ and web/src/assets/fonts/:
+  SIL Open Font License 1.1 (licence texts in design/fonts/).
+- Open-source libraries listed in the package and Gradle files: their own licences.
+- The Negroni Bar Lab name, menu and look belong to the bar.
+
+Permission requests: https://github.com/ThanosZappas
