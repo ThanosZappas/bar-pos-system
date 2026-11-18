@@ -13,7 +13,7 @@
     "emulators": "firebase emulators:start --project demo-negroni",
     "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes",
     "deploy:worker": "node scripts/deploy-worker.mjs",
-    "deploy:hosting": "firebase deploy --only hosting"
+    "deploy:dashboard": "node scripts/deploy-dashboard.mjs"
   },
   "devDependencies": {
     "firebase-tools": "15.35.0",
