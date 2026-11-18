@@ -8,7 +8,10 @@ Private order-taking system for Negroni Bar Lab (Κολοκοτρώνη 74–76,
 - a **Firebase backend** on the free Spark plan: Auth and Firestore (region `europe-west8`,
   Milan) with role-based security rules;
 - a **Cloudflare Worker** (free plan) with the server functions: user management, PIN
-  sign-in, phones, pictures, moving tables. The dashboard is hosted on Cloudflare Pages.
+  sign-in, phones, pictures, moving tables. The dashboard is hosted on Cloudflare too.
+
+**Live:** dashboard https://negroni-bar-lab.thanoszapp.workers.dev · server functions
+https://negroni-bar-lab-api.thanoszapp.workers.dev · Firebase project `ni-bar-lab`.
 
 Not distributed through the Play Store: the debug APK is installed from this laptop.
 The look (colours, fonts, spacing) comes from https://www.barlab.gr/menu.html, see
@@ -56,7 +59,7 @@ scripts/preflight.sh phone emulators deploy
 ## First-time setup
 
 Everything runs on free plans with **no card**: Firebase **Spark** (sign-in and the database)
-and Cloudflare (the server functions as a **Worker**, the dashboard on **Pages**). Expected
+and Cloudflare (the server functions as a **Worker**, the dashboard as static files). Expected
 cost: €0. How it fits together: [Hosting](#hosting-firebase--cloudflare).
 
 ### 1. Tools on the laptop
@@ -91,22 +94,17 @@ npm run install:all
    **Register**. Copy `web/.env.example` to `web/.env.local` and fill in `apiKey`,
    `authDomain`, `projectId`, `appId` (`VITE_API_URL` comes in step 4).
 7. ⚙ **Project settings → Service accounts → Generate new private key → Generate key**. Save
-   the downloaded file **outside the project**, as `~/negroni-service-account.json`. It is the
-   master key to the database and the accounts: the Worker and the seed use it; never commit,
-   e-mail or share it.
+   the downloaded file **outside the project** (on the dev laptop:
+   `~/Coding/Keys/negroni-service-account.json`, readable only by you: `chmod 600`). It is the
+   master key to the database and the accounts: the rules deploy, the Worker and the seed use
+   it; never commit, e-mail or share it. Below, `<key>` means that file's path.
 
 `google-services.json` and `web/.env.local` are git-ignored and never committed.
 
 ### 3. Command-line logins (once per laptop)
 
-**Firebase** (for the security rules):
-
-```bash
-npx firebase login && npx firebase use --add
-```
-
-Pick the project and give it the alias `default` (this writes `.firebaserc`, which may be
-committed).
+**Firebase:** nothing to log in to; the key file is enough. `.firebaserc` (committed) names the
+project.
 
 **Cloudflare** (for the Worker and the dashboard). Having a Cloudflare account is not enough:
 the `wrangler` tool on this laptop needs your permission to act for that account.
@@ -127,10 +125,12 @@ scripts/preflight.sh deploy
 ```
 
 ```bash
-npm run deploy:backend
+npm run deploy:backend -- <key>
 ```
 
-Deploys the Firestore security rules and indexes.
+Publishes the Firestore security rules (`scripts/deploy-rules.mjs`, through the Firebase Rules
+API with the key; `firebase deploy` would need extra permissions to switch Google APIs on).
+There are no composite indexes.
 
 ```bash
 npm run deploy:worker
@@ -143,7 +143,7 @@ address, `https://negroni-bar-lab-api.<subdomain>.workers.dev`: put it in
 `negroni.apiUrl=…` (same address in both).
 
 ```bash
-node scripts/set-worker-secrets.mjs ~/negroni-service-account.json
+node scripts/set-worker-secrets.mjs <key>
 ```
 
 Gives the Worker its secrets: the service account from the key file, and a random **PIN
@@ -155,7 +155,7 @@ npm --prefix tools/seed run init-credentials
 ```
 
 ```bash
-GOOGLE_APPLICATION_CREDENTIALS=~/negroni-service-account.json npm --prefix tools/seed run seed -- --project <projectId>
+GOOGLE_APPLICATION_CREDENTIALS=<key> npm --prefix tools/seed run seed -- --project <projectId>
 ```
 
 Creates `admin` and `user1`..`user5` (display names "Admin", "Server 1".."Server 5"; initial
@@ -168,9 +168,9 @@ npm run deploy:dashboard
 ```
 
 Builds the dashboard with `web/.env.local` and publishes it at
-`https://negroni-bar-lab.pages.dev` (works on the laptop and on any phone's browser). Then in
-Firebase → **Authentication → Settings → Authorized domains → Add domain**:
-`negroni-bar-lab.pages.dev`.
+`https://negroni-bar-lab.<subdomain>.workers.dev` (works on the laptop and on any phone's
+browser): a Worker that only serves the built files (`web/wrangler.jsonc`), free with unlimited
+visits. (Cloudflare is folding Pages into Workers; this is its current way to host a site.)
 
 Finally install the phone app built for this project ([Install the app on a phone](#install-the-app-on-a-phone)).
 
@@ -477,9 +477,10 @@ immutable, so reports can be built later from Firestore.
   signed-in person's Firebase token. The Worker checks the token, then works on Firebase as an
   admin with the service account (a Cloudflare secret). Free plan: 100,000 calls a day, 10 ms
   of processing per call (a PIN check takes about 2 ms).
-- **Dashboard files → Cloudflare Pages** (free), at `negroni-bar-lab.pages.dev`. Hash routes
-  (`#/board`, `#/tables`, …) work on any domain. A custom subdomain later: Pages project →
-  Custom domains, then add it under Firebase → Authentication → Settings → Authorized domains.
+- **Dashboard files → Cloudflare** (free static files served by a Worker), at
+  `negroni-bar-lab.thanoszapp.workers.dev`. Hash routes (`#/board`, `#/tables`, …) work on any
+  domain. A custom subdomain later: Cloudflare dashboard → the `negroni-bar-lab` Worker →
+  Settings → Domains & Routes.
 - The laptop is only needed to build and install the phone app and to deploy changes.
 
 ### Launcher icon
@@ -599,7 +600,7 @@ Commissioner and Noto Serif Display for Greek letters; all SIL Open Font License
   `negroni.apiUrl` in `android/local.properties` is missing; add it and reinstall. On the
   dashboard: `web/.env.local` (with `VITE_API_URL`) is missing; add it and redeploy.
 - **"Internal error"** on every sign-in or user change: the Worker has no secrets yet, or the
-  key was revoked. Run `node scripts/set-worker-secrets.mjs ~/negroni-service-account.json`;
+  key was revoked. Run `node scripts/set-worker-secrets.mjs <key>`;
   `npx wrangler tail --config worker/wrangler.jsonc` shows the Worker's live log.
 - **"Wrong username or password"** right after setup: the seed has not run against this project.
 - **"Account not set up"**: the Auth user exists but has no `users/{uid}` profile; create users

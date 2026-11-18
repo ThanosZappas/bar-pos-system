@@ -54,9 +54,9 @@ for mode in "$@"; do
       echo "Real Firebase project and Cloudflare"
       if [ -f android/app/google-services.json ]; then ok "android/app/google-services.json"; else bad "android/app/google-services.json missing" "README → First-time setup, step 2.5"; fi
       if [ -f web/.env.local ]; then ok "web/.env.local"; else bad "web/.env.local missing" "copy web/.env.example and fill it in (README step 2.6)"; fi
-      if [ -f .firebaserc ]; then ok ".firebaserc ($(sed -n 's/.*"default": *"\([^"]*\)".*/\1/p' .firebaserc))"; else bad ".firebaserc missing" "npx firebase login && npx firebase use --add"; fi
+      if [ -f .firebaserc ]; then ok ".firebaserc ($(sed -n 's/.*"default": *"\([^"]*\)".*/\1/p' .firebaserc))"; else bad ".firebaserc missing" "it names the Firebase project; restore it from git"; fi
       if npx wrangler whoami 2>/dev/null | grep -qi "logged in"; then ok "Cloudflare login (wrangler)"; else bad "not logged in to Cloudflare" "npx wrangler login (README step 3)"; fi
-      if [ -f "$HOME/negroni-service-account.json" ]; then ok "~/negroni-service-account.json"; else warn "no ~/negroni-service-account.json" "Firebase → Project settings → Service accounts → Generate new private key (README step 2.7)"; fi
+      if [ -f "$HOME/Coding/Keys/negroni-service-account.json" ]; then ok "~/Coding/Keys/negroni-service-account.json"; else warn "no service-account key at ~/Coding/Keys/negroni-service-account.json" "Firebase → Project settings → Service accounts → Generate new private key (README step 2.7)"; fi
       grep -q '^negroni.apiUrl=.' android/local.properties 2>/dev/null && ok "negroni.apiUrl in android/local.properties" || warn "no negroni.apiUrl in android/local.properties yet" "add it after npm run deploy:worker (README step 4)"
       grep -q '^VITE_API_URL=.' web/.env.local 2>/dev/null && ok "VITE_API_URL in web/.env.local" || warn "no VITE_API_URL in web/.env.local yet" "add it after npm run deploy:worker (README step 4)"
       ;;
