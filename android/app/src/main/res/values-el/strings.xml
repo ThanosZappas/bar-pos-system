@@ -170,7 +170,6 @@
     <string name="late_rebill">Προσθήκη στον λογαριασμό του τραπεζιού %1$s</string>
 
     <!-- Move table -->
-    <string name="move_table">Μεταφορά σε άλλο τραπέζι</string>
     <string name="move_title">Μεταφορά από το τραπέζι %1$s στο</string>
     <string name="move_none">Δεν υπάρχει ελεύθερο τραπέζι.</string>
     <string name="move_done">Μεταφέρθηκε στο τραπέζι %1$s.</string>
@@ -357,9 +356,19 @@
 
     <!-- Επεξεργασία φωτογραφίας πριν το ανέβασμα -->
     <string name="crop_title">Μετακίνηση και ζουμ</string>
-    <string name="crop_hint">Σύρετε για μετακίνηση. Τσιμπήστε ή χρησιμοποιήστε τη μπάρα για ζουμ. Στρίψτε με δύο δάχτυλα ή πατήστε Περιστροφή.</string>
+    <string name="crop_hint">Σύρετε για μετακίνηση. Τσιμπήστε ή χρησιμοποιήστε τη μπάρα για ζουμ. Γυρίστε με τη μπάρα περιστροφής ή πατήστε Περιστροφή για ένα τέταρτο.</string>
     <string name="crop_zoom">Ζουμ</string>
     <string name="crop_rotate">Περιστροφή</string>
     <string name="crop_reset">Επαναφορά</string>
     <string name="crop_use">Χρήση φωτογραφίας</string>
+
+    <!-- Πλευρικό μενού, οθόνη Μενού, εξαντλημένα -->
+    <string name="menu_open">Άνοιγμα μενού</string>
+    <string name="settings_open_menu">Άνοιγμα μενού</string>
+    <string name="menu_sold_out">Εξαντλήθηκε</string>
+    <string name="menu_mark_sold_out">Εξαντλήθηκε</string>
+    <string name="menu_back_in">Ξανά διαθέσιμο</string>
+    <string name="menu_sold_out_hint">Δείτε όλο το μενού και σημειώστε ό,τι εξαντλήθηκε (ή είναι ξανά διαθέσιμο). Τα εξαντλημένα μένουν στο μενού αλλά δεν παραγγέλνονται, σε κάθε τηλέφωνο.</string>
+    <string name="move_table_short">Αλλαγή τραπεζιού</string>
+    <string name="crop_rotation">Γωνία</string>
 </resources>

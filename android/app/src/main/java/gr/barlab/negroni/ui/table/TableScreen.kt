@@ -1,5 +1,11 @@
 package gr.barlab.negroni.ui.table
 
+import gr.barlab.negroni.ui.theme.BarLabColors
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -96,13 +102,21 @@ fun TableScreen(
                 item(key = "payments") {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                         PaymentsSection(state, payments, onReverse = { p, reason -> orders.reverse(p, reason, user) }, canReverse = user.may { it.reversePayments })
-                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                            if (state.dueCents > 0 && user.may { it.payments }) OutlinedButton(onClick = { paying = true }) { Text(stringResource(R.string.pay_record).caps(), style = MaterialTheme.typography.labelLarge) }
-                            TextButton(onClick = { showSummary = true }) { Text(stringResource(R.string.summary_button)) }
-                            if (user.may { it.moveTables }) TextButton(onClick = { moving = true }) { Text(stringResource(R.string.move_table)) }
+                        if (state.dueCents > 0 && user.may { it.payments }) {
+                            Button(
+                                onClick = { paying = true },
+                                shape = SquareShape,
+                                border = BorderStroke(1.dp, BarLabColors.Gold),
+                                colors = ButtonDefaults.buttonColors(containerColor = BarLabColors.GoldTint, contentColor = BarLabColors.Gold),
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                            ) { Text(stringResource(R.string.pay_record).caps(), style = MaterialTheme.typography.labelLarge) }
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                            SideButton(stringResource(R.string.summary_button), Modifier.weight(1f)) { showSummary = true }
+                            if (user.may { it.moveTables }) SideButton(stringResource(R.string.move_table_short), Modifier.weight(1f)) { moving = true }
                         }
                         if (state.status == TableStatus.Paid && user.may { it.closeTables }) {
-                            Button(onClick = { confirmClose = true }, modifier = Modifier.fillMaxWidth()) {
+                            Button(onClick = { confirmClose = true }, shape = SquareShape, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                                 Text(stringResource(R.string.close_table).caps(), style = MaterialTheme.typography.labelLarge)
                             }
                         } else if (state.totalCents > 0) {
@@ -112,7 +126,7 @@ fun TableScreen(
                 }
             }
         }
-        Button(onClick = onNewOrder, modifier = Modifier.fillMaxWidth().padding(Spacing.l)) {
+        Button(onClick = onNewOrder, shape = SquareShape, modifier = Modifier.fillMaxWidth().padding(Spacing.l).height(52.dp)) {
             Text(stringResource(R.string.order_new).caps(), style = MaterialTheme.typography.labelLarge)
         }
     }
@@ -162,4 +176,19 @@ fun TableScreen(
             onDismiss = { editing = null },
         )
     }
+}
+
+/** The site's buttons are square; 2 dp only softens the touch feedback. */
+private val SquareShape = RoundedCornerShape(2.dp)
+
+/** A secondary action next to another one: same width, one line, hairline frame. */
+@Composable
+private fun SideButton(label: String, modifier: Modifier, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = SquareShape,
+        border = BorderStroke(1.dp, BarLabColors.LineStrong),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = BarLabColors.Text),
+        modifier = modifier.height(48.dp),
+    ) { Text(label.caps(), style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false) }
 }

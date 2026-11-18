@@ -75,12 +75,12 @@ fun PhotoCropDialog(source: Bitmap, onCancel: () -> Unit, onDone: (Bitmap) -> Un
                     .border(1.5.dp, BarLabColors.Gold)
                     .onSizeChanged { viewSide = it.width.toFloat() }
                     .pointerInput(source) {
-                        detectTransformGestures(panZoomLock = false) { _, pan: Offset, zoom, turn ->
+                        // Move and zoom only: rotation is on its own slider, so pinching never turns it.
+                        detectTransformGestures(panZoomLock = true) { _, pan: Offset, zoom, _ ->
                             frame = frame.copy(
                                 zoom = (frame.zoom * zoom).coerceIn(PhotoFrame.MIN_ZOOM, PhotoFrame.MAX_ZOOM),
                                 offsetX = frame.offsetX + pan.x,
                                 offsetY = frame.offsetY + pan.y,
-                                rotation = frame.rotation + turn,
                             )
                         }
                     },
@@ -104,8 +104,21 @@ fun PhotoCropDialog(source: Bitmap, onCancel: () -> Unit, onDone: (Bitmap) -> Un
                     modifier = Modifier.weight(1f).padding(horizontal = Spacing.m),
                 )
             }
+            Row(Modifier.widthIn(max = 420.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.crop_rotation), style = MaterialTheme.typography.labelLarge, color = BarLabColors.Muted)
+                Slider(
+                    value = frame.rotation.coerceIn(-180f, 180f),
+                    onValueChange = { frame = frame.copy(rotation = it) },
+                    valueRange = -180f..180f,
+                    modifier = Modifier.weight(1f).padding(horizontal = Spacing.m),
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                OutlinedButton(onClick = { frame = frame.copy(rotation = ((frame.rotation / 90f).roundToInt() + 1) * 90f) }) {
+                OutlinedButton(onClick = {
+                    // A quarter turn, kept within the slider's -180°…180°.
+                    val next = ((frame.rotation / 90f).roundToInt() + 1) * 90f
+                    frame = frame.copy(rotation = if (next > 180f) next - 360f else next)
+                }) {
                     Text(stringResource(R.string.crop_rotate).caps(), style = MaterialTheme.typography.labelLarge)
                 }
                 TextButton(onClick = { frame = PhotoFrame() }) { Text(stringResource(R.string.crop_reset)) }

@@ -42,7 +42,7 @@ export function Shell({ user }: { user: StaffUser }) {
   return (
     <>
       <nav class="nav">
-        <span class="logo">{t('app.name')}</span>
+        <a class="logo" href="#/board" title={t('nav.home')}>{t('app.name')}</a>
         <ul class="nav-links">
           {ROUTES.map((r) => (
             <li><a href={`#/${r.route}`} class={route === r.route || (r.route === 'tables' && route === 'tables-admin') ? 'active' : ''}>{t(r.label)}</a></li>

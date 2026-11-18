@@ -84,3 +84,18 @@ describe('tables', () => {
     await assertFails(updateDoc(doc(db('server'), 'tables/t1'), { name: 'X', ...stampUpdate('server') }));
   });
 });
+
+describe('sold out', () => {
+  it('any active staff member marks an item sold out and back, changing nothing else', async () => {
+    await assertSucceeds(updateDoc(doc(db('server'), 'menuItems/i1'), { soldOut: true, ...stampUpdate('server') }));
+    await assertSucceeds(updateDoc(doc(db('server'), 'menuItems/i1'), { soldOut: false, ...stampUpdate('server') }));
+    await assertSucceeds(updateDoc(doc(db('admin'), 'menuItems/i1'), { soldOut: true, ...stampUpdate('admin') }));
+  });
+  it('refuses other fields, a non-boolean, someone else\'s stamp, and staff who are not set up', async () => {
+    await assertFails(updateDoc(doc(db('server'), 'menuItems/i1'), { soldOut: true, priceCents: 1, ...stampUpdate('server') }));
+    await assertFails(updateDoc(doc(db('server'), 'menuItems/i1'), { soldOut: 'yes', ...stampUpdate('server') }));
+    await assertFails(updateDoc(doc(db('server'), 'menuItems/i1'), { soldOut: true, ...stampUpdate('admin') }));
+    await assertFails(updateDoc(doc(db('newAdmin'), 'menuItems/i1'), { soldOut: true, ...stampUpdate('newAdmin') }));
+    await assertFails(updateDoc(doc(env.unauthenticatedContext().firestore(), 'menuItems/i1'), { soldOut: true }));
+  });
+});

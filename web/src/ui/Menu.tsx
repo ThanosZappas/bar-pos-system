@@ -130,11 +130,15 @@ function ItemView({ item, items }: { item: Row<Item>; items: Row<Item>[] }) {
             {item.name}
             {item.tags.map((tag) => <span class="badge">{tag}</span>)}
             {item.hidden && <span class="badge">{t('common.hidden')}</span>}
+            {item.soldOut && <span class="badge sold-out">{t('menu.soldOut')}</span>}
           </div>
           {item.description && <div class="item-desc">{item.description}</div>}
         </div>
         <div class="item-side">
           <div class="item-price">{formatCents(item.priceCents)}</div>
+          <button class="link" onClick={() => patch('menuItems', item.id, { soldOut: !item.soldOut })}>
+            {item.soldOut ? t('menu.backIn') : t('menu.markSoldOut')}
+          </button>
           <RowActions
             hidden={item.hidden}
             onEdit={() => setEditing(!editing)}

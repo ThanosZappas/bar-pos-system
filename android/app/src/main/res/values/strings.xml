@@ -181,7 +181,6 @@
     <string name="late_rebill">Add to table %1$s\'s current bill</string>
 
     <!-- Move table -->
-    <string name="move_table">Move to another table</string>
     <string name="move_title">Move guests from table %1$s to</string>
     <string name="move_none">No free table to move to.</string>
     <string name="move_done">Moved to table %1$s.</string>
@@ -369,9 +368,19 @@
 
     <!-- Picture editor before upload -->
     <string name="crop_title">Move and zoom</string>
-    <string name="crop_hint">Drag to move. Pinch or use the slider to zoom. Twist with two fingers, or tap Rotate.</string>
+    <string name="crop_hint">Drag to move. Pinch or use the slider to zoom. Turn with the rotate slider, or tap Rotate for a quarter turn.</string>
     <string name="crop_zoom">Zoom</string>
     <string name="crop_rotate">Rotate</string>
     <string name="crop_reset">Reset</string>
     <string name="crop_use">Use picture</string>
+
+    <!-- Drawer, Menu screen, sold out -->
+    <string name="menu_open">Open the menu</string>
+    <string name="settings_open_menu">Open the menu</string>
+    <string name="menu_sold_out">Sold out</string>
+    <string name="menu_mark_sold_out">Mark sold out</string>
+    <string name="menu_back_in">Available again</string>
+    <string name="menu_sold_out_hint">See the whole menu and mark items sold out (or available again). Sold-out items stay on the menu but cannot be ordered, on every phone.</string>
+    <string name="move_table_short">Move table</string>
+    <string name="crop_rotation">Rotation</string>
 </resources>

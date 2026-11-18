@@ -1,5 +1,6 @@
 package gr.barlab.negroni.ui.board
 
+import androidx.compose.foundation.layout.Box
 import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -91,7 +92,14 @@ fun BoardScreen(user: StaffUser, orders: OrdersRepository, tables: List<DiningTa
 
     Column(Modifier.fillMaxSize()) {
         if (rounds.isEmpty()) {
-            Text(stringResource(R.string.board_empty), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(Spacing.xxl))
+            Box(Modifier.fillMaxSize().padding(Spacing.xxl), contentAlignment = Alignment.Center) {
+                Text(
+                    stringResource(R.string.board_empty),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+            }
         } else {
             LazyColumn(contentPadding = PaddingValues(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.m), modifier = Modifier.fillMaxSize()) {
                 items(rounds, key = { it.id }) { round ->

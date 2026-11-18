@@ -13,7 +13,9 @@ body {
   border-bottom: var(--hairline) solid var(--line);
   position: sticky; top: 0; z-index: 100;
 }
-.logo { font-family: var(--font-script); font-weight: 600; font-size: 28px; color: var(--text); white-space: nowrap; }
+.logo { font-family: var(--font-script); font-weight: 600; font-size: 28px; color: var(--text); white-space: nowrap; text-decoration: none; }
+a.logo:hover { color: var(--gold); }
+.badge.sold-out { color: var(--rust); }
 .hero { text-align: center; padding: 60px 20px 40px; }
 .hero-logo { font-family: var(--font-script); font-weight: 600; font-size: 52px; line-height: 1; color: var(--gold); }
 .hero-sub { font-size: 11px; letter-spacing: 4px; color: var(--muted); margin-top: 6px; text-transform: uppercase; }

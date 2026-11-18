@@ -61,6 +61,11 @@ import gr.barlab.negroni.auth.Fingerprint
 import gr.barlab.negroni.ui.auth.FingerprintOffer
 import gr.barlab.negroni.profile.ProfileRepository
 import gr.barlab.negroni.ui.auth.SetPinScreen
+import gr.barlab.negroni.ui.catalog.MenuScreen
+import gr.barlab.negroni.ui.home.homeTabs
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import gr.barlab.negroni.ui.table.TableScreen
 
 /** Everything after sign-in: one live subscription each for tables, menu and table states. */
@@ -81,6 +86,9 @@ fun SignedInApp(
     onRemoveFromPhone: () -> Unit,
 ) {
     val nav = rememberNavigator()
+    // The Home tab lives here, not in HomeScreen, so it is still selected after a table, a new
+    // order or Settings, and after Android stops the app in the background.
+    var homeTab by rememberSaveable(user.uid) { mutableStateOf(homeTabs(user.role).first()) }
     val snackbar = remember { SnackbarHostState() }
     val resources = LocalResources.current
     val tables by catalog.tables.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -153,14 +161,16 @@ fun SignedInApp(
                 return@Box
             }
             when (val screen = nav.current) {
-                Screen.Home -> HomeScreen(user, tables, states, menu, orders, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs, photo = myPhoto, onSwitchUser = onSwitchUser)
+                Screen.Home -> HomeScreen(user, tables, states, orders, tab = homeTab, onTab = { homeTab = it }, onTableClick = { nav.go(Screen.Table(it.id)) }, onSettings = { nav.go(Screen.Settings) }, onServe = serveWithUndo, onStaff = { nav.go(Screen.Staff) }, onUsers = { nav.go(Screen.Users) }, nowMs = nowMs, photo = myPhoto, onSwitchUser = onSwitchUser)
                 Screen.Settings -> SettingsScreen(
                     user, profiles, myPhoto, fingerprint,
                     onBack = nav::back,
                     onChangePin = { nav.go(Screen.ChangePin) },
+                    onMenu = { nav.go(Screen.Menu) },
                     onSwitchUser = onSwitchUser,
                     onRemoveFromPhone = onRemoveFromPhone,
                 )
+                Screen.Menu -> MenuScreen(menu, onBack = nav::back, onSoldOut = { item, soldOut -> catalog.setSoldOut(item, soldOut, user.uid) })
                 Screen.ChangePin -> SetPinScreen(
                     phone, user, changing = true,
                     onCancel = nav::back,

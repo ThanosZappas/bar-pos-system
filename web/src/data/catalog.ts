@@ -22,6 +22,8 @@ export interface Item extends Listed {
   description: string;
   priceCents: number;
   tags: string[];
+  /** Out of stock for now: still listed, cannot be ordered. Any staff member can set it. */
+  soldOut?: boolean;
 }
 export interface Table {
   name: string;

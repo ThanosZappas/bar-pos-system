@@ -15,6 +15,8 @@ data class ItemDoc(
     val order: Long,
     val hidden: Boolean,
     val archived: Boolean,
+    /** Out of stock for now: any staff member marks it, it stays on the menu but cannot be ordered. */
+    val soldOut: Boolean = false,
 )
 data class ReceiptHeader(val barName: String, val address: String, val phone: String, val footer: String) {
     companion object {
@@ -28,7 +30,7 @@ data class DiningTable(val id: String, val name: String, val order: Long, val cu
 data class Menu(val sections: List<Section>) {
     data class Section(val id: String, val name: String, val note: String, val categories: List<Category>)
     data class Category(val id: String, val name: String, val items: List<Item>)
-    data class Item(val id: String, val name: String, val description: String, val priceCents: Long, val tags: List<String>)
+    data class Item(val id: String, val name: String, val description: String, val priceCents: Long, val tags: List<String>, val soldOut: Boolean = false)
 
     val isEmpty get() = sections.isEmpty()
 
@@ -62,7 +64,7 @@ data class Menu(val sections: List<Section>) {
                 sections.filter { !it.hidden && !it.archived }.sortedBy { it.order }.mapNotNull { s ->
                     val cats = categoriesBySection[s.id].orEmpty().sortedBy { it.order }.mapNotNull { c ->
                         val its = itemsByCategory[c.id].orEmpty().sortedBy { it.order }
-                            .map { Item(it.id, it.name, it.description, it.priceCents, it.tags) }
+                            .map { Item(it.id, it.name, it.description, it.priceCents, it.tags, it.soldOut) }
                         if (its.isEmpty()) null else Category(c.id, c.name, its)
                     }
                     if (cats.isEmpty()) null else Section(s.id, s.name, s.note, cats)

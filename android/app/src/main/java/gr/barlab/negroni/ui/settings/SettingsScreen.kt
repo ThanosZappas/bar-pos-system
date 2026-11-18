@@ -59,6 +59,7 @@ fun SettingsScreen(
     fingerprint: Fingerprint?,
     onBack: () -> Unit,
     onChangePin: () -> Unit,
+    onMenu: () -> Unit,
     onSwitchUser: () -> Unit,
     onRemoveFromPhone: () -> Unit,
 ) {
@@ -104,6 +105,11 @@ fun SettingsScreen(
             OutlinedButton(onClick = onSwitchUser) { Text(stringResource(R.string.switch_user).caps(), style = MaterialTheme.typography.labelLarge) }
             Text(stringResource(R.string.switch_user_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick = { confirmRemove = true }) { Text(stringResource(R.string.remove_me_from_phone)) }
+
+            HorizontalDivider(color = BarLabColors.Line)
+            Text(stringResource(R.string.tab_menu).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.menu_sold_out_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = onMenu) { Text(stringResource(R.string.settings_open_menu).caps(), style = MaterialTheme.typography.labelLarge) }
 
             HorizontalDivider(color = BarLabColors.Line)
             Text(stringResource(R.string.settings_language).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)

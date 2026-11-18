@@ -298,5 +298,9 @@
   "crop.rotateLeft": "Περιστροφή αριστερά",
   "crop.rotateRight": "Περιστροφή δεξιά",
   "crop.reset": "Επαναφορά",
-  "crop.use": "Χρήση φωτογραφίας"
+  "crop.use": "Χρήση φωτογραφίας",
+  "nav.home": "Αρχική",
+  "menu.soldOut": "Εξαντλήθηκε",
+  "menu.markSoldOut": "Εξαντλήθηκε",
+  "menu.backIn": "Ξανά διαθέσιμο"
 }

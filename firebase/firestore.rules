@@ -98,7 +98,8 @@ service cloud.firestore {
         && text(d.sectionId, 1, 100) && text(d.name, 1, 60) && listed(d);
     }
     function validItem(d) {
-      return d.keys().hasOnly(['categoryId', 'name', 'description', 'priceCents', 'tags', 'order', 'hidden', 'archived'].concat(stampKeys()))
+      return d.keys().hasOnly(['categoryId', 'name', 'description', 'priceCents', 'tags', 'order', 'hidden', 'archived', 'soldOut'].concat(stampKeys()))
+        && (!('soldOut' in d) || d.soldOut is bool)
         && text(d.categoryId, 1, 100) && text(d.name, 1, 80) && text(d.description, 0, 500)
         && d.priceCents is int && d.priceCents >= 0 && d.priceCents <= 1000000
         && d.tags is list && d.tags.size() <= 5 && listed(d);
@@ -118,7 +119,11 @@ service cloud.firestore {
     match /menuItems/{id} {
       allow read: if isStaff();
       allow create: if isAdmin() && stampedCreate() && validItem(request.resource.data);
-      allow update: if isAdmin() && stampedUpdate() && validItem(request.resource.data);
+      // Any active staff member marks an item sold out (or back): only that flag and the stamp.
+      allow update: if (isAdmin() && stampedUpdate() && validItem(request.resource.data))
+        || (isStaff() && changesOnly(['soldOut', 'updatedAt', 'updatedBy'])
+          && request.resource.data.soldOut is bool
+          && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time);
       allow delete: if false;
     }
 

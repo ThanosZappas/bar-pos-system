@@ -304,5 +304,9 @@
   "crop.rotateLeft": "Rotate left",
   "crop.rotateRight": "Rotate right",
   "crop.reset": "Reset",
-  "crop.use": "Use picture"
+  "crop.use": "Use picture",
+  "nav.home": "Home",
+  "menu.soldOut": "Sold out",
+  "menu.markSoldOut": "Mark sold out",
+  "menu.backIn": "Available again"
 }

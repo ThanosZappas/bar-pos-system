@@ -1,6 +1,7 @@
 package gr.barlab.negroni.catalog
 
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
 import gr.barlab.negroni.data.Api
@@ -45,6 +46,16 @@ class CatalogRepository(private val db: FirebaseFirestore, private val api: Api)
         Unit
     }
 
+    /**
+     * Marks an item sold out (or back in stock). Any active staff member may; the rules allow
+     * exactly this field and the stamp. Works offline: it is sent when the connection returns.
+     */
+    fun setSoldOut(item: Menu.Item, soldOut: Boolean, userId: String) {
+        db.collection("menuItems").document(item.id).update(
+            mapOf("soldOut" to soldOut, "updatedAt" to FieldValue.serverTimestamp(), "updatedBy" to userId),
+        )
+    }
+
     private fun <T> docs(collection: String, map: (DocumentSnapshot) -> T): Flow<List<T>> =
         db.collection(collection).snapshots().map { snap -> snap.documents.map(map) }
             // Access revoked mid-session (deactivated user): stop quietly; the session screen takes over.
@@ -66,6 +77,7 @@ class CatalogRepository(private val db: FirebaseFirestore, private val api: Api)
         order = num("order"),
         hidden = flag("hidden"),
         archived = flag("archived"),
+        soldOut = flag("soldOut"),
     )
     private fun DocumentSnapshot.toTable() = DiningTable(id, str("name"), num("order"), str("currentSessionId"))
 }

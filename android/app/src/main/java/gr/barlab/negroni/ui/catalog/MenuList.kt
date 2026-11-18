@@ -3,6 +3,8 @@ package gr.barlab.negroni.ui.catalog
 import gr.barlab.negroni.ui.components.caps
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,10 +45,16 @@ import kotlinx.coroutines.launch
 
 /**
  * Browsable menu: search box, section tabs that jump to their section, category headers and items.
- * [onItemClick] is null for read-only browsing; the order flow passes a handler.
+ * [onItemClick]: the order flow (sold-out items cannot be picked). [onSoldOut]: the Menu screen,
+ * where anyone marks an item sold out or available again.
  */
 @Composable
-fun MenuList(menu: Menu, modifier: Modifier = Modifier, onItemClick: ((Menu.Item) -> Unit)? = null) {
+fun MenuList(
+    menu: Menu,
+    modifier: Modifier = Modifier,
+    onItemClick: ((Menu.Item) -> Unit)? = null,
+    onSoldOut: ((Menu.Item, Boolean) -> Unit)? = null,
+) {
     var query by rememberSaveable { mutableStateOf("") }
     val shown = remember(menu, query) { menu.search(query) }
     val listState = rememberLazyListState()
@@ -83,7 +91,7 @@ fun MenuList(menu: Menu, modifier: Modifier = Modifier, onItemClick: ((Menu.Item
         when {
             menu.isEmpty -> Empty(stringResource(R.string.menu_empty))
             shown.isEmpty -> Empty(stringResource(R.string.menu_no_results, query))
-            else -> MenuRows(rows, listState, onItemClick)
+            else -> MenuRows(rows, listState, onItemClick, onSoldOut)
         }
     }
 }
@@ -99,8 +107,10 @@ private fun flatten(menu: Menu): List<Row> = menu.sections.flatMap { s ->
 }
 
 @Composable
-private fun MenuRows(rows: List<Row>, state: LazyListState, onItemClick: ((Menu.Item) -> Unit)?) {
-    LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
+private fun MenuRows(rows: List<Row>, state: LazyListState, onItemClick: ((Menu.Item) -> Unit)?, onSoldOut: ((Menu.Item, Boolean) -> Unit)?) {
+    // Room after the last item, so the last section's tab can still bring its header to the top.
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    LazyColumn(state = state, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = maxHeight * 0.85f)) {
         items(rows, key = { r ->
             when (r) {
                 is Row.SectionHeader -> "s-${r.section.id}"
@@ -116,9 +126,10 @@ private fun MenuRows(rows: List<Row>, state: LazyListState, onItemClick: ((Menu.
                     }
                 }
                 is Row.CategoryHeader -> CategoryLine(r.category.name)
-                is Row.ItemRow -> ItemLine(r.item, onItemClick)
+                is Row.ItemRow -> ItemLine(r.item, onItemClick, onSoldOut)
             }
         }
+    }
     }
 }
 
@@ -137,12 +148,16 @@ private fun CategoryLine(name: String) {
 }
 
 @Composable
-private fun ItemLine(item: Menu.Item, onClick: ((Menu.Item) -> Unit)?) {
-    Column(Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable { onClick(item) } else Modifier)) {
+private fun ItemLine(item: Menu.Item, onClick: ((Menu.Item) -> Unit)?, onSoldOut: ((Menu.Item, Boolean) -> Unit)?) {
+    val pickable = onClick != null && !item.soldOut
+    Column(Modifier.fillMaxWidth().then(if (pickable) Modifier.clickable { onClick?.invoke(item) } else Modifier)) {
         Row(Modifier.padding(horizontal = Spacing.l, vertical = Spacing.listRow), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(item.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(item.name, style = MaterialTheme.typography.titleMedium, color = if (item.soldOut) BarLabColors.Faint else MaterialTheme.colorScheme.onSurface)
+                    if (item.soldOut) {
+                        Text(stringResource(R.string.menu_sold_out).caps(), style = MaterialTheme.typography.labelSmall, color = BarLabColors.Rust, modifier = Modifier.padding(start = Spacing.s))
+                    }
                     item.tags.forEach { Tag(it) }
                 }
                 if (item.description.isNotEmpty()) {
@@ -155,7 +170,14 @@ private fun ItemLine(item: Menu.Item, onClick: ((Menu.Item) -> Unit)?) {
                 }
             }
             Spacer(Modifier.width(Spacing.xl))
-            Text(Money.format(item.priceCents), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(Money.format(item.priceCents), style = MaterialTheme.typography.titleMedium, color = if (item.soldOut) BarLabColors.Faint else MaterialTheme.colorScheme.primary)
+                onSoldOut?.let { toggle ->
+                    TextButton(onClick = { toggle(item, !item.soldOut) }) {
+                        Text(stringResource(if (item.soldOut) R.string.menu_back_in else R.string.menu_mark_sold_out), color = if (item.soldOut) BarLabColors.Green else BarLabColors.Rust)
+                    }
+                }
+            }
         }
         HorizontalDivider(thickness = Spacing.hairline, color = BarLabColors.LineFaint, modifier = Modifier.padding(horizontal = Spacing.l))
     }
