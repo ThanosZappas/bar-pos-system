@@ -337,8 +337,8 @@ on or off in Settings → Order board.
   (reserved `.invalid` domain, so no mail can ever be sent). Passwords live only in Firebase
   Auth (hashed); the seed reads initial ones from the git-ignored credentials file.
 - Role, active state and `mustChangePassword` live in `users/{uid}`. Security rules read that
-  document on every request, so deactivation and role changes apply at once. Only Cloud
-  Functions write it: `createUser`, `updateUser`, `resetPassword`, `changeOwnPassword`. Every
+  document on every request, so deactivation and role changes apply at once. Only the
+  server functions write it: `createUser`, `updateUser`, `resetPassword`, `changeOwnPassword`. Every
   change goes to `auditLog`.
 - Anyone with `mustChangePassword` (the seeded admin, anyone after a reset) can do nothing
   but change their password, and not back to the initial username-twice password.
