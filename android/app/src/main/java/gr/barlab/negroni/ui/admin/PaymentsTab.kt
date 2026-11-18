@@ -1,5 +1,7 @@
 package gr.barlab.negroni.ui.admin
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,7 +52,7 @@ fun PaymentsTab(orders: OrdersRepository, nowMs: Long) {
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(Spacing.l), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
         item {
-            Text(stringResource(R.string.admin_payments_tonight).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            SectionHeading(stringResource(R.string.admin_payments_tonight))
             Text(
                 stringResource(R.string.admin_payments_totals, Money.format(sum(PaymentMethod.Cash)), Money.format(sum(PaymentMethod.Card)), Money.format(sum())),
                 style = MaterialTheme.typography.titleMedium,
@@ -61,7 +63,7 @@ fun PaymentsTab(orders: OrdersRepository, nowMs: Long) {
         items(payments, key = { "p-${it.id}" }) { PaymentRow(it, withTable = true) }
         item {
             HorizontalDivider(color = BarLabColors.Line, modifier = Modifier.padding(vertical = Spacing.m))
-            Text(stringResource(R.string.admin_closed_tonight).caps(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            SectionHeading(stringResource(R.string.admin_closed_tonight))
             if (bills.isEmpty()) Text(stringResource(R.string.admin_closed_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = Spacing.s))
         }
         items(bills, key = { "b-${it.sessionId}" }) { bill ->
@@ -111,5 +113,18 @@ private fun ClosedBillRow(bill: ClosedBill, expanded: Boolean, orders: OrdersRep
             }
         }
         HorizontalDivider(color = BarLabColors.LineFaint, modifier = Modifier.padding(top = Spacing.xs))
+    }
+}
+
+/** A clearly separated heading: larger serif, gold, with a gold rule under it. */
+@Composable
+private fun SectionHeading(text: String) {
+    androidx.compose.foundation.layout.Column(Modifier.padding(top = Spacing.l, bottom = Spacing.xs)) {
+        Text(text, style = MaterialTheme.typography.headlineSmall.copy(fontFamily = MaterialTheme.typography.titleLarge.fontFamily), color = MaterialTheme.colorScheme.primary)
+        androidx.compose.material3.HorizontalDivider(
+            thickness = 1.dp,
+            color = gr.barlab.negroni.ui.theme.BarLabColors.Gold.copy(alpha = 0.6f),
+            modifier = Modifier.padding(top = Spacing.xs).width(64.dp),
+        )
     }
 }
